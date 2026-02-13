@@ -1,0 +1,301 @@
+/**
+ * Core Type Definitions for Yachy App
+ */
+
+// ===== USER & AUTH TYPES =====
+
+export type UserRole = 'HOD' | 'CREW' | 'MANAGEMENT';
+
+export type Department = 'DECK' | 'INTERIOR' | 'ENGINEERING' | 'GALLEY';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  position: string;
+  department: Department;
+  role: UserRole;
+  vesselId: string;
+  profilePhoto?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Vessel {
+  id: string;
+  name: string;
+  managementCompanyId?: string;
+  inviteCode: string;
+  inviteExpiry: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ===== TASK TYPES =====
+
+export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+
+export type TaskPriority = 'GREEN' | 'YELLOW' | 'RED' | 'OVERDUE';
+
+export type TaskTimeframe = '1_DAY' | '3_DAYS' | '1_WEEK' | '2_WEEKS' | '1_MONTH' | 'CUSTOM';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  vesselId: string;
+  createdBy: string;
+  createdByName: string;
+  department: Department;
+  assignedTo?: string;
+  assignedToName?: string;
+  timeframe: TaskTimeframe;
+  deadline: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  notes: TaskNote[];
+  attachments: Attachment[];
+  claimedBy?: string;
+  claimedByName?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskNote {
+  id: string;
+  taskId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: string;
+}
+
+// ===== INVENTORY TYPES =====
+
+export interface InventoryCategory {
+  id: string;
+  name: string;
+  department: Department;
+  vesselId: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  description: string;
+  quantity: number;
+  location: string;
+  department: Department;
+  vesselId: string;
+  photo?: string;
+  lastEditedBy: string;
+  lastEditedByName: string;
+  lastEditedAt: string;
+  createdAt: string;
+}
+
+// ===== WATCH DUTIES TYPES =====
+
+export interface WatchDuty {
+  id: string;
+  vesselId: string;
+  department: Department;
+  date: string;
+  startTime: string;
+  endTime: string;
+  assignedTo: string;
+  assignedToName: string;
+  tasks: WatchTask[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WatchTask {
+  id: string;
+  watchDutyId: string;
+  description: string;
+  order: number;
+}
+
+// Local-only watch checklist (stored on device)
+export interface WatchChecklist {
+  watchDutyId: string;
+  userId: string;
+  date: string;
+  checkboxes: { [taskId: string]: boolean };
+}
+
+// ===== GENERAL DUTIES TYPES =====
+
+export type DutyFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'CUSTOM';
+
+export interface DutyCategory {
+  id: string;
+  name: string;
+  frequency: DutyFrequency;
+  department: Department;
+  vesselId: string;
+  order: number;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface Duty {
+  id: string;
+  categoryId: string;
+  description: string;
+  order: number;
+  createdAt: string;
+}
+
+// ===== TRIPS TYPES =====
+
+export type TripType = 'BOSS' | 'GUEST';
+
+export interface Trip {
+  id: string;
+  vesselId: string;
+  type: TripType;
+  title: string;
+  startDate: string;
+  endDate: string;
+  itinerary: Itinerary[];
+  preferences: TripPreference[];
+  specialRequests: string;
+  notes: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Itinerary {
+  id: string;
+  tripId: string;
+  date: string;
+  location: string;
+  activity: string;
+  time?: string;
+  notes?: string;
+  order: number;
+}
+
+export interface TripPreference {
+  id: string;
+  tripId: string;
+  category: string; // e.g., "Dietary", "Room", "Activities"
+  preference: string;
+}
+
+// ===== CONTRACTORS TYPES =====
+
+export interface Contractor {
+  id: string;
+  vesselId: string;
+  department: Department;
+  serviceType: string;
+  companyName: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  date: string;
+  time: string;
+  notes?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ===== SHARED TYPES =====
+
+export interface Attachment {
+  id: string;
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+// ===== CALENDAR TYPES =====
+
+export type CalendarFilterType = 'ALL' | 'BOSS_TRIPS' | 'GUEST_TRIPS' | 'CONTRACTORS' | 'JOBS' | 'DUTIES';
+
+export interface CalendarEvent {
+  id: string;
+  type: CalendarFilterType;
+  title: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  color: string;
+  relatedId: string; // ID of the task, trip, contractor, etc.
+}
+
+// ===== LOCATION/STORE FINDER TYPES =====
+
+export interface SavedLocation {
+  id: string;
+  vesselId: string;
+  name: string;
+  category: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  notes?: string;
+  savedBy: string;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface SavedChat {
+  id: string;
+  userId: string;
+  vesselId: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+}
+
+// ===== NAVIGATION TYPES =====
+
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  Login: undefined;
+  Register: undefined;
+};
+
+export type MainTabParamList = {
+  Tasks: undefined;
+  Inventory: undefined;
+  Calendar: undefined;
+  More: undefined;
+};
+
+export type TasksStackParamList = {
+  TasksList: undefined;
+  TaskDetail: { taskId: string };
+  CreateTask: undefined;
+  EditTask: { taskId: string };
+};
+
+export type InventoryStackParamList = {
+  InventoryList: undefined;
+  CategoryDetail: { categoryId: string };
+  CreateCategory: undefined;
+  CreateItem: { categoryId: string };
+  EditItem: { itemId: string };
+};
