@@ -16,7 +16,7 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'text';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
@@ -73,7 +73,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' ? COLORS.primary : COLORS.white}
+          color={variant === 'outline' || variant === 'text' ? COLORS.primary : COLORS.white}
         />
       ) : (
         <Text style={textStyles}>{title}</Text>
@@ -124,6 +124,13 @@ const styles = StyleSheet.create({
   },
   dangerText: {
     color: COLORS.white,
+  },
+  text: {
+    backgroundColor: 'transparent',
+  },
+  textText: {
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   // Sizes
   small: {

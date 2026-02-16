@@ -7,7 +7,8 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
-import { LoginScreen, RegisterScreen, HomeScreen } from '../screens';
+import { LoginScreen, RegisterScreen, RegisterCaptainScreen, RegisterCrewScreen, HomeScreen, JoinVesselScreen } from '../screens';
+import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
 import authService from '../services/auth';
 import { COLORS } from '../constants/theme';
@@ -67,10 +68,17 @@ export const RootNavigator = () => {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="RegisterCaptain" component={RegisterCaptainScreen} />
+            <Stack.Screen name="RegisterCrew" component={RegisterCrewScreen} />
+            <Stack.Screen name="CreateVessel" component={CreateVesselScreen} />
           </>
         ) : (
           // Main App Stack
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="JoinVessel" component={JoinVesselScreen} />
+            <Stack.Screen name="CreateVessel" component={CreateVesselScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

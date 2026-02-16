@@ -15,7 +15,7 @@ export interface User {
   position: string;
   department: Department;
   role: UserRole;
-  vesselId: string;
+  vesselId?: string; // Optional - user can join vessel later
   profilePhoto?: string;
   createdAt: string;
   updatedAt: string;

@@ -117,15 +117,41 @@ export const LoginScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Button
-              title="Register"
-              onPress={() => navigation.navigate('Register')}
-              variant="outline"
-              size="small"
-            />
+          {/* Create Account Options */}
+          <View style={styles.createAccountSection}>
+            <Text style={styles.sectionTitle}>Don't have an account?</Text>
+            
+            {/* Captain Registration */}
+            <View style={styles.accountTypeCard}>
+              <Text style={styles.accountTypeIcon}>⚓</Text>
+              <Text style={styles.accountTypeTitle}>Captain</Text>
+              <Text style={styles.accountTypeDescription}>
+                Create your vessel and invite your crew
+              </Text>
+              <Button
+                title="Create Captain Account"
+                onPress={() => navigation.navigate('RegisterCaptain')}
+                variant="primary"
+                fullWidth
+                style={styles.accountTypeButton}
+              />
+            </View>
+
+            {/* Crew Registration */}
+            <View style={styles.accountTypeCard}>
+              <Text style={styles.accountTypeIcon}>👥</Text>
+              <Text style={styles.accountTypeTitle}>Crew Member</Text>
+              <Text style={styles.accountTypeDescription}>
+                Join a vessel using an invite code
+              </Text>
+              <Button
+                title="Create Crew Account"
+                onPress={() => navigation.navigate('RegisterCrew')}
+                variant="outline"
+                fullWidth
+                style={styles.accountTypeButton}
+              />
+            </View>
           </View>
 
           {/* Coming Soon: Social Login */}
@@ -173,15 +199,46 @@ const styles = StyleSheet.create({
   loginButton: {
     marginTop: SPACING.md,
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.lg,
+  createAccountSection: {
+    marginTop: SPACING.xl,
   },
-  footerText: {
+  sectionTitle: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+  },
+  accountTypeCard: {
+    backgroundColor: COLORS.white,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.md,
+    alignItems: 'center',
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  accountTypeIcon: {
+    fontSize: 48,
+    marginBottom: SPACING.sm,
+  },
+  accountTypeTitle: {
+    fontSize: FONTS.xl,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: SPACING.xs,
+  },
+  accountTypeDescription: {
     fontSize: FONTS.sm,
     color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+  },
+  accountTypeButton: {
+    marginTop: SPACING.xs,
   },
   socialSection: {
     marginTop: SPACING.xl,

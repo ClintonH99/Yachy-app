@@ -1,5 +1,6 @@
 /**
- * Register Screen
+ * Register Captain Screen
+ * For vessel owners/captains who will create their vessel
  */
 
 import React, { useState } from 'react';
@@ -14,39 +15,23 @@ import {
 } from 'react-native';
 import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
-import { Department } from '../types';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
 
-const DEPARTMENTS = [
-  { label: 'Deck (Exterior)', value: 'DECK' },
-  { label: 'Interior', value: 'INTERIOR' },
-  { label: 'Engineering', value: 'ENGINEERING' },
-  { label: 'Galley', value: 'GALLEY' },
-];
-
-export const RegisterScreen = ({ navigation, route }: any) => {
+export const RegisterCaptainScreen = ({ navigation }: any) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    position: '',
-    department: '' as Department | '',
-    inviteCode: route.params?.inviteCode || '',
-    vesselId: route.params?.vesselId || '', // Hidden field for vessel creator
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
 
   const setUser = useAuthStore((state) => state.setUser);
 
-  // Check if user is creating their own vessel (came from CreateVessel screen)
-  const isVesselCreator = !!formData.vesselId;
-
   const updateField = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
-    // Clear error for this field
     if (errors[field]) {
       setErrors({ ...errors, [field]: '' });
     }
@@ -82,19 +67,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
       valid = false;
     }
 
-    if (!formData.position.trim()) {
-      newErrors.position = 'Position is required';
-      valid = false;
-    }
-
-    if (!formData.department) {
-      newErrors.department = 'Department is required';
-      valid = false;
-    }
-
-    // Invite code is now completely optional
-    // Users can register without it and join a vessel later
-
     setErrors(newErrors);
     return valid;
   };
@@ -108,20 +80,21 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         email: formData.email,
         password: formData.password,
         name: formData.name,
-        position: formData.position,
-        department: formData.department as string,
-        inviteCode: formData.inviteCode,
-        vesselId: formData.vesselId || undefined,
+        position: 'Captain', // Default position for captains
+        department: 'DECK', // Default department for captains
+        // No invite code or vesselId - captain will create vessel after login
       });
 
       if (user) {
         setUser(user);
-        const roleMessage = formData.vesselId 
-          ? 'Your vessel is ready! You are the Head of Department.'
-          : 'Welcome aboard!';
-        Alert.alert('Success', `Account created successfully! ${roleMessage}`);
+        Alert.alert(
+          'Success',
+          'Captain account created! You can now create your vessel and invite your crew.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error: any) {
+      console.error('Captain registration error:', error);
       Alert.alert('Error', error.message || 'Failed to create account');
     } finally {
       setLoading(false);
@@ -140,9 +113,17 @@ export const RegisterScreen = ({ navigation, route }: any) => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.icon}>⚓</Text>
+            <Text style={styles.title}>Create Captain Account</Text>
             <Text style={styles.subtitle}>
-              {isVesselCreator ? 'Set up your captain account' : 'Join the crew'}
+              Set up your account and create your vessel
+            </Text>
+          </View>
+
+          {/* Info Banner */}
+          <View style={styles.infoBanner}>
+            <Text style={styles.infoBannerText}>
+              As a Captain, you'll create your vessel and receive an invite code to share with your crew.
             </Text>
           </View>
 
@@ -187,67 +168,8 @@ export const RegisterScreen = ({ navigation, route }: any) => {
               error={errors.confirmPassword}
             />
 
-            <Input
-              label="Position"
-              placeholder="e.g., Deckhand, Chief Stew, Engineer"
-              value={formData.position}
-              onChangeText={(value) => updateField('position', value)}
-              error={errors.position}
-            />
-
-            {/* Department Selection - simplified for now */}
-            <View style={styles.departmentSection}>
-              <Text style={styles.label}>Department</Text>
-              <View style={styles.departmentButtons}>
-                {DEPARTMENTS.map((dept) => (
-                  <Button
-                    key={dept.value}
-                    title={dept.label}
-                    variant={
-                      formData.department === dept.value ? 'primary' : 'outline'
-                    }
-                    size="small"
-                    onPress={() => updateField('department', dept.value)}
-                    style={styles.departmentButton}
-                  />
-                ))}
-              </View>
-              {errors.department && (
-                <Text style={styles.error}>{errors.department}</Text>
-              )}
-            </View>
-
-            {/* Only show invite code for vessel creators */}
-            {isVesselCreator && (
-              <Input
-                label="Invite Code"
-                placeholder="Auto-generated for your vessel"
-                value={formData.inviteCode}
-                onChangeText={(value) => updateField('inviteCode', value)}
-                autoCapitalize="characters"
-                error={errors.inviteCode}
-                editable={false}
-              />
-            )}
-
-            {/* Info message for regular users */}
-            {!isVesselCreator && (
-              <View style={styles.inviteCodeInfo}>
-                <Text style={styles.inviteCodeInfoText}>
-                  💡 You can join a vessel after creating your account
-                </Text>
-              </View>
-            )}
-
-            {/* Show vessel creator badge */}
-            {isVesselCreator && (
-              <View style={styles.creatorBadge}>
-                <Text style={styles.creatorBadgeText}>⚓ Vessel Creator - You'll be assigned as Head of Department</Text>
-              </View>
-            )}
-
             <Button
-              title="Create Account"
+              title="Create Captain Account"
               onPress={handleRegister}
               loading={loading}
               fullWidth
@@ -285,8 +207,12 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xl,
   },
   header: {
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
     alignItems: 'center',
+  },
+  icon: {
+    fontSize: 64,
+    marginBottom: SPACING.sm,
   },
   title: {
     fontSize: FONTS['3xl'],
@@ -297,6 +223,20 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  infoBanner: {
+    backgroundColor: COLORS.primaryLight,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.lg,
+  },
+  infoBannerText: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   form: {
     marginBottom: SPACING.lg,
@@ -319,42 +259,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
     marginBottom: SPACING.sm,
-  },
-  inviteCodeInfo: {
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.md,
-  },
-  inviteCodeInfoText: {
-    fontSize: FONTS.sm,
-    color: COLORS.primary,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  inviteCodeHelp: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  inviteCodeHelpText: {
-    fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
-  },
-  creatorBadge: {
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  creatorBadgeText: {
-    fontSize: FONTS.sm,
-    color: COLORS.primary,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   registerButton: {
     marginTop: SPACING.md,

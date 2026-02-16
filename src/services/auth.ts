@@ -16,6 +16,7 @@ export interface RegisterData extends LoginCredentials {
   position: string;
   department: string;
   inviteCode?: string;
+  vesselId?: string; // For when user creates their own vessel
 }
 
 class AuthService {
@@ -46,7 +47,7 @@ class AuthService {
   /**
    * Sign up with email and password
    */
-  async signUp({ email, password, name, position, department, inviteCode }: RegisterData) {
+  async signUp({ email, password, name, position, department, inviteCode, vesselId }: RegisterData) {
     try {
       // First, create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -57,25 +58,34 @@ class AuthService {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Determine user role (HOD for vessel creator, CREW otherwise)
+        const role = vesselId ? 'HOD' : 'CREW';
+
         // Then create the user profile
-        const userProfile: Partial<User> = {
+        const userProfile: any = {
           id: authData.user.id,
           email,
           name,
           position,
           department: department as any,
-          role: 'CREW', // Default role, will be updated based on position
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          role: role as any,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
 
-        // If invite code provided, validate and link to vessel
-        if (inviteCode) {
+        // If vesselId provided (user created vessel), use it
+        if (vesselId) {
+          userProfile.vessel_id = vesselId;
+        }
+        // Otherwise, if invite code provided, validate and link to vessel
+        else if (inviteCode && inviteCode.trim()) {
           const vessel = await this.validateInviteCode(inviteCode);
           if (vessel) {
-            userProfile.vesselId = vessel.id;
+            userProfile.vessel_id = vessel.id;
           }
         }
+        // If neither vesselId nor inviteCode provided, user can join a vessel later
+        // vessel_id will be null
 
         const { error: profileError } = await supabase
           .from('users')
@@ -83,7 +93,21 @@ class AuthService {
 
         if (profileError) throw profileError;
 
-        return { user: userProfile as User, session: authData.session };
+        // Map the profile to User type (snake_case -> camelCase)
+        const mappedUser: User = {
+          id: userProfile.id,
+          email: userProfile.email,
+          name: userProfile.name,
+          position: userProfile.position,
+          department: userProfile.department,
+          role: userProfile.role,
+          vesselId: userProfile.vessel_id, // Map vessel_id to vesselId
+          profilePhoto: userProfile.profile_photo,
+          createdAt: userProfile.created_at,
+          updatedAt: userProfile.updated_at,
+        };
+
+        return { user: mappedUser, session: authData.session };
       }
 
       return { user: null, session: null };
@@ -129,10 +153,29 @@ class AuthService {
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as User;
+      
+      // If no user found, return null (user doesn't have a profile yet)
+      if (!data) {
+        console.log('No user profile found for:', userId);
+        return null;
+      }
+      
+      // Map snake_case database columns to camelCase User type
+      return {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        position: data.position,
+        department: data.department,
+        role: data.role,
+        vesselId: data.vessel_id, // Map vessel_id to vesselId
+        profilePhoto: data.profile_photo,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as User;
     } catch (error) {
       console.error('Get user profile error:', error);
       return null;
@@ -147,19 +190,50 @@ class AuthService {
       const { data, error } = await supabase
         .from('vessels')
         .select('*')
-        .eq('inviteCode', inviteCode)
+        .eq('invite_code', inviteCode)
         .single();
 
       if (error) throw error;
 
       // Check if invite code is expired
-      if (data && new Date(data.inviteExpiry) < new Date()) {
+      if (data && new Date(data.invite_expiry) < new Date()) {
         throw new Error('Invite code has expired');
       }
 
       return data;
     } catch (error) {
       console.error('Validate invite code error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Join a vessel using invite code (for users who registered without a vessel)
+   */
+  async joinVessel(userId: string, inviteCode: string) {
+    try {
+      // Validate invite code and get vessel
+      const vessel = await this.validateInviteCode(inviteCode);
+      
+      if (!vessel) {
+        throw new Error('Invalid invite code');
+      }
+
+      // Update user's vessel_id
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          vessel_id: vessel.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Return updated user profile
+      return await this.getUserProfile(userId);
+    } catch (error) {
+      console.error('Join vessel error:', error);
       throw error;
     }
   }
