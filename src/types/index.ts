@@ -39,6 +39,27 @@ export type TaskPriority = 'GREEN' | 'YELLOW' | 'RED' | 'OVERDUE';
 
 export type TaskTimeframe = '1_DAY' | '3_DAYS' | '1_WEEK' | '2_WEEKS' | '1_MONTH' | 'CUSTOM';
 
+export type TaskCategory = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+
+export type TaskRecurring = '7_DAYS' | '14_DAYS' | '30_DAYS' | null;
+
+export interface VesselTask {
+  id: string;
+  vesselId: string;
+  category: TaskCategory;
+  title: string;
+  notes: string;
+  doneByDate: string | null;
+  status: TaskStatus;
+  recurring: TaskRecurring;
+  completedBy?: string;
+  completedAt?: string;
+  completedByName?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -190,6 +211,26 @@ export interface TripPreference {
   tripId: string;
   category: string; // e.g., "Dietary", "Room", "Activities"
   preference: string;
+}
+
+// ===== YARD PERIOD JOBS TYPES =====
+
+export interface YardPeriodJob {
+  id: string;
+  vesselId: string;
+  jobTitle: string;
+  jobDescription: string;
+  yardLocation: string;
+  contractorCompanyName: string;
+  contactDetails: string;
+  doneByDate: string | null;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  completedBy?: string;
+  completedAt?: string;
+  completedByName?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ===== CONTRACTORS TYPES =====

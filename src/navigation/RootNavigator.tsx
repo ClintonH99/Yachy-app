@@ -25,6 +25,12 @@ import {
   DeliveryTripsScreen,
   YardPeriodTripsScreen,
   TripColorSettingsScreen,
+  TasksScreen,
+  TasksListScreen,
+  AddEditTaskScreen,
+  OverdueTasksScreen,
+  YardPeriodJobsScreen,
+  AddEditYardJobScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
@@ -228,6 +234,54 @@ export const RootNavigator = () => {
               component={TripColorSettingsScreen}
               options={{ 
                 title: 'Trip colors',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="Tasks" 
+              component={TasksScreen}
+              options={{ 
+                title: 'Tasks',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="TasksList" 
+              component={TasksListScreen}
+              options={{ 
+                title: 'Tasks',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditTask" 
+              component={AddEditTaskScreen}
+              options={{ 
+                title: 'Task',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="OverdueTasks" 
+              component={OverdueTasksScreen}
+              options={{ 
+                title: 'Overdue Tasks',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="YardPeriodJobs" 
+              component={YardPeriodJobsScreen}
+              options={{ 
+                title: 'Yard Period',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditYardJob" 
+              component={AddEditYardJobScreen}
+              options={{ 
+                title: 'Job',
                 headerShown: true,
               }}
             />

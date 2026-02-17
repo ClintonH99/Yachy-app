@@ -93,15 +93,16 @@ export const HomeScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Show normal content only if user has a vessel */}
-        {hasVessel && (
-          <>
-            {/* Quick Stats & Upcoming Trips */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>0</Text>
-                <Text style={styles.statLabel}>Active Tasks</Text>
-              </View>
+        {/* Quick access: symbol cards (always shown; some screens require vessel) */}
+        <View style={styles.statsContainer}>
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => navigation.navigate('Tasks')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statNumber}>📋</Text>
+                <Text style={styles.statLabel}>Tasks</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.statCard}
                 onPress={() => navigation.navigate('UpcomingTrips')}
@@ -110,22 +111,32 @@ export const HomeScreen = ({ navigation }: any) => {
                 <Text style={styles.statNumber}>📅</Text>
                 <Text style={styles.statLabel}>Upcoming Trips</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => navigation.navigate('YardPeriodJobs')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statNumber}>🔧</Text>
+                <Text style={styles.statLabel}>Yard Period</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => navigation.navigate('Settings')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statNumber}>⚙️</Text>
+                <Text style={styles.statLabel}>Settings</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Upcoming Trips Button */}
-            <Button
-              title="Upcoming Trips"
-              onPress={() => navigation.navigate('UpcomingTrips')}
-              variant="primary"
-              fullWidth
-              style={styles.upcomingTripsButton}
-            />
-
+        {/* Show normal content only if user has a vessel */}
+        {hasVessel && (
+          <>
             {/* Coming Soon Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Coming Soon</Text>
               <View style={styles.featureList}>
-                <Text style={styles.featureItem}>✅ Tasks Management</Text>
+                <Text style={styles.featureItem}>✅ Tasks (Daily, Weekly, Monthly)</Text>
                 <Text style={styles.featureItem}>✅ Inventory Tracking</Text>
                 <Text style={styles.featureItem}>✅ Watch Duties</Text>
                 <Text style={styles.featureItem}>✅ Trips Planning</Text>
@@ -147,13 +158,6 @@ export const HomeScreen = ({ navigation }: any) => {
         )}
 
         {/* Logout Button */}
-        <Button
-          title="Settings"
-          onPress={() => navigation.navigate('Settings')}
-          variant="primary"
-          fullWidth
-          style={styles.settingsButton}
-        />
         <Button
           title="Sign Out"
           onPress={handleLogout}
@@ -280,9 +284,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  upcomingTripsButton: {
-    marginBottom: SPACING.lg,
-  },
   section: {
     backgroundColor: COLORS.white,
     padding: SPACING.lg,
@@ -324,9 +325,6 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sm,
     color: COLORS.white,
     opacity: 0.9,
-  },
-  settingsButton: {
-    marginBottom: SPACING.sm,
   },
   logoutButton: {
     marginTop: SPACING.md,
