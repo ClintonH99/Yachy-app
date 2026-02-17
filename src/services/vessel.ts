@@ -170,6 +170,26 @@ class VesselService {
       throw error;
     }
   }
+
+  /**
+   * Update vessel name (HOD only)
+   */
+  async updateVesselName(vesselId: string, name: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('vessels')
+        .update({
+          name: name.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', vesselId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Update vessel name error:', error);
+      throw error;
+    }
+  }
 }
 
 export default new VesselService();

@@ -156,7 +156,7 @@ export interface Duty {
 
 // ===== TRIPS TYPES =====
 
-export type TripType = 'BOSS' | 'GUEST';
+export type TripType = 'BOSS' | 'GUEST' | 'DELIVERY' | 'YARD_PERIOD';
 
 export interface Trip {
   id: string;
@@ -165,11 +165,11 @@ export interface Trip {
   title: string;
   startDate: string;
   endDate: string;
-  itinerary: Itinerary[];
-  preferences: TripPreference[];
-  specialRequests: string;
+  itinerary?: Itinerary[];
+  preferences?: TripPreference[];
+  specialRequests?: string;
   notes: string;
-  createdBy: string;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }

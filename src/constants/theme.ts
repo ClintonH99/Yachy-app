@@ -17,13 +17,32 @@ export const COLORS = {
   success: '#10B981', // Green (70-100% time remaining)
   warning: '#F59E0B', // Yellow/Amber (30-70% time remaining)
   danger: '#EF4444', // Red (0-30% time remaining)
+  error: '#EF4444', // Error state
   
   // Module colors - Calendar view
   bossTripColor: '#3B82F6', // Blue
   guestTripColor: '#10B981', // Green
+  deliveryTripColor: '#F59E0B', // Amber
+  yardPeriodColor: '#0D9488', // Teal
   contractorColor: '#F59E0B', // Yellow
   jobColor: '#EF4444', // Red
-  dutyColor: '#8B5CF6', // Purple
+  dutyColor: '#8B5CF6', // Purple (multiple trip types on same day)
+  
+  // Swatches for HOD trip color picker (distinct, accessible)
+  tripColorSwatches: [
+    '#10B981', // Green
+    '#3B82F6', // Blue
+    '#F59E0B', // Amber
+    '#0D9488', // Teal
+    '#8B5CF6', // Purple
+    '#EC4899', // Pink
+    '#EF4444', // Red
+    '#6366F1', // Indigo
+    '#14B8A6', // Teal light
+    '#F97316', // Orange
+    '#84CC16', // Lime
+    '#06B6D4', // Cyan
+  ],
   
   // Neutral colors
   white: '#FFFFFF',

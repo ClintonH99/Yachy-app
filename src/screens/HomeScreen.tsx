@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { Button } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
@@ -95,17 +96,30 @@ export const HomeScreen = ({ navigation }: any) => {
         {/* Show normal content only if user has a vessel */}
         {hasVessel && (
           <>
-            {/* Quick Stats Placeholder */}
+            {/* Quick Stats & Upcoming Trips */}
             <View style={styles.statsContainer}>
               <View style={styles.statCard}>
                 <Text style={styles.statNumber}>0</Text>
                 <Text style={styles.statLabel}>Active Tasks</Text>
               </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>0</Text>
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => navigation.navigate('UpcomingTrips')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statNumber}>📅</Text>
                 <Text style={styles.statLabel}>Upcoming Trips</Text>
-              </View>
+              </TouchableOpacity>
             </View>
+
+            {/* Upcoming Trips Button */}
+            <Button
+              title="Upcoming Trips"
+              onPress={() => navigation.navigate('UpcomingTrips')}
+              variant="primary"
+              fullWidth
+              style={styles.upcomingTripsButton}
+            />
 
             {/* Coming Soon Section */}
             <View style={styles.section}>
@@ -133,6 +147,13 @@ export const HomeScreen = ({ navigation }: any) => {
         )}
 
         {/* Logout Button */}
+        <Button
+          title="Settings"
+          onPress={() => navigation.navigate('Settings')}
+          variant="primary"
+          fullWidth
+          style={styles.settingsButton}
+        />
         <Button
           title="Sign Out"
           onPress={handleLogout}
@@ -259,6 +280,9 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
+  upcomingTripsButton: {
+    marginBottom: SPACING.lg,
+  },
   section: {
     backgroundColor: COLORS.white,
     padding: SPACING.lg,
@@ -300,6 +324,9 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sm,
     color: COLORS.white,
     opacity: 0.9,
+  },
+  settingsButton: {
+    marginBottom: SPACING.sm,
   },
   logoutButton: {
     marginTop: SPACING.md,

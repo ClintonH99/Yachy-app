@@ -49,17 +49,33 @@ class AuthService {
    */
   async signUp({ email, password, name, position, department, inviteCode, vesselId }: RegisterData) {
     try {
+      console.log('🚀 Starting signup process...');
+      console.log('📧 Email:', email);
+      console.log('👤 Name:', name);
+      console.log('🎫 Invite Code:', inviteCode || 'None');
+      console.log('⚓ Vessel ID:', vesselId || 'None');
+
       // First, create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('❌ Auth signup error:', authError.message);
+        // Provide more helpful error message for common issues
+        if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
+          throw new Error('This email is already registered. Please use a different email or sign in instead.');
+        }
+        throw authError;
+      }
 
       if (authData.user) {
+        console.log('✅ Auth user created:', authData.user.id);
+
         // Determine user role (HOD for vessel creator, CREW otherwise)
         const role = vesselId ? 'HOD' : 'CREW';
+        console.log('👔 Assigned role:', role);
 
         // Then create the user profile
         const userProfile: any = {
@@ -75,23 +91,41 @@ class AuthService {
 
         // If vesselId provided (user created vessel), use it
         if (vesselId) {
+          console.log('⚓ Using provided vessel ID:', vesselId);
           userProfile.vessel_id = vesselId;
         }
         // Otherwise, if invite code provided, validate and link to vessel
         else if (inviteCode && inviteCode.trim()) {
-          const vessel = await this.validateInviteCode(inviteCode);
-          if (vessel) {
-            userProfile.vessel_id = vessel.id;
+          console.log('🔍 Validating invite code:', inviteCode);
+          try {
+            const vessel = await this.validateInviteCode(inviteCode);
+            if (vessel) {
+              console.log('✅ Invite code valid! Vessel found:', vessel.name, '(ID:', vessel.id, ')');
+              userProfile.vessel_id = vessel.id;
+            } else {
+              console.error('❌ Invite code validation returned null');
+              throw new Error('Invalid invite code');
+            }
+          } catch (inviteError: any) {
+            console.error('❌ Invite code validation failed:', inviteError.message);
+            throw new Error(`Invalid invite code: ${inviteError.message}`);
           }
+        } else {
+          console.log('ℹ️ No vessel assignment (Captain without vessel or no invite code)');
         }
-        // If neither vesselId nor inviteCode provided, user can join a vessel later
-        // vessel_id will be null
+
+        console.log('💾 Creating user profile with vessel_id:', userProfile.vessel_id || 'null');
 
         const { error: profileError } = await supabase
           .from('users')
           .insert([userProfile]);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('❌ Profile creation error:', profileError);
+          throw profileError;
+        }
+
+        console.log('✅ User profile created successfully!');
 
         // Map the profile to User type (snake_case -> camelCase)
         const mappedUser: User = {
@@ -107,12 +141,14 @@ class AuthService {
           updatedAt: userProfile.updated_at,
         };
 
+        console.log('🎉 Signup complete! User:', mappedUser.name, 'Vessel ID:', mappedUser.vesselId);
+
         return { user: mappedUser, session: authData.session };
       }
 
       return { user: null, session: null };
-    } catch (error) {
-      console.error('Sign up error:', error);
+    } catch (error: any) {
+      console.error('❌ Sign up error:', error.message || error);
       throw error;
     }
   }
@@ -187,22 +223,41 @@ class AuthService {
    */
   async validateInviteCode(inviteCode: string) {
     try {
+      console.log('🔍 Validating invite code in database:', inviteCode);
+      
       const { data, error } = await supabase
         .from('vessels')
         .select('*')
         .eq('invite_code', inviteCode)
         .single();
 
-      if (error) throw error;
-
-      // Check if invite code is expired
-      if (data && new Date(data.invite_expiry) < new Date()) {
-        throw new Error('Invite code has expired');
+      if (error) {
+        console.error('❌ Database error when validating invite code:', error.message);
+        throw new Error('Invalid invite code - vessel not found');
       }
 
+      if (!data) {
+        console.error('❌ No vessel found with invite code:', inviteCode);
+        throw new Error('Invalid invite code - no vessel found');
+      }
+
+      console.log('✅ Vessel found:', data.name, 'ID:', data.id);
+
+      // Check if invite code is expired
+      const expiryDate = new Date(data.invite_expiry);
+      const now = new Date();
+      console.log('📅 Expiry date:', expiryDate.toISOString());
+      console.log('📅 Current date:', now.toISOString());
+      
+      if (expiryDate < now) {
+        console.error('❌ Invite code has expired');
+        throw new Error('Invite code has expired - ask your captain for a new code');
+      }
+
+      console.log('✅ Invite code is valid and not expired');
       return data;
-    } catch (error) {
-      console.error('Validate invite code error:', error);
+    } catch (error: any) {
+      console.error('❌ Validate invite code error:', error.message || error);
       throw error;
     }
   }
