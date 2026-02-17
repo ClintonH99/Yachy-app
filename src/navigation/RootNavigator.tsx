@@ -29,8 +29,11 @@ import {
   TasksListScreen,
   AddEditTaskScreen,
   OverdueTasksScreen,
+  UpcomingTasksScreen,
   YardPeriodJobsScreen,
   AddEditYardJobScreen,
+  MaintenanceLogScreen,
+  AddEditMaintenanceLogScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
@@ -270,6 +273,14 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
+              name="UpcomingTasks" 
+              component={UpcomingTasksScreen}
+              options={{ 
+                title: 'Upcoming Tasks',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
               name="YardPeriodJobs" 
               component={YardPeriodJobsScreen}
               options={{ 
@@ -282,6 +293,22 @@ export const RootNavigator = () => {
               component={AddEditYardJobScreen}
               options={{ 
                 title: 'Job',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="MaintenanceLog" 
+              component={MaintenanceLogScreen}
+              options={{ 
+                title: 'Maintenance Log',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditMaintenanceLog" 
+              component={AddEditMaintenanceLogScreen}
+              options={{ 
+                title: 'Log',
                 headerShown: true,
               }}
             />

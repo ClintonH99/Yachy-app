@@ -1,5 +1,5 @@
 /**
- * Tasks Screen - Hub with Daily, Weekly, Monthly categories
+ * Tasks Screen - Hub: Upcoming Tasks (button), Overdue, then Daily/Weekly/Monthly categories
  */
 
 import React, { useEffect } from 'react';
@@ -58,7 +58,6 @@ export const TasksScreen = ({ navigation }: any) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Tasks</Text>
       <Text style={styles.subtitle}>
         Choose a category to view and manage tasks
       </Text>
@@ -71,6 +70,18 @@ export const TasksScreen = ({ navigation }: any) => {
           style={styles.createButton}
         />
       )}
+
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('UpcomingTasks')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.cardIcon}>📋</Text>
+        <View style={styles.cardLabelWrap}>
+          <Text style={styles.cardLabel}>Upcoming Tasks</Text>
+          <Text style={styles.cardHint}>Tasks due in the next 3 days</Text>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity
         style={[styles.card, styles.overdueCard]}
         onPress={() => navigation.navigate('OverdueTasks')}
@@ -117,12 +128,6 @@ const styles = StyleSheet.create({
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
     textAlign: 'center',
-  },
-  title: {
-    fontSize: FONTS['2xl'],
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: FONTS.base,

@@ -24,5 +24,8 @@ export { TasksScreen } from './TasksScreen';
 export { TasksListScreen } from './TasksListScreen';
 export { AddEditTaskScreen } from './AddEditTaskScreen';
 export { OverdueTasksScreen } from './OverdueTasksScreen';
+export { UpcomingTasksScreen } from './UpcomingTasksScreen';
 export { YardPeriodJobsScreen } from './YardPeriodJobsScreen';
 export { AddEditYardJobScreen } from './AddEditYardJobScreen';
+export { MaintenanceLogScreen } from './MaintenanceLogScreen';
+export { AddEditMaintenanceLogScreen } from './AddEditMaintenanceLogScreen';

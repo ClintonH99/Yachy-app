@@ -168,6 +168,36 @@ class VesselTasksService {
     }
   }
 
+  /**
+   * Tasks from Daily, Weekly, Monthly that are due within the next N days (not overdue, not completed).
+   */
+  async getUpcomingTasks(vesselId: string, withinDays: number = 3): Promise<VesselTask[]> {
+    try {
+      const today = new Date();
+      const startDate = today.toISOString().slice(0, 10);
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + withinDays);
+      const endDateStr = endDate.toISOString().slice(0, 10);
+
+      const { data, error } = await supabase
+        .from('vessel_tasks')
+        .select('*')
+        .eq('vessel_id', vesselId)
+        .not('done_by_date', 'is', null)
+        .gte('done_by_date', startDate)
+        .lte('done_by_date', endDateStr)
+        .neq('status', 'COMPLETED')
+        .in('category', ['DAILY', 'WEEKLY', 'MONTHLY'])
+        .order('done_by_date', { ascending: true });
+
+      if (error) throw error;
+      return (data || []).map(this.mapRowToTask);
+    } catch (error) {
+      console.error('Get upcoming tasks error:', error);
+      return [];
+    }
+  }
+
   async deleteCompletedTasksBefore(vesselId: string, beforeDate: string): Promise<number> {
     try {
       const { data, error } = await supabase

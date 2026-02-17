@@ -93,41 +93,49 @@ export const HomeScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Quick access: symbol cards (always shown; some screens require vessel) */}
-        <View style={styles.statsContainer}>
-              <TouchableOpacity
-                style={styles.statCard}
-                onPress={() => navigation.navigate('Tasks')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.statNumber}>📋</Text>
-                <Text style={styles.statLabel}>Tasks</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.statCard}
-                onPress={() => navigation.navigate('UpcomingTrips')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.statNumber}>📅</Text>
-                <Text style={styles.statLabel}>Upcoming Trips</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.statCard}
-                onPress={() => navigation.navigate('YardPeriodJobs')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.statNumber}>🔧</Text>
-                <Text style={styles.statLabel}>Yard Period</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.statCard}
-                onPress={() => navigation.navigate('Settings')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.statNumber}>⚙️</Text>
-                <Text style={styles.statLabel}>Settings</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Quick access: list of shortcut cards (stacked vertically) */}
+        <View style={styles.shortcutList}>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('Tasks')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>📋</Text>
+            <Text style={styles.shortcutLabel}>Tasks</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('UpcomingTrips')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>📅</Text>
+            <Text style={styles.shortcutLabel}>Upcoming Trips</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('MaintenanceLog')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>📝</Text>
+            <Text style={styles.shortcutLabel}>Maintenance Log</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('YardPeriodJobs')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>🔧</Text>
+            <Text style={styles.shortcutLabel}>Yard Period</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>⚙️</Text>
+            <Text style={styles.shortcutLabel}>Settings</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Show normal content only if user has a vessel */}
         {hasVessel && (
@@ -256,33 +264,31 @@ const styles = StyleSheet.create({
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: SPACING.md,
+  shortcutList: {
     marginBottom: SPACING.xl,
   },
-  statCard: {
-    flex: 1,
+  shortcutCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: 12,
-    alignItems: 'center',
+    marginBottom: SPACING.md,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  statNumber: {
-    fontSize: FONTS['3xl'],
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
+  shortcutIcon: {
+    fontSize: FONTS['2xl'],
+    marginRight: SPACING.lg,
   },
-  statLabel: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+  shortcutLabel: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    flex: 1,
   },
   section: {
     backgroundColor: COLORS.white,

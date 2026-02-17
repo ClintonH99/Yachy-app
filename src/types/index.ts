@@ -233,6 +233,23 @@ export interface YardPeriodJob {
   updatedAt: string;
 }
 
+// ===== MAINTENANCE LOG TYPES =====
+
+export interface MaintenanceLog {
+  id: string;
+  vesselId: string;
+  equipment: string;
+  portStarboardNa: string;
+  serialNumber: string;
+  hoursOfService: string;
+  hoursAtNextService: string;
+  whatServiceDone: string;
+  notes: string;
+  serviceDoneBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ===== CONTRACTORS TYPES =====
 
 export interface Contractor {
