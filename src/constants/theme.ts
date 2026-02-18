@@ -19,6 +19,15 @@ export const COLORS = {
   danger: '#EF4444', // Red (0-30% time remaining)
   error: '#EF4444', // Error state
   
+  // Department colors (Tasks Calendar, Crew Management)
+  departmentColors: {
+    BRIDGE: '#3B82F6',
+    ENGINEERING: '#EF4444',
+    EXTERIOR: '#0EA5E9',
+    INTERIOR: '#8B5CF6',
+    GALLEY: '#10B981',
+  } as Record<string, string>,
+
   // Module colors - Calendar view
   bossTripColor: '#3B82F6', // Blue
   guestTripColor: '#10B981', // Green

@@ -38,6 +38,22 @@ export const calculateTaskPriority = (deadline: string): string => {
 };
 
 /**
+ * Parse a YYYY-MM-DD date string as local date (avoids UTC midnight shifting to previous day).
+ */
+export const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+};
+
+/**
+ * Format a YYYY-MM-DD string for display using local date (no timezone shift).
+ */
+export const formatLocalDateString = (
+  dateStr: string,
+  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' }
+): string => parseLocalDate(dateStr).toLocaleDateString(undefined, options);
+
+/**
  * Format date to readable string
  */
 export const formatDate = (date: string | Date): string => {

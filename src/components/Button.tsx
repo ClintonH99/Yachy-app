@@ -36,8 +36,9 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
-  const buttonStyles: ViewStyle[] = [styles.button, styles[variant]];
-  const textStyles: TextStyle[] = [styles.text, styles[`${variant}Text`]];
+  const variantStyle = variant === 'text' ? styles.textVariant : styles[variant];
+  const buttonStyles: ViewStyle[] = [styles.button, variantStyle];
+  const textStyles: TextStyle[] = [styles.baseText, styles[`${variant}Text`]];
 
   // Size variations
   if (size === 'small') {
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: '100%',
   },
-  text: {
+  baseText: {
     fontSize: FONTS.base,
     fontWeight: '600',
   },
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   dangerText: {
     color: COLORS.white,
   },
-  text: {
+  textVariant: {
     backgroundColor: 'transparent',
   },
   textText: {

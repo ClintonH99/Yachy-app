@@ -176,6 +176,33 @@ class VesselTasksService {
   /**
    * Tasks from Daily, Weekly, Monthly that are due within the next N days (not overdue, not completed).
    */
+  /**
+   * Get all tasks (any category, any status) with done_by_date in the given date range.
+   * Used for Tasks Calendar.
+   */
+  async getTasksInDateRange(
+    vesselId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<VesselTask[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vessel_tasks')
+        .select('*')
+        .eq('vessel_id', vesselId)
+        .not('done_by_date', 'is', null)
+        .gte('done_by_date', startDate)
+        .lte('done_by_date', endDate)
+        .order('done_by_date', { ascending: true });
+
+      if (error) throw error;
+      return (data || []).map(this.mapRowToTask);
+    } catch (error) {
+      console.error('Get tasks in date range error:', error);
+      return [];
+    }
+  }
+
   async getUpcomingTasks(vesselId: string, withinDays: number = 3): Promise<VesselTask[]> {
     try {
       const today = new Date();

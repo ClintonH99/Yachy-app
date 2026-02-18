@@ -57,6 +57,8 @@ const MAINTENANCE_HEADERS = [
 const YARD_HEADERS = [
   'Job Title',
   'Job Description',
+  'Department (BRIDGE/ENGINEERING/EXTERIOR/INTERIOR/GALLEY)',
+  'Priority (GREEN/YELLOW/RED)',
   'Yard Location',
   'Contractor Company Name',
   'Contact Details',
@@ -142,6 +144,8 @@ function createYardWorkbook(): XLSX.WorkBook {
     createSheetWithHeaders(YARD_HEADERS, [
       'Hull Paint',
       'Full hull repaint',
+      'EXTERIOR',
+      'GREEN',
       'Marina XYZ',
       'ABC Marine',
       'contact@abc.com',
@@ -215,6 +219,8 @@ export interface ParsedMaintenance {
 export interface ParsedYardJob {
   jobTitle: string;
   jobDescription?: string;
+  department?: string;
+  priority?: string;
   yardLocation?: string;
   contractorCompanyName?: string;
   contactDetails?: string;
@@ -275,9 +281,15 @@ export function parseYardFile(uri: string): Promise<ParseResult<ParsedYardJob>> 
   return parseFile(uri, 'yard', (row, rowNum, headerMap) => {
     const jobTitle = (headerMap['Job Title'] ?? '').trim();
     if (!jobTitle) throw new Error('Job Title is required.');
+    const deptRaw = (headerMap['Department (BRIDGE/ENGINEERING/EXTERIOR/INTERIOR/GALLEY)'] ?? headerMap['Department'] ?? '').trim().toUpperCase();
+    const priorityRaw = (headerMap['Priority (GREEN/YELLOW/RED)'] ?? headerMap['Priority'] ?? '').trim().toUpperCase();
+    const department = deptRaw && VALID_DEPARTMENTS.includes(deptRaw as (typeof VALID_DEPARTMENTS)[number]) ? deptRaw : undefined;
+    const priority = ['GREEN', 'YELLOW', 'RED'].includes(priorityRaw) ? priorityRaw : undefined;
     return {
       jobTitle,
       jobDescription: (headerMap['Job Description'] ?? '').trim() || undefined,
+      department,
+      priority,
       yardLocation: (headerMap['Yard Location'] ?? '').trim() || undefined,
       contractorCompanyName: (headerMap['Contractor Company Name'] ?? '').trim() || undefined,
       contactDetails: (headerMap['Contact Details'] ?? '').trim() || undefined,

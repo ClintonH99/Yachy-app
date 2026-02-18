@@ -137,6 +137,8 @@ export const ImportExportScreen = ({ navigation }: any) => {
               vesselId,
               jobTitle: row.jobTitle,
               jobDescription: row.jobDescription,
+              department: (row.department || user?.department || 'INTERIOR') as 'BRIDGE' | 'ENGINEERING' | 'EXTERIOR' | 'INTERIOR' | 'GALLEY',
+              priority: (row.priority || 'GREEN') as 'GREEN' | 'YELLOW' | 'RED',
               yardLocation: row.yardLocation,
               contractorCompanyName: row.contractorCompanyName,
               contactDetails: row.contactDetails,

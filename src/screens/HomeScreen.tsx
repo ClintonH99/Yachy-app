@@ -129,6 +129,14 @@ export const HomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shortcutCard}
+            onPress={() => navigation.navigate('WatchKeeping')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>⏱️</Text>
+            <Text style={styles.shortcutLabel}>Watch Keeping</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
             onPress={() => navigation.navigate('ImportExport')}
             activeOpacity={0.8}
           >

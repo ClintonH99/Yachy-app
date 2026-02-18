@@ -216,11 +216,15 @@ export interface TripPreference {
 
 // ===== YARD PERIOD JOBS TYPES =====
 
+export type YardJobPriority = 'GREEN' | 'YELLOW' | 'RED';
+
 export interface YardPeriodJob {
   id: string;
   vesselId: string;
   jobTitle: string;
   jobDescription: string;
+  department: Department;
+  priority: YardJobPriority;
   yardLocation: string;
   contractorCompanyName: string;
   contactDetails: string;

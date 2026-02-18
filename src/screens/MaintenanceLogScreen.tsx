@@ -479,7 +479,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
           >
           <View style={styles.table}>
             <View style={[styles.row, styles.headerRow]}>
-              <View style={[styles.cell, styles.headerCell, styles.checkboxHeaderCell, { width: CHECKBOX_WIDTH }]}>
+              <View style={[styles.cellView, styles.headerCellView, styles.checkboxHeaderCell, { width: CHECKBOX_WIDTH }]}>
                 <Checkbox
                   checked={filteredLogs.length > 0 && filteredLogs.every((l) => selectedIds.has(l.id))}
                   onPress={toggleSelectAll}
@@ -495,7 +495,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
               <Text style={[styles.cell, styles.headerCell, { width: COLUMN_WIDTH }]}>Notes</Text>
               <Text style={[styles.cell, styles.headerCell, { width: COLUMN_WIDTH }]}>Done by</Text>
               <Text style={[styles.cell, styles.headerCell, { width: DATE_WIDTH }]}>Date</Text>
-              <View style={[styles.cell, styles.headerCell, { width: ACTIONS_WIDTH }]} />
+              <View style={[styles.cellView, styles.headerCellView, { width: ACTIONS_WIDTH }]} />
             </View>
             {filteredLogs.length === 0 ? (
               <View style={styles.filterEmptyRow}>
@@ -730,10 +730,17 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sm,
     color: COLORS.textPrimary,
   },
+  cellView: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
   headerCell: {
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     fontSize: FONTS.xs,
+  },
+  headerCellView: {
+    /* layout only, no text props - for View */
   },
   dateCell: {
     color: COLORS.textSecondary,

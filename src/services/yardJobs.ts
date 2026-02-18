@@ -3,12 +3,14 @@
  */
 
 import { supabase } from './supabase';
-import { YardPeriodJob } from '../types';
+import { YardPeriodJob, Department, YardJobPriority } from '../types';
 
 export interface CreateYardJobData {
   vesselId: string;
   jobTitle: string;
   jobDescription?: string;
+  department: Department;
+  priority: YardJobPriority;
   yardLocation?: string;
   contractorCompanyName?: string;
   contactDetails?: string;
@@ -18,6 +20,8 @@ export interface CreateYardJobData {
 export interface UpdateYardJobData {
   jobTitle?: string;
   jobDescription?: string;
+  department?: Department;
+  priority?: YardJobPriority;
   yardLocation?: string;
   contractorCompanyName?: string;
   contactDetails?: string;
@@ -55,6 +59,8 @@ class YardJobsService {
             vessel_id: input.vesselId,
             job_title: input.jobTitle.trim(),
             job_description: input.jobDescription?.trim() || null,
+            department: input.department,
+            priority: input.priority,
             yard_location: input.yardLocation?.trim() || null,
             contractor_company_name: input.contractorCompanyName?.trim() || null,
             contact_details: input.contactDetails?.trim() || null,
@@ -82,6 +88,8 @@ class YardJobsService {
       };
       if (input.jobTitle !== undefined) payload.job_title = input.jobTitle.trim();
       if (input.jobDescription !== undefined) payload.job_description = input.jobDescription?.trim() || null;
+      if (input.department !== undefined) payload.department = input.department;
+      if (input.priority !== undefined) payload.priority = input.priority;
       if (input.yardLocation !== undefined) payload.yard_location = input.yardLocation?.trim() || null;
       if (input.contractorCompanyName !== undefined) payload.contractor_company_name = input.contractorCompanyName?.trim() || null;
       if (input.contactDetails !== undefined) payload.contact_details = input.contactDetails?.trim() || null;
@@ -153,6 +161,8 @@ class YardJobsService {
       vesselId: row.vessel_id as string,
       jobTitle: row.job_title as string,
       jobDescription: (row.job_description as string) ?? '',
+      department: (row.department as Department) ?? 'INTERIOR',
+      priority: (row.priority as YardJobPriority) ?? 'GREEN',
       yardLocation: (row.yard_location as string) ?? '',
       contractorCompanyName: (row.contractor_company_name as string) ?? '',
       contactDetails: (row.contact_details as string) ?? '',

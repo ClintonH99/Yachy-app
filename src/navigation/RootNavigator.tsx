@@ -35,6 +35,10 @@ import {
   MaintenanceLogScreen,
   AddEditMaintenanceLogScreen,
   ImportExportScreen,
+  TasksCalendarScreen,
+  WatchKeepingScreen,
+  WatchScheduleScreen,
+  CreateWatchTimetableScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
@@ -282,6 +286,14 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
+              name="TasksCalendar" 
+              component={TasksCalendarScreen}
+              options={{ 
+                title: 'Yard Period Calendar',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
               name="YardPeriodJobs" 
               component={YardPeriodJobsScreen}
               options={{ 
@@ -318,6 +330,30 @@ export const RootNavigator = () => {
               component={ImportExportScreen}
               options={{ 
                 title: 'Import / Export',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="WatchKeeping" 
+              component={WatchKeepingScreen}
+              options={{ 
+                title: 'Watch Keeping',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="WatchSchedule" 
+              component={WatchScheduleScreen}
+              options={{ 
+                title: 'Watch Schedule',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateWatchTimetable" 
+              component={CreateWatchTimetableScreen}
+              options={{ 
+                title: 'Create',
                 headerShown: true,
               }}
             />

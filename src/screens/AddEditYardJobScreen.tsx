@@ -20,6 +20,7 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme
 import { useAuthStore } from '../store';
 import yardJobsService from '../services/yardJobs';
 import { Input, Button } from '../components';
+import { Department, YardJobPriority } from '../types';
 
 export const AddEditYardJobScreen = ({ navigation, route }: any) => {
   const { user } = useAuthStore();
@@ -27,6 +28,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
 
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+  const [department, setDepartment] = useState<Department>(user?.department ?? 'INTERIOR');
+  const [priority, setPriority] = useState<YardJobPriority>('GREEN');
   const [yardLocation, setYardLocation] = useState('');
   const [contractorCompanyName, setContractorCompanyName] = useState('');
   const [contactDetails, setContactDetails] = useState('');
@@ -52,6 +55,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
         if (job) {
           setJobTitle(job.jobTitle);
           setJobDescription(job.jobDescription ?? '');
+          setDepartment(job.department ?? user?.department ?? 'INTERIOR');
+          setPriority(job.priority ?? 'GREEN');
           setYardLocation(job.yardLocation ?? '');
           setContractorCompanyName(job.contractorCompanyName ?? '');
           setContactDetails(job.contactDetails ?? '');
@@ -66,8 +71,17 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
     })();
   }, [jobId]);
 
-  const markedDates: Record<string, { selected?: boolean; selectedColor?: string }> =
-    doneByDate ? { [doneByDate]: { selected: true, selectedColor: COLORS.primary } } : {};
+  const markedDates: Record<string, { selected?: boolean; selectedColor?: string; selectedTextColor?: string; marked?: boolean }> =
+    doneByDate
+      ? {
+          [doneByDate]: {
+            selected: true,
+            selectedColor: COLORS.primary,
+            selectedTextColor: '#FFFFFF',
+            marked: true,
+          },
+        }
+      : {};
 
   const calendarTheme = {
     backgroundColor: COLORS.white,
@@ -103,6 +117,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
         await yardJobsService.update(jobId, {
           jobTitle: trimmed,
           jobDescription: jobDescription.trim() || undefined,
+          department,
+          priority,
           yardLocation: yardLocation.trim() || undefined,
           contractorCompanyName: contractorCompanyName.trim() || undefined,
           contactDetails: contactDetails.trim() || undefined,
@@ -116,6 +132,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
           vesselId,
           jobTitle: trimmed,
           jobDescription: jobDescription.trim() || undefined,
+          department,
+          priority,
           yardLocation: yardLocation.trim() || undefined,
           contractorCompanyName: contractorCompanyName.trim() || undefined,
           contactDetails: contactDetails.trim() || undefined,
@@ -166,7 +184,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
       >
         <Input
           label="Job title"
@@ -183,6 +201,62 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
           multiline
           numberOfLines={3}
         />
+        <Text style={styles.label}>Department</Text>
+        <Text style={styles.hint}>Which department is this job for?</Text>
+        <View style={styles.chipRow}>
+          {(['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'] as Department[]).map((dept) => (
+            <TouchableOpacity
+              key={dept}
+              style={[
+                styles.chip,
+                department === dept && styles.chipSelected,
+                { borderColor: COLORS.departmentColors?.[dept] ?? COLORS.primary },
+              ]}
+              onPress={() => setDepartment(dept)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  department === dept && styles.chipTextSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {dept.charAt(0) + dept.slice(1).toLowerCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.label}>Urgency / Priority</Text>
+        <Text style={styles.hint}>How urgent is this job?</Text>
+        <View style={styles.priorityRow}>
+          {(['GREEN', 'YELLOW', 'RED'] as YardJobPriority[]).map((p) => {
+            const isSelected = priority === p;
+            const chipColor = p === 'GREEN' ? COLORS.success : p === 'YELLOW' ? COLORS.warning : COLORS.danger;
+            return (
+            <TouchableOpacity
+              key={p}
+              style={[
+                styles.priorityChip,
+                { borderColor: chipColor, borderWidth: isSelected ? 3 : 2 },
+                isSelected && { backgroundColor: chipColor },
+              ]}
+              onPress={() => setPriority(p)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <View style={[styles.priorityDot, { backgroundColor: p === 'GREEN' ? COLORS.success : p === 'YELLOW' ? COLORS.warning : COLORS.danger }]} />
+              <Text
+                style={[
+                  styles.priorityChipText,
+                  isSelected && { color: COLORS.white, fontWeight: '700' },
+                ]}
+              >
+                {p === 'GREEN' ? 'Low' : p === 'YELLOW' ? 'Medium' : 'High'}
+              </Text>
+            </TouchableOpacity>
+          );
+          })}
+        </View>
         <Input
           label="Yard location"
           value={yardLocation}
@@ -310,5 +384,57 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  chip: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 2,
+    backgroundColor: COLORS.white,
+  },
+  chipSelected: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  chipText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  chipTextSelected: {
+    color: COLORS.white,
+  },
+  priorityRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  priorityChip: {
+    flex: 1,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 2,
+    backgroundColor: COLORS.white,
+  },
+  priorityDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  priorityChipText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
   },
 });
