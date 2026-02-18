@@ -6,7 +6,7 @@
 
 export type UserRole = 'HOD' | 'CREW' | 'MANAGEMENT';
 
-export type Department = 'DECK' | 'INTERIOR' | 'ENGINEERING' | 'GALLEY';
+export type Department = 'BRIDGE' | 'ENGINEERING' | 'EXTERIOR' | 'INTERIOR' | 'GALLEY';
 
 export interface User {
   id: string;
@@ -47,6 +47,7 @@ export interface VesselTask {
   id: string;
   vesselId: string;
   category: TaskCategory;
+  department: Department;
   title: string;
   notes: string;
   doneByDate: string | null;

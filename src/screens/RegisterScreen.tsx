@@ -19,9 +19,10 @@ import authService from '../services/auth';
 import { useAuthStore } from '../store';
 
 const DEPARTMENTS = [
-  { label: 'Deck (Exterior)', value: 'DECK' },
-  { label: 'Interior', value: 'INTERIOR' },
+  { label: 'Bridge', value: 'BRIDGE' },
   { label: 'Engineering', value: 'ENGINEERING' },
+  { label: 'Exterior', value: 'EXTERIOR' },
+  { label: 'Interior', value: 'INTERIOR' },
   { label: 'Galley', value: 'GALLEY' },
 ];
 

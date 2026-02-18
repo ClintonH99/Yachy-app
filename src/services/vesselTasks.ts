@@ -4,11 +4,12 @@
  */
 
 import { supabase } from './supabase';
-import { VesselTask, TaskCategory, TaskRecurring } from '../types';
+import { VesselTask, TaskCategory, TaskRecurring, Department } from '../types';
 
 export interface CreateVesselTaskData {
   vesselId: string;
   category: TaskCategory;
+  department: Department;
   title: string;
   notes?: string;
   doneByDate?: string | null;
@@ -18,6 +19,7 @@ export interface CreateVesselTaskData {
 export interface UpdateVesselTaskData {
   title?: string;
   notes?: string;
+  department?: Department;
   doneByDate?: string | null;
   status?: string;
   recurring?: TaskRecurring;
@@ -56,6 +58,7 @@ class VesselTasksService {
           {
             vessel_id: input.vesselId,
             category: input.category,
+            department: input.department,
             title: input.title.trim(),
             notes: input.notes?.trim() || null,
             done_by_date: input.doneByDate || null,
@@ -70,9 +73,9 @@ class VesselTasksService {
 
       if (error) throw error;
       return this.mapRowToTask(data);
-    } catch (error) {
-      console.error('Create vessel task error:', error);
-      throw error;
+    } catch (err) {
+      console.error('Create vessel task error:', err);
+      throw err;
     }
   }
 
@@ -83,6 +86,7 @@ class VesselTasksService {
       };
       if (input.title !== undefined) payload.title = input.title.trim();
       if (input.notes !== undefined) payload.notes = input.notes?.trim() || null;
+      if (input.department !== undefined) payload.department = input.department;
       if (input.doneByDate !== undefined) payload.done_by_date = input.doneByDate || null;
       if (input.status !== undefined) payload.status = input.status;
       if (input.recurring !== undefined) payload.recurring = input.recurring || null;
@@ -138,6 +142,7 @@ class VesselTasksService {
       const next = await this.create({
         vesselId: task.vesselId,
         category: task.category,
+        department: task.department,
         title: task.title,
         notes: task.notes || undefined,
         doneByDate: nextDate.toISOString().slice(0, 10),
@@ -237,6 +242,7 @@ class VesselTasksService {
       id: row.id as string,
       vesselId: row.vessel_id as string,
       category: row.category as TaskCategory,
+      department: (row.department as Department) ?? 'INTERIOR',
       title: row.title as string,
       notes: (row.notes as string) ?? '',
       doneByDate: (row.done_by_date as string) ?? null,

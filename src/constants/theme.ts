@@ -146,12 +146,15 @@ export const SIZES = {
   inputHeight: 48,
   iconSize: 24,
   avatarSize: 40,
-  
+
   // Header
   headerHeight: 60,
-  
+
   // Tab bar
   tabBarHeight: 60,
+
+  /** Extra padding at bottom of scroll content so last item is not cut off (tab bar + safe area). */
+  bottomScrollPadding: 88,
 };
 
 export default {

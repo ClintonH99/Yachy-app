@@ -4,7 +4,7 @@
  * What service done, Notes, Service done by (Crew/Contractor)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,19 +15,90 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Modal,
+  TextInput,
 } from 'react-native';
-import { COLORS, FONTS, SPACING } from '../constants/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import maintenanceLogsService from '../services/maintenanceLogs';
 import { Input, Button } from '../components';
+
+const DEFAULT_EQUIPMENT_OPTIONS = [
+  'Mains',
+  'Generators',
+  'Stabilizer',
+  'Water Maker',
+  'Treatment System',
+  'Air-Conditioning',
+  'Windless',
+  'Winches',
+  'Ice Machine',
+  'Air Handlers',
+  'Jet Systems',
+  'Running Gear',
+  'Hot Tub/Pool',
+  'Tender',
+  'Jet Ski',
+  'Seabobs',
+  'E-Foils/Flight Board',
+  'Scuba Diving Gear',
+  'Hydraulic Doors',
+  'Passerelle',
+  'Crane',
+];
+
+const CUSTOM_EQUIPMENT_STORAGE_KEY = 'maintenance_equipment_custom';
+
+const SERIAL_NUMBERS_STORAGE_KEY = 'maintenance_serial_numbers';
+
+const MAX_STORED_SERIAL_NUMBERS = 100;
+
+function getSerialNumberKey(equipment: string, location: string): string {
+  return `${equipment || ''}\x00${location || ''}`;
+}
+
+const DEFAULT_LOCATION_OPTIONS = [
+  'Bow',
+  'Cockpit',
+  'Saloon',
+  'Flybridge',
+  'Sky Deck',
+  'Aft Deck',
+  'Engine Room',
+  'Guest Cabins',
+  'Crew Cabins',
+  'Galley',
+  'Garage',
+];
+
+const CUSTOM_LOCATION_STORAGE_KEY = 'maintenance_location_custom';
+
+const HIDDEN_EQUIPMENT_STORAGE_KEY = 'maintenance_equipment_hidden';
+
+const HIDDEN_LOCATION_STORAGE_KEY = 'maintenance_location_hidden';
 
 export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
   const { user } = useAuthStore();
   const logId = route.params?.logId as string | undefined;
 
   const [equipment, setEquipment] = useState('');
-  const [portStarboardNa, setPortStarboardNa] = useState('');
+  const [equipmentOptions, setEquipmentOptions] = useState<string[]>(DEFAULT_EQUIPMENT_OPTIONS);
+  const [equipmentDropdownVisible, setEquipmentDropdownVisible] = useState(false);
+  const [createNewVisible, setCreateNewVisible] = useState(false);
+  const [newEquipmentName, setNewEquipmentName] = useState('');
+  const [location, setLocation] = useState('');
+  const [locationOptions, setLocationOptions] = useState<string[]>(DEFAULT_LOCATION_OPTIONS);
+  const [locationDropdownVisible, setLocationDropdownVisible] = useState(false);
+  const [addNewLocationVisible, setAddNewLocationVisible] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [hiddenEquipment, setHiddenEquipment] = useState<string[]>([]);
+  const [hiddenLocations, setHiddenLocations] = useState<string[]>([]);
   const [serialNumber, setSerialNumber] = useState('');
+  const [serialNumbersByKey, setSerialNumbersByKey] = useState<Record<string, string[]>>({});
+  const [serialNumberDropdownVisible, setSerialNumberDropdownVisible] = useState(false);
+
+  const previousSerialNumbers = (serialNumbersByKey[getSerialNumberKey(equipment, location)] || []).slice(0, MAX_STORED_SERIAL_NUMBERS);
   const [hoursOfService, setHoursOfService] = useState('');
   const [hoursAtNextService, setHoursAtNextService] = useState('');
   const [whatServiceDone, setWhatServiceDone] = useState('');
@@ -45,14 +116,85 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
     });
   }, [navigation, logId]);
 
+  const loadCustomEquipment = useCallback(async () => {
+    try {
+      const [customRaw, hiddenRaw] = await Promise.all([
+        AsyncStorage.getItem(CUSTOM_EQUIPMENT_STORAGE_KEY),
+        AsyncStorage.getItem(HIDDEN_EQUIPMENT_STORAGE_KEY),
+      ]);
+      const custom: string[] = customRaw ? JSON.parse(customRaw) : [];
+      const hidden: string[] = hiddenRaw ? JSON.parse(hiddenRaw) : [];
+      setHiddenEquipment(hidden);
+      const combined = [...DEFAULT_EQUIPMENT_OPTIONS];
+      custom.forEach((c) => {
+        if (!combined.includes(c)) combined.push(c);
+      });
+      setEquipmentOptions(combined.filter((x) => !hidden.includes(x)));
+    } catch (e) {
+      console.error('Load custom equipment error:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomEquipment();
+  }, [loadCustomEquipment]);
+
+  const loadCustomLocations = useCallback(async () => {
+    try {
+      const [customRaw, hiddenRaw] = await Promise.all([
+        AsyncStorage.getItem(CUSTOM_LOCATION_STORAGE_KEY),
+        AsyncStorage.getItem(HIDDEN_LOCATION_STORAGE_KEY),
+      ]);
+      const custom: string[] = customRaw ? JSON.parse(customRaw) : [];
+      const hidden: string[] = hiddenRaw ? JSON.parse(hiddenRaw) : [];
+      setHiddenLocations(hidden);
+      const combined = [...DEFAULT_LOCATION_OPTIONS];
+      custom.forEach((c) => {
+        if (!combined.includes(c)) combined.push(c);
+      });
+      setLocationOptions(combined.filter((x) => !hidden.includes(x)));
+    } catch (e) {
+      console.error('Load custom locations error:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomLocations();
+  }, [loadCustomLocations]);
+
+  const loadSerialNumbersByKey = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(SERIAL_NUMBERS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const byKey = Array.isArray(parsed) ? {} : parsed;
+      setSerialNumbersByKey(byKey);
+    } catch (e) {
+      console.error('Load serial numbers error:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSerialNumbersByKey();
+  }, [loadSerialNumbersByKey]);
+
   useEffect(() => {
     if (!logId) return;
     (async () => {
       try {
         const log = await maintenanceLogsService.getById(logId);
         if (log) {
-          setEquipment(log.equipment);
-          setPortStarboardNa(log.portStarboardNa ?? '');
+          const eq = log.equipment;
+          setEquipment(eq);
+          setEquipmentOptions((prev) => {
+            if (eq && !prev.includes(eq)) return [...prev, eq];
+            return prev;
+          });
+          setLocation(log.portStarboardNa ?? '');
+          setLocationOptions((prev) => {
+            const loc = log.portStarboardNa?.trim();
+            if (loc && !prev.includes(loc)) return [...prev, loc];
+            return prev;
+          });
           setSerialNumber(log.serialNumber ?? '');
           setHoursOfService(log.hoursOfService ?? '');
           setHoursAtNextService(log.hoursAtNextService ?? '');
@@ -68,6 +210,96 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
       }
     })();
   }, [logId]);
+
+  const removeEquipment = (opt: string) => {
+    Alert.alert(
+      'Remove from list',
+      `Remove "${opt}" from your equipment list?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const nextHidden = [...hiddenEquipment, opt];
+            setHiddenEquipment(nextHidden);
+            setEquipmentOptions((prev) => prev.filter((x) => x !== opt));
+            if (equipment === opt) setEquipment('');
+            try {
+              await AsyncStorage.setItem(HIDDEN_EQUIPMENT_STORAGE_KEY, JSON.stringify(nextHidden));
+            } catch (e) {
+              console.error('Save hidden equipment error:', e);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const removeLocation = (opt: string) => {
+    Alert.alert(
+      'Remove from list',
+      `Remove "${opt}" from your location list?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const nextHidden = [...hiddenLocations, opt];
+            setHiddenLocations(nextHidden);
+            setLocationOptions((prev) => prev.filter((x) => x !== opt));
+            if (location === opt) setLocation('');
+            try {
+              await AsyncStorage.setItem(HIDDEN_LOCATION_STORAGE_KEY, JSON.stringify(nextHidden));
+            } catch (e) {
+              console.error('Save hidden location error:', e);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSaveNewLocation = async () => {
+    const name = newLocationName.trim();
+    if (!name) {
+      Alert.alert('Required', 'Please enter location name.');
+      return;
+    }
+    const nextOptions = locationOptions.includes(name) ? locationOptions : [...locationOptions, name];
+    setLocationOptions(nextOptions);
+    setLocation(name);
+    setNewLocationName('');
+    setAddNewLocationVisible(false);
+    setLocationDropdownVisible(false);
+    try {
+      const custom = nextOptions.filter((o) => !DEFAULT_LOCATION_OPTIONS.includes(o));
+      await AsyncStorage.setItem(CUSTOM_LOCATION_STORAGE_KEY, JSON.stringify(custom));
+    } catch (e) {
+      console.error('Save custom location error:', e);
+    }
+  };
+
+  const handleSaveNewEquipment = async () => {
+    const name = newEquipmentName.trim();
+    if (!name) {
+      Alert.alert('Required', 'Please enter equipment name.');
+      return;
+    }
+    const nextOptions = equipmentOptions.includes(name) ? equipmentOptions : [...equipmentOptions, name];
+    setEquipmentOptions(nextOptions);
+    setEquipment(name);
+    setNewEquipmentName('');
+    setCreateNewVisible(false);
+    setEquipmentDropdownVisible(false);
+    try {
+      const custom = nextOptions.filter((o) => !DEFAULT_EQUIPMENT_OPTIONS.includes(o));
+      await AsyncStorage.setItem(CUSTOM_EQUIPMENT_STORAGE_KEY, JSON.stringify(custom));
+    } catch (e) {
+      console.error('Save custom equipment error:', e);
+    }
+  };
 
   const handleSave = async () => {
     const trimmedEquipment = equipment.trim();
@@ -90,7 +322,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
       if (isEdit) {
         await maintenanceLogsService.update(logId, {
           equipment: trimmedEquipment,
-          portStarboardNa: portStarboardNa.trim() || undefined,
+          portStarboardNa: location.trim() || undefined,
           serialNumber: serialNumber.trim() || undefined,
           hoursOfService: hoursOfService.trim() || undefined,
           hoursAtNextService: hoursAtNextService.trim() || undefined,
@@ -98,6 +330,19 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
           notes: notes.trim() || undefined,
           serviceDoneBy: trimmedServiceDoneBy,
         });
+        const sn = serialNumber.trim();
+        if (sn) {
+          const key = getSerialNumberKey(equipment, location);
+          setSerialNumbersByKey((prev) => {
+            const list = prev[key] || [];
+            const nextList = [sn, ...list.filter((p) => p !== sn)].slice(0, MAX_STORED_SERIAL_NUMBERS);
+            const next = { ...prev, [key]: nextList };
+            AsyncStorage.setItem(SERIAL_NUMBERS_STORAGE_KEY, JSON.stringify(next)).catch((e) =>
+              console.error('Save serial numbers error:', e)
+            );
+            return next;
+          });
+        }
         Alert.alert('Updated', 'Log updated.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
@@ -105,7 +350,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
         await maintenanceLogsService.create({
           vesselId,
           equipment: trimmedEquipment,
-          portStarboardNa: portStarboardNa.trim() || undefined,
+          portStarboardNa: location.trim() || undefined,
           serialNumber: serialNumber.trim() || undefined,
           hoursOfService: hoursOfService.trim() || undefined,
           hoursAtNextService: hoursAtNextService.trim() || undefined,
@@ -113,6 +358,19 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
           notes: notes.trim() || undefined,
           serviceDoneBy: trimmedServiceDoneBy,
         });
+        const sn = serialNumber.trim();
+        if (sn) {
+          const key = getSerialNumberKey(equipment, location);
+          setSerialNumbersByKey((prev) => {
+            const list = prev[key] || [];
+            const nextList = [sn, ...list.filter((p) => p !== sn)].slice(0, MAX_STORED_SERIAL_NUMBERS);
+            const next = { ...prev, [key]: nextList };
+            AsyncStorage.setItem(SERIAL_NUMBERS_STORAGE_KEY, JSON.stringify(next)).catch((e) =>
+              console.error('Save serial numbers error:', e)
+            );
+            return next;
+          });
+        }
         Alert.alert('Saved', 'Log added.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
@@ -152,26 +410,256 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Input
-          label="Equipment"
-          value={equipment}
-          onChangeText={setEquipment}
-          placeholder="e.g. Main engine, Generator"
-          autoCapitalize="words"
-        />
-        <Input
-          label="Port / Starboard or NA"
-          value={portStarboardNa}
-          onChangeText={setPortStarboardNa}
-          placeholder="Port, Starboard or NA"
-          autoCapitalize="characters"
-        />
-        <Input
-          label="Serial number"
-          value={serialNumber}
-          onChangeText={setSerialNumber}
-          placeholder="Optional"
-        />
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Equipment</Text>
+          <TouchableOpacity
+            style={styles.dropdownTrigger}
+            onPress={() => setEquipmentDropdownVisible(true)}
+          >
+            <Text style={[styles.dropdownText, !equipment && styles.placeholder]}>
+              {equipment || 'Select equipment...'}
+            </Text>
+            <Text style={styles.dropdownChevron}>▼</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          visible={equipmentDropdownVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setEquipmentDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setEquipmentDropdownVisible(false)}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                {equipmentOptions.map((opt) => (
+                  <View key={opt} style={[styles.dropdownOptionRow, equipment === opt && styles.dropdownOptionSelected]}>
+                    <TouchableOpacity
+                      style={styles.dropdownOptionTouch}
+                      onPress={() => {
+                        setEquipment(opt);
+                        setEquipmentDropdownVisible(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownOptionText, equipment === opt && styles.dropdownOptionTextSelected]}>
+                        {opt}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteOptionBtn}
+                      onPress={() => removeEquipment(opt)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.deleteOptionText, equipment === opt && styles.deleteOptionTextSelected]}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.createNewBtn}
+                onPress={() => {
+                  setEquipmentDropdownVisible(false);
+                  setCreateNewVisible(true);
+                }}
+              >
+                <Text style={styles.createNewBtnText}>Create New</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        <Modal
+          visible={createNewVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCreateNewVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setCreateNewVisible(false)}
+          >
+            <View style={styles.createNewModal} onStartShouldSetResponder={() => true}>
+              <Text style={styles.createNewTitle}>New Equipment</Text>
+              <TextInput
+                style={styles.createNewInput}
+                value={newEquipmentName}
+                onChangeText={setNewEquipmentName}
+                placeholder="Enter equipment name"
+                placeholderTextColor={COLORS.gray400}
+                autoCapitalize="words"
+                autoFocus
+              />
+              <View style={styles.createNewActions}>
+                <Button title="Add" onPress={handleSaveNewEquipment} variant="primary" style={styles.createNewAddBtn} />
+                <TouchableOpacity onPress={() => { setCreateNewVisible(false); setNewEquipmentName(''); }}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Location</Text>
+          <TouchableOpacity
+            style={styles.dropdownTrigger}
+            onPress={() => setLocationDropdownVisible(true)}
+          >
+            <Text style={[styles.dropdownText, !location && styles.placeholder]}>
+              {location || 'Select location...'}
+            </Text>
+            <Text style={styles.dropdownChevron}>▼</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          visible={locationDropdownVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLocationDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setLocationDropdownVisible(false)}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                {locationOptions.map((opt) => (
+                  <View key={opt} style={[styles.dropdownOptionRow, location === opt && styles.dropdownOptionSelected]}>
+                    <TouchableOpacity
+                      style={styles.dropdownOptionTouch}
+                      onPress={() => {
+                        setLocation(opt);
+                        setLocationDropdownVisible(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownOptionText, location === opt && styles.dropdownOptionTextSelected]}>
+                        {opt}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteOptionBtn}
+                      onPress={() => removeLocation(opt)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.deleteOptionText, location === opt && styles.deleteOptionTextSelected]}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.createNewBtn}
+                onPress={() => {
+                  setLocationDropdownVisible(false);
+                  setAddNewLocationVisible(true);
+                }}
+              >
+                <Text style={styles.createNewBtnText}>Add New Location</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        <Modal
+          visible={addNewLocationVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAddNewLocationVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setAddNewLocationVisible(false)}
+          >
+            <View style={styles.createNewModal} onStartShouldSetResponder={() => true}>
+              <Text style={styles.createNewTitle}>New Location</Text>
+              <TextInput
+                style={styles.createNewInput}
+                value={newLocationName}
+                onChangeText={setNewLocationName}
+                placeholder="Enter location name"
+                placeholderTextColor={COLORS.gray400}
+                autoCapitalize="words"
+                autoFocus
+              />
+              <View style={styles.createNewActions}>
+                <Button title="Add" onPress={handleSaveNewLocation} variant="primary" style={styles.createNewAddBtn} />
+                <TouchableOpacity onPress={() => { setAddNewLocationVisible(false); setNewLocationName(''); }}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Serial number</Text>
+          <View style={styles.serialNumberRow}>
+            <TextInput
+              style={styles.serialNumberInput}
+              value={serialNumber}
+              onChangeText={setSerialNumber}
+              placeholder="Optional - tap Recent for this equipment + location"
+              placeholderTextColor={COLORS.gray400}
+            />
+            <TouchableOpacity
+              style={styles.recentBtn}
+              onPress={() => setSerialNumberDropdownVisible(true)}
+            >
+              <Text style={styles.recentBtnText}>Recent</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Modal
+          visible={serialNumberDropdownVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSerialNumberDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSerialNumberDropdownVisible(false)}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              <Text style={styles.previousTitle}>
+                {equipment || location
+                  ? `Previous serial numbers${equipment && location ? ` for ${equipment} / ${location}` : ''}`
+                  : 'Select equipment and location first'}
+              </Text>
+              {!equipment && !location ? (
+                <Text style={styles.previousEmpty}>Choose equipment and location to see serial numbers for that combination.</Text>
+              ) : previousSerialNumbers.length === 0 ? (
+                <Text style={styles.previousEmpty}>No previous entries for this combination yet. Save a log to add one.</Text>
+              ) : (
+                <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                  {previousSerialNumbers.map((sn) => (
+                    <TouchableOpacity
+                      key={sn}
+                      style={[styles.dropdownOption, serialNumber === sn && styles.dropdownOptionSelected]}
+                      onPress={() => {
+                        setSerialNumber(sn);
+                        setSerialNumberDropdownVisible(false);
+                      }}
+                    >
+                      <Text
+                        style={[styles.dropdownOptionText, serialNumber === sn && styles.dropdownOptionTextSelected]}
+                        numberOfLines={2}
+                      >
+                        {sn}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
         <Input
           label="Hours of service"
           value={hoursOfService}
@@ -240,7 +728,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['2xl'],
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   center: {
     flex: 1,
@@ -264,5 +752,173 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
+  },
+  fieldContainer: {
+    marginBottom: SPACING.md,
+  },
+  label: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: SIZES.inputHeight,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+  },
+  dropdownText: {
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  placeholder: {
+    color: COLORS.gray400,
+  },
+  dropdownChevron: {
+    fontSize: 10,
+    color: COLORS.gray500,
+    marginLeft: SPACING.sm,
+  },
+  serialNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  serialNumberInput: {
+    flex: 1,
+    height: SIZES.inputHeight,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+  },
+  recentBtn: {
+    paddingHorizontal: SPACING.md,
+    height: SIZES.inputHeight,
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  recentBtnText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  previousTitle: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    padding: SPACING.md,
+    paddingBottom: SPACING.xs,
+  },
+  previousEmpty: {
+    fontSize: FONTS.base,
+    color: COLORS.textSecondary,
+    padding: SPACING.lg,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.overlay,
+    justifyContent: 'center',
+    padding: SPACING.lg,
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    maxHeight: 400,
+  },
+  dropdownList: {
+    maxHeight: 300,
+  },
+  dropdownOption: {
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  dropdownOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  dropdownOptionTouch: {
+    flex: 1,
+    padding: SPACING.md,
+    justifyContent: 'center',
+  },
+  deleteOptionBtn: {
+    padding: SPACING.md,
+    paddingLeft: SPACING.sm,
+  },
+  deleteOptionText: {
+    fontSize: 20,
+    color: COLORS.gray500,
+    fontWeight: '300',
+  },
+  deleteOptionTextSelected: {
+    color: COLORS.white,
+  },
+  dropdownOptionSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  dropdownOptionText: {
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+  },
+  dropdownOptionTextSelected: {
+    color: COLORS.white,
+    fontWeight: '600',
+  },
+  createNewBtn: {
+    padding: SPACING.md,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray200,
+  },
+  createNewBtnText: {
+    fontSize: FONTS.base,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  createNewModal: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+  },
+  createNewTitle: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
+  },
+  createNewInput: {
+    height: SIZES.inputHeight,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
+  },
+  createNewActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  createNewAddBtn: {
+    minWidth: 100,
   },
 });

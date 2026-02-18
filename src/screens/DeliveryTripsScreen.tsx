@@ -15,7 +15,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import tripsService from '../services/trips';
 import { Trip } from '../types';
@@ -212,6 +212,7 @@ const styles = StyleSheet.create({
   list: {
     padding: SPACING.lg,
     paddingTop: SPACING.sm,
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   card: {
     backgroundColor: COLORS.white,

@@ -81,7 +81,7 @@ export const RegisterCaptainScreen = ({ navigation }: any) => {
         password: formData.password,
         name: formData.name,
         position: 'Captain', // Default position for captains
-        department: 'DECK', // Default department for captains
+        department: 'BRIDGE', // Default department for captains
         // No invite code or vesselId - captain will create vessel after login
       });
 

@@ -14,7 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import tripColorsService, { DEFAULT_COLORS } from '../services/tripColors';
 import { Button } from '../components';
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['2xl'],
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   center: {
     flex: 1,

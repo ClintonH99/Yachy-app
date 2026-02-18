@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import tripsService from '../services/trips';
 import { Trip, TripType } from '../types';
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['2xl'],
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   center: {
     flex: 1,

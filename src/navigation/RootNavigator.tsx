@@ -34,6 +34,7 @@ import {
   AddEditYardJobScreen,
   MaintenanceLogScreen,
   AddEditMaintenanceLogScreen,
+  ImportExportScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
@@ -309,6 +310,14 @@ export const RootNavigator = () => {
               component={AddEditMaintenanceLogScreen}
               options={{ 
                 title: 'Log',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="ImportExport" 
+              component={ImportExportScreen}
+              options={{ 
+                title: 'Import / Export',
                 headerShown: true,
               }}
             />

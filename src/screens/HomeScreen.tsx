@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Button } from '../components';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import authService from '../services/auth';
 import vesselService from '../services/vessel';
@@ -129,6 +129,14 @@ export const HomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shortcutCard}
+            onPress={() => navigation.navigate('ImportExport')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>📥</Text>
+            <Text style={styles.shortcutLabel}>Import / Export</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
             onPress={() => navigation.navigate('Settings')}
             activeOpacity={0.8}
           >
@@ -185,6 +193,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   header: {
     marginBottom: SPACING.xl,

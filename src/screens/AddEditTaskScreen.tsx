@@ -16,10 +16,10 @@ import {
   Platform,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import vesselTasksService from '../services/vesselTasks';
-import { TaskCategory, TaskRecurring } from '../types';
+import { TaskCategory, TaskRecurring, Department } from '../types';
 import { Input, Button } from '../components';
 
 const CATEGORY_LABELS: Record<TaskCategory, string> = {
@@ -41,6 +41,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
   const showCategoryPicker = categoryFromRoute === undefined;
 
   const [category, setCategory] = useState<TaskCategory>(categoryFromRoute ?? 'DAILY');
+  const [department, setDepartment] = useState<Department>(user?.department ?? 'INTERIOR');
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [doneByDate, setDoneByDate] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
           setNotes(task.notes ?? '');
           setDoneByDate(task.doneByDate ?? null);
           setCategory(task.category);
+          setDepartment(task.department ?? user?.department ?? 'INTERIOR');
           setRecurring(task.recurring ?? null);
         }
       } catch (e) {
@@ -122,6 +124,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
         await vesselTasksService.update(taskId, {
           title: trimmed,
           notes: notes.trim() || undefined,
+          department,
           doneByDate: doneByDate || null,
           recurring: recurring || undefined,
         });
@@ -132,6 +135,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
         await vesselTasksService.create({
           vesselId,
           category,
+          department,
           title: trimmed,
           notes: notes.trim() || undefined,
           doneByDate: doneByDate || null,
@@ -184,6 +188,32 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        <Text style={styles.label}>Department</Text>
+        <Text style={styles.hint}>
+          Tasks are scoped by department. Crew will filter by their department to see only relevant tasks.
+        </Text>
+        <View style={styles.categoryRow}>
+          {(['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'] as Department[]).map((dept) => (
+            <TouchableOpacity
+              key={dept}
+              style={[
+                styles.deptChip,
+                department === dept && styles.deptChipSelected,
+              ]}
+              onPress={() => setDepartment(dept)}
+            >
+              <Text
+                style={[
+                  styles.deptChipText,
+                  department === dept && styles.deptChipTextSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {dept.charAt(0) + dept.slice(1).toLowerCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {showCategoryPicker && (
           <>
             <Text style={styles.label}>Task category</Text>
@@ -320,7 +350,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['2xl'],
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   center: {
     flex: 1,
@@ -376,8 +406,26 @@ const styles = StyleSheet.create({
   },
   categoryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: SPACING.sm,
     marginBottom: SPACING.lg,
+  },
+  deptChip: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.gray100,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  deptChipSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  deptChipText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  deptChipTextSelected: {
+    color: COLORS.white,
   },
   categoryChip: {
     flex: 1,

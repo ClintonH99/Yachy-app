@@ -4,7 +4,7 @@
  * Logs persist until manually deleted.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,15 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
+  FlatList,
+  Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import maintenanceLogsService from '../services/maintenanceLogs';
 import vesselService from '../services/vessel';
@@ -29,6 +32,64 @@ import { Button } from '../components';
 const COLUMN_WIDTH = 110;
 const DATE_WIDTH = 88;
 const ACTIONS_WIDTH = 90;
+const CHECKBOX_WIDTH = 44;
+
+const FILTER_KEYS = [
+  { key: 'equipment', label: 'Equipment' },
+  { key: 'location', label: 'Location' },
+  { key: 'serialNumber', label: 'Serial #' },
+  { key: 'hoursOfService', label: 'Hrs' },
+  { key: 'hoursAtNextService', label: 'Hrs next' },
+  { key: 'whatServiceDone', label: 'Service done' },
+  { key: 'serviceDoneBy', label: 'Done by' },
+  { key: 'date', label: 'Date' },
+] as const;
+
+type FilterKey = (typeof FILTER_KEYS)[number]['key'];
+
+function getLogFilterValue(log: MaintenanceLog, filterKey: FilterKey, formatDateFn: (d: string) => string): string {
+  switch (filterKey) {
+    case 'equipment':
+      return log.equipment?.trim() || '—';
+    case 'location':
+      return log.portStarboardNa?.trim() || '—';
+    case 'serialNumber':
+      return log.serialNumber?.trim() || '—';
+    case 'hoursOfService':
+      return log.hoursOfService?.trim() || '—';
+    case 'hoursAtNextService':
+      return log.hoursAtNextService?.trim() || '—';
+    case 'whatServiceDone':
+      return log.whatServiceDone?.trim() || '—';
+    case 'serviceDoneBy':
+      return log.serviceDoneBy?.trim() || '—';
+    case 'date':
+      return formatDateFn(log.createdAt);
+    default:
+      return '—';
+  }
+}
+
+function Checkbox({
+  checked,
+  onPress,
+  disabled,
+}: {
+  checked: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      style={[styles.checkbox, checked && styles.checkboxChecked]}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      {checked && <Text style={styles.checkmark}>✓</Text>}
+    </TouchableOpacity>
+  );
+}
 
 function escapeHtml(s: string): string {
   return String(s)
@@ -44,8 +105,76 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<Record<FilterKey, string>>({
+    equipment: '',
+    location: '',
+    serialNumber: '',
+    hoursOfService: '',
+    hoursAtNextService: '',
+    whatServiceDone: '',
+    serviceDoneBy: '',
+    date: '',
+  });
+  const [filterDropdownKey, setFilterDropdownKey] = useState<FilterKey | null>(null);
 
   const vesselId = user?.vesselId ?? null;
+
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+
+  const uniqueValuesByKey = useMemo(() => {
+    const out: Record<FilterKey, string[]> = {
+      equipment: [],
+      location: [],
+      serialNumber: [],
+      hoursOfService: [],
+      hoursAtNextService: [],
+      whatServiceDone: [],
+      serviceDoneBy: [],
+      date: [],
+    };
+    logs.forEach((log) => {
+      (FILTER_KEYS as readonly { key: FilterKey; label: string }[]).forEach(({ key }) => {
+        const v = getLogFilterValue(log, key, formatDate);
+        if (v && v !== '—' && !out[key].includes(v)) out[key].push(v);
+      });
+    });
+    Object.keys(out).forEach((k) => {
+      out[k as FilterKey].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    });
+    return out;
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      return (FILTER_KEYS as readonly { key: FilterKey; label: string }[]).every(({ key }) => {
+        const selected = filters[key];
+        if (!selected) return true;
+        const logValue = getLogFilterValue(log, key, formatDate);
+        return logValue === selected;
+      });
+    });
+  }, [logs, filters]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = filteredLogs.map((l) => l.id);
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+    if (allVisibleSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleIds));
+    }
+  };
 
   const loadLogs = useCallback(async () => {
     if (!vesselId) return;
@@ -70,9 +199,6 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
     setRefreshing(true);
     loadLogs();
   };
-
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
 
   const onAdd = () => {
     navigation.navigate('AddEditMaintenanceLog', {});
@@ -105,6 +231,15 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
   };
 
   const exportPdf = async () => {
+    const logsToExport = logs.filter((l) => selectedIds.has(l.id));
+    if (logsToExport.length === 0) {
+      Alert.alert(
+        'No logs selected',
+        'Please select at least one log to include in the PDF.'
+      );
+      return;
+    }
+
     try {
       setExportingPdf(true);
       
@@ -127,7 +262,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const filename = `${vesselName}_${dateStr}_MaintenanceLog.pdf`;
       
-      const rows = logs.map(
+      const rows = logsToExport.map(
         (l) =>
           `<tr>
             <td>${escapeHtml(l.equipment)}</td>
@@ -162,7 +297,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
             <thead>
               <tr>
                 <th>Equipment</th>
-                <th>Port/Stbd/NA</th>
+                <th>Location</th>
                 <th>Serial #</th>
                 <th>Hrs service</th>
                 <th>Hrs next</th>
@@ -220,20 +355,89 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.actionsRow}>
+        <View style={styles.leftActions}>
+          <Button
+            title="Add Log"
+            onPress={onAdd}
+            variant="primary"
+            style={styles.addButton}
+          />
+          {logs.length > 0 && (
+            <TouchableOpacity onPress={toggleSelectAll} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.selectAllWrap}>
+              <Text style={styles.selectAllLink}>
+                {filteredLogs.length > 0 && filteredLogs.every((l) => selectedIds.has(l.id)) ? 'Deselect All' : 'Select All'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Button
-          title="Add Log"
-          onPress={onAdd}
-          variant="primary"
-          style={styles.addButton}
-        />
-        <Button
-          title={exportingPdf ? 'Exporting…' : 'Download PDF'}
+          title={
+            exportingPdf
+              ? 'Exporting…'
+              : selectedIds.size > 0
+                ? `Download PDF (${selectedIds.size} selected)`
+                : 'Download PDF'
+          }
           onPress={exportPdf}
           variant="outline"
           style={styles.pdfButton}
-          disabled={exportingPdf || logs.length === 0}
+          disabled={exportingPdf || logs.length === 0 || selectedIds.size === 0}
         />
       </View>
+
+      {logs.length > 0 && !loading && (
+        <View style={styles.filterBarWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterBarContent}>
+            {FILTER_KEYS.map(({ key, label }) => {
+              const value = filters[key];
+              const display = value || 'All';
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.filterChip, value ? styles.filterChipActive : null]}
+                  onPress={() => setFilterDropdownKey(key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.filterChipLabel} numberOfLines={1}>{label}</Text>
+                  <Text style={[styles.filterChipValue, value ? styles.filterChipValueActive : null]} numberOfLines={1}>
+                    {display}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          {(FILTER_KEYS as readonly { key: FilterKey }[]).some(({ key }) => filters[key]) && (
+            <TouchableOpacity onPress={() => setFilters({ equipment: '', location: '', serialNumber: '', hoursOfService: '', hoursAtNextService: '', whatServiceDone: '', serviceDoneBy: '', date: '' })} style={styles.clearFiltersWrap}>
+              <Text style={styles.clearFiltersLink}>Clear filters</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {filterDropdownKey && (
+        <Modal visible transparent animationType="fade">
+          <Pressable style={styles.filterModalBackdrop} onPress={() => setFilterDropdownKey(null)}>
+            <View style={styles.filterModalBox} onStartShouldSetResponder={() => true}>
+              <Text style={styles.filterModalTitle}>{FILTER_KEYS.find((f) => f.key === filterDropdownKey)?.label ?? filterDropdownKey}</Text>
+              <FlatList
+                data={['', ...uniqueValuesByKey[filterDropdownKey]]}
+                keyExtractor={(item, i) => (item || 'all') + i}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.filterModalItem, filters[filterDropdownKey] === item && styles.filterModalItemSelected]}
+                    onPress={() => {
+                      setFilters((prev) => ({ ...prev, [filterDropdownKey]: item }));
+                      setFilterDropdownKey(null);
+                    }}
+                  >
+                    <Text style={styles.filterModalItemText}>{item || 'All'}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+      )}
 
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
@@ -256,9 +460,8 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
         </ScrollView>
       ) : (
         <ScrollView
-          horizontal
-          style={styles.tableScroll}
-          contentContainerStyle={styles.tableContent}
+          style={styles.verticalScroll}
+          contentContainerStyle={[styles.verticalScrollContent, { paddingBottom: SIZES.bottomScrollPadding }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -266,11 +469,25 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
               colors={[COLORS.primary]}
             />
           }
+          showsVerticalScrollIndicator
         >
+          <ScrollView
+            horizontal
+            style={styles.tableScroll}
+            contentContainerStyle={styles.tableContent}
+            showsHorizontalScrollIndicator
+          >
           <View style={styles.table}>
             <View style={[styles.row, styles.headerRow]}>
+              <View style={[styles.cell, styles.headerCell, styles.checkboxHeaderCell, { width: CHECKBOX_WIDTH }]}>
+                <Checkbox
+                  checked={filteredLogs.length > 0 && filteredLogs.every((l) => selectedIds.has(l.id))}
+                  onPress={toggleSelectAll}
+                  disabled={filteredLogs.length === 0}
+                />
+              </View>
               <Text style={[styles.cell, styles.headerCell, { width: COLUMN_WIDTH }]}>Equipment</Text>
-              <Text style={[styles.cell, styles.headerCell, { width: 72 }]}>Port/Stbd/NA</Text>
+              <Text style={[styles.cell, styles.headerCell, { width: 72 }]}>Location</Text>
               <Text style={[styles.cell, styles.headerCell, { width: COLUMN_WIDTH }]}>Serial #</Text>
               <Text style={[styles.cell, styles.headerCell, { width: 70 }]}>Hrs</Text>
               <Text style={[styles.cell, styles.headerCell, { width: 70 }]}>Hrs next</Text>
@@ -280,8 +497,19 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
               <Text style={[styles.cell, styles.headerCell, { width: DATE_WIDTH }]}>Date</Text>
               <View style={[styles.cell, styles.headerCell, { width: ACTIONS_WIDTH }]} />
             </View>
-            {logs.map((log) => (
+            {filteredLogs.length === 0 ? (
+              <View style={styles.filterEmptyRow}>
+                <Text style={styles.filterEmptyText}>No logs match the current filters</Text>
+              </View>
+            ) : (
+            filteredLogs.map((log) => (
               <View key={log.id} style={styles.row}>
+                <View style={[styles.cell, styles.checkboxCell, { width: CHECKBOX_WIDTH }]}>
+                  <Checkbox
+                    checked={selectedIds.has(log.id)}
+                    onPress={() => toggleSelect(log.id)}
+                  />
+                </View>
                 <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={2}>{log.equipment}</Text>
                 <Text style={[styles.cell, { width: 72 }]} numberOfLines={1}>{log.portStarboardNa || '—'}</Text>
                 <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={1}>{log.serialNumber || '—'}</Text>
@@ -300,8 +528,10 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
+            ))
+            )}
           </View>
+          </ScrollView>
         </ScrollView>
       )}
     </View>
@@ -330,11 +560,117 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
-  addButton: {
+  leftActions: {
     flex: 1,
+    gap: SPACING.xs,
+  },
+  addButton: {
+    alignSelf: 'stretch',
+  },
+  selectAllWrap: {
+    alignSelf: 'flex-start',
+    marginTop: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  selectAllLink: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   pdfButton: {
     flex: 1,
+  },
+  filterBarWrap: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  filterBarContent: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'center',
+  },
+  filterChip: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    minWidth: 72,
+    maxWidth: 120,
+  },
+  filterChipActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight + '20',
+  },
+  filterChipLabel: {
+    fontSize: FONTS.xs,
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  filterChipValue: {
+    fontSize: FONTS.sm,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  filterChipValueActive: {
+    color: COLORS.primary,
+  },
+  clearFiltersWrap: {
+    alignSelf: 'flex-start',
+    marginTop: SPACING.xs,
+  },
+  clearFiltersLink: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  filterModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  filterModalBox: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    maxHeight: '70%',
+    width: '100%',
+    maxWidth: 320,
+    overflow: 'hidden',
+  },
+  filterModalTitle: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    padding: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  filterModalItem: {
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.gray200,
+  },
+  filterModalItemSelected: {
+    backgroundColor: COLORS.primaryLight + '20',
+  },
+  filterModalItemText: {
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+  },
+  filterEmptyRow: {
+    padding: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  filterEmptyText: {
+    fontSize: FONTS.base,
+    color: COLORS.textSecondary,
   },
   loader: {
     marginTop: SPACING.xl,
@@ -360,15 +696,21 @@ const styles = StyleSheet.create({
   emptyBtn: {
     minWidth: 160,
   },
-  tableScroll: {
+  verticalScroll: {
     flex: 1,
+  },
+  verticalScrollContent: {
+    flexGrow: 1,
+  },
+  tableScroll: {
+    flexGrow: 0,
   },
   tableContent: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING['2xl'],
+    paddingBottom: SPACING.lg,
   },
   table: {
-    minWidth: 2 * COLUMN_WIDTH * 3 + 70 * 2 + DATE_WIDTH + ACTIONS_WIDTH,
+    minWidth: CHECKBOX_WIDTH + 2 * COLUMN_WIDTH * 3 + 70 * 2 + DATE_WIDTH + ACTIONS_WIDTH,
   },
   row: {
     flexDirection: 'row',
@@ -400,6 +742,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.xs,
     justifyContent: 'flex-start',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: COLORS.gray400,
+    borderRadius: BORDER_RADIUS.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkmark: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  checkboxHeaderCell: {
+    justifyContent: 'center',
+    paddingVertical: SPACING.xs,
+  },
+  checkboxCell: {
+    justifyContent: 'center',
+    paddingVertical: SPACING.xs,
   },
   editBtn: {
     fontSize: FONTS.xs,

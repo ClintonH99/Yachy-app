@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import userService from '../services/user';
 import vesselService from '../services/vessel';
@@ -207,12 +207,14 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 
   const getDepartmentColor = (department: Department): string => {
     switch (department) {
-      case 'DECK':
+      case 'BRIDGE':
         return '#3B82F6'; // Blue
-      case 'INTERIOR':
-        return '#8B5CF6'; // Purple
       case 'ENGINEERING':
         return '#EF4444'; // Red
+      case 'EXTERIOR':
+        return '#0EA5E9'; // Sky blue
+      case 'INTERIOR':
+        return '#8B5CF6'; // Purple
       case 'GALLEY':
         return '#10B981'; // Green
       default:
@@ -449,6 +451,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING.lg,
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   header: {
     marginBottom: SPACING.lg,

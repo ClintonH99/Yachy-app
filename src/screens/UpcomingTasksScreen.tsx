@@ -3,7 +3,7 @@
  * Tasks from Daily, Weekly, Monthly due in the next 3 days (not completed)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,15 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import vesselTasksService from '../services/vesselTasks';
 import { getTaskUrgencyColor } from '../utils/taskUrgency';
-import { VesselTask, TaskCategory } from '../types';
+import { VesselTask, TaskCategory, Department } from '../types';
 
 const UPCOMING_DAYS = 3;
 
@@ -34,8 +36,24 @@ export const UpcomingTasksScreen = ({ navigation }: any) => {
   const [tasks, setTasks] = useState<VesselTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [departmentFilter, setDepartmentFilter] = useState<Department | ''>('');
+  const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
 
   const vesselId = user?.vesselId ?? null;
+
+  const filteredTasks = useMemo(() => {
+    if (!departmentFilter) return tasks;
+    return tasks.filter((t) => t.department === departmentFilter);
+  }, [tasks, departmentFilter]);
+
+  const DEPARTMENT_OPTIONS: { value: Department | ''; label: string }[] = [
+    { value: '', label: 'All Departments' },
+    { value: 'BRIDGE', label: 'Bridge' },
+    { value: 'ENGINEERING', label: 'Engineering' },
+    { value: 'EXTERIOR', label: 'Exterior' },
+    { value: 'INTERIOR', label: 'Interior' },
+    { value: 'GALLEY', label: 'Galley' },
+  ];
   const isHOD = user?.role === 'HOD';
 
   const loadTasks = useCallback(async () => {
@@ -138,6 +156,7 @@ export const UpcomingTasksScreen = ({ navigation }: any) => {
           )}
         </View>
         <View style={styles.cardMeta}>
+          <Text style={styles.deptBadge}>{item.department.charAt(0) + item.department.slice(1).toLowerCase()}</Text>
           <Text style={styles.categoryBadge}>{categoryLabel}</Text>
           {item.doneByDate && (
             <Text style={styles.cardDate}>
@@ -191,11 +210,60 @@ export const UpcomingTasksScreen = ({ navigation }: any) => {
           </Text>
         </View>
       ) : (
+        <>
+          <View style={styles.filterBar}>
+            <TouchableOpacity
+              style={[styles.filterChip, departmentFilter ? styles.filterChipActive : null]}
+              onPress={() => setDepartmentModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.filterChipLabel}>Department</Text>
+              <Text style={[styles.filterChipValue, departmentFilter ? styles.filterChipValueActive : null]}>
+                {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All'}
+              </Text>
+            </TouchableOpacity>
+            {departmentFilter ? (
+              <TouchableOpacity onPress={() => setDepartmentFilter('')} style={styles.clearFilters}>
+                <Text style={styles.clearFiltersText}>Clear filter</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {departmentModalVisible && (
+            <Modal visible transparent animationType="fade">
+              <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
+                <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
+                  <Text style={styles.modalTitle}>Filter by department</Text>
+                  {DEPARTMENT_OPTIONS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt.value || 'all'}
+                      style={[styles.modalItem, departmentFilter === opt.value && styles.modalItemSelected]}
+                      onPress={() => {
+                        setDepartmentFilter(opt.value);
+                        setDepartmentModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.modalItemText}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </Pressable>
+            </Modal>
+          )}
         <FlatList
-          data={tasks}
+          data={filteredTasks}
           keyExtractor={(t) => t.id}
           renderItem={renderItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            filteredTasks.length === 0 && tasks.length > 0 && styles.listEmpty,
+          ]}
+          ListEmptyComponent={
+            filteredTasks.length === 0 && tasks.length > 0 ? (
+              <View style={styles.emptyFilter}>
+                <Text style={styles.emptyFilterText}>No tasks match the current filter</Text>
+              </View>
+            ) : null
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -204,6 +272,7 @@ export const UpcomingTasksScreen = ({ navigation }: any) => {
             />
           }
         />
+        </>
       )}
     </View>
   );
@@ -231,6 +300,89 @@ const styles = StyleSheet.create({
   list: {
     padding: SPACING.lg,
     paddingTop: SPACING.sm,
+    paddingBottom: SIZES.bottomScrollPadding,
+  },
+  listEmpty: {
+    flexGrow: 1,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
+    gap: SPACING.md,
+  },
+  filterChip: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.gray100,
+    borderRadius: BORDER_RADIUS.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  filterChipLabel: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+  },
+  filterChipValue: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  filterChipValueActive: {
+    color: COLORS.primary,
+  },
+  clearFilters: {
+    paddingVertical: SPACING.xs,
+  },
+  clearFiltersText: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalBox: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    minWidth: 260,
+    maxHeight: 400,
+  },
+  modalTitle: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
+  },
+  modalItem: {
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  modalItemSelected: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  modalItemText: {
+    fontSize: FONTS.base,
+    color: COLORS.textPrimary,
+  },
+  emptyFilter: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  emptyFilterText: {
+    fontSize: FONTS.base,
+    color: COLORS.textSecondary,
   },
   card: {
     backgroundColor: COLORS.white,
@@ -270,6 +422,14 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     alignItems: 'center',
     marginBottom: SPACING.xs,
+  },
+  deptBadge: {
+    fontSize: FONTS.xs,
+    color: COLORS.textSecondary,
+    backgroundColor: COLORS.gray100,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.sm,
   },
   categoryBadge: {
     fontSize: FONTS.xs,

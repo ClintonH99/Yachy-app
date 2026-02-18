@@ -16,7 +16,7 @@ import {
   TextInput,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import { Button } from '../components';
 import userService from '../services/user';
@@ -31,10 +31,10 @@ export const ProfileScreen = ({ navigation }: any) => {
   // Form state
   const [name, setName] = useState(user?.name || '');
   const [position, setPosition] = useState(user?.position || '');
-  const [department, setDepartment] = useState<Department>(user?.department || 'DECK');
+  const [department, setDepartment] = useState<Department>(user?.department || 'BRIDGE');
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto);
 
-  const departments: Department[] = ['DECK', 'INTERIOR', 'ENGINEERING', 'GALLEY'];
+  const departments: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
 
   const handlePickImage = async () => {
     try {
@@ -163,7 +163,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     // Reset form to original values
     setName(user?.name || '');
     setPosition(user?.position || '');
-    setDepartment(user?.department || 'DECK');
+    setDepartment(user?.department || 'BRIDGE');
     setIsEditing(false);
   };
 
@@ -349,6 +349,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.lg,
+    paddingBottom: SIZES.bottomScrollPadding,
   },
   photoSection: {
     alignItems: 'center',
