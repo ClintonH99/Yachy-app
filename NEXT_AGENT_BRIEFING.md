@@ -1,8 +1,8 @@
 # Next Agent Briefing - Nautical Ops
 
-**Date:** February 18, 2026  
-**Session Focus:** Rebrand to Nautical Ops, Home/Settings/Inventory/Department colors, Shopping List checkboxes, Watch/crew fixes, Inventory (department → Create New → Title/Description/Location + Amount/Item table).  
-**Status:** ✅ Session complete — App is Nautical Ops; Inventory flow live; department color settings; DB fixes for inventory_items.
+**Date:** February 23, 2026  
+**Session Focus:** Inventory PDF export polish, Import/Export screen — Inventory section (Download Template + Import from File), Excel template with department tabs, DB constraint fix.  
+**Status:** ✅ Session complete — All changes committed and pushed to GitHub (`main`).
 
 ---
 
@@ -10,127 +10,191 @@
 
 ### What Was Built / Fixed (Completed ✅)
 
-1. **Rebrand to Nautical Ops**
-   - **app.json:** `name`: "Nautical Ops", `slug`: "nautical-ops".
-   - **User-facing:** Login hero, Settings version text, Vessel/Create share text, excel export filename, comments (App.tsx, types).
-   - **package.json** name left as `yachy-app` for tooling.
+---
 
-2. **Login Screen**
-   - Maritime-themed redesign: deep navy background, hero (logo mark, app name, tagline "Operations for superyacht & maritime crews", horizon line), sign-in card (Title, Description, Location inputs; no strikethrough), captain/crew account cards.
+### 1. Inventory PDF Export — Portrait & Page Breaks ✅
+- **Always portrait:** `@page { size: A4 portrait; }` in the PDF HTML so the export is always portrait regardless of device settings.
+- **Automatic page breaks:** Content flows to the next page naturally when the page is full. Each `.item` block has `page-break-inside: avoid` so an inventory entry never splits across two pages.
+- **Header/footer space:** `@page` uses `margin-top: 22mm` and `margin-bottom: 22mm` to reserve clear space at the top and bottom of every page.
 
-3. **Home Screen**
-   - **Header order:** Vessel name (top, largest) → User name → Department → Position; HOD as badge on same line as position. No Welcome, no emoji before vessel. Larger fonts than buttons.
-   - **Removed:** Coming Soon section.
-   - **Added:** Inventory shortcut (📦). Header/nav blend (background, no shadow); Home screen title empty.
+**File:** `src/utils/inventoryPdf.ts`
 
-4. **Settings & Crew**
-   - **Department colors:** New App item "Department colors" → DepartmentColorSettingsScreen. Per-department color or "No color"; persisted in AsyncStorage; all department badges/accents use store (getDepartmentColor + overrides).
-   - **Vessel Settings:** Description "Manage vessel name. Invite code is here."
-   - **Crew Management:** Invite code section removed (use Vessel Settings). Vessel/Clipboard/Share/Button cleanup.
+---
 
-5. **Shopping List**
-   - **Checkboxes:** Items are `{ text, checked }`. Tick on list cards and in Add/Edit; checked = green tick, strikethrough. Service: `ShoppingListItem`, normalize legacy string[].
-   - **Department dropdown:** White background (no blue) on Shopping List and AddEditShoppingList.
+### 2. Inventory PDF — Filename ✅
+- PDF is saved as: **`{Department}_{YYYY-MM-DD}_Inventory List.pdf`**
+  - Single department selected → e.g. `Interior_2026-02-23_Inventory List.pdf`
+  - Multiple departments → `Mixed_2026-02-23_Inventory List.pdf`
+- Uses `expo-file-system` (`FileSystem.moveAsync`) to rename the temp file before sharing — same pattern as Watch Schedule and Maintenance Log.
 
-6. **Inventory (full flow)**
-   - **InventoryScreen:** Department buttons (Bridge, Engineering, Exterior, Interior, Galley) → navigate to Department Inventory.
-   - **DepartmentInventoryScreen:** List of inventory items for that department + **Create New** button; tap item to edit.
-   - **AddEditInventoryItemScreen:** **Title**, **Description**, **Location**; then table **Amount | Item** with rows; **+ Add New** under table (like Shopping List); Save/Create.
-   - **Service:** `src/services/inventory.ts` — getByVesselAndDepartment, create, update, delete. `items` = JSONB array of `{ amount, item }`.
-   - **DB:** Table `inventory_items` (vessel_id, department, title, description, location, items JSONB). Insert does **not** send `created_by` (column may be missing). If table was created without `items`, run **FIX_INVENTORY_ITEMS_MISSING_COLUMNS.sql** in Supabase.
+**File:** `src/utils/inventoryPdf.ts`
 
-7. **Watch Schedule**
-   - View modal is single ScrollView (header + content + actions) so header is not stuck.
-   - TypeScript fix: guard `data` in `.then()` callback (possibly undefined).
+---
 
-8. **Fixes**
-   - **Title/Location/Amount/Item text:** Strikethrough removed — `Input` component and AddEditInventoryItemScreen `tableInput` use `textDecorationLine: 'none'`.
-   - **Inventory DB:** Omit `created_by` from insert to avoid PGRST204 when column missing; use FIX_INVENTORY_ITEMS_MISSING_COLUMNS.sql to add `description`, `location`, `items` if missing.
+### 3. Inventory PDF — Content Cleanup ✅
+- **Removed:** The duplicate small "Inventory" text that appeared in the fixed header (lighter font, 11px).
+- **Removed:** "X item(s) · Generated from Nautical Ops" line from the document body.
+- **Removed:** "Generated from Nautical Ops" footer text and its top divider line.
+- **Kept:** Single prominent `<h1>Inventory</h1>` at the top of the content so the document is clearly identified.
+
+**File:** `src/utils/inventoryPdf.ts`
+
+---
+
+### 4. Import/Export Screen — Inventory Section ✅
+A new **Inventory** card was added to the bottom of the Import/Export screen (`src/screens/ImportExportScreen.tsx`), with:
+
+| Button | Action |
+|---|---|
+| **Download Template** | Generates and shares an `.xlsx` file with 5 department tabs |
+| **Import from File** | Picks a filled `.xlsx`, creates each row as an inventory item in Supabase, navigates to Inventory on success |
+
+- Uses the existing `TemplateType` pattern (`'inventory'` added to the union).
+- Import success alert has a **"Go to Inventory"** button (`navigation.navigate('Inventory')`).
+- `InventoryScreen` uses `useFocusEffect` so it auto-reloads imported items when navigated to.
+
+**Files:** `src/screens/ImportExportScreen.tsx`, `src/services/excelTemplates.ts`
+
+---
+
+### 5. Inventory Excel Template ✅
+The template has **6 tabs**:
+
+| Tab | Purpose |
+|---|---|
+| **Info Dump** | General instructions |
+| **Bridge** | Bridge department items |
+| **Engineering** | Engineering department items |
+| **Exterior** | Exterior department items |
+| **Interior** | Interior department items |
+| **Galley** | Galley department items |
+
+**Columns per tab:** `Title | Location | Description | Amount 1 | Item 1`
+
+- **No Department column** — department is inferred from the sheet/tab name at import time (e.g. `'Interior'` → `'INTERIOR'`).
+- **No example rows** — tabs are blank below the header so users fill in their own data.
+- The parser (`parseInventoryFile`) reads all 5 department tabs, infers department from `sheetName.trim().toUpperCase()`, supports up to 10 Amount/Item column pairs per row for flexibility.
+
+**File:** `src/services/excelTemplates.ts`
+
+---
+
+### 6. DB Department Constraint Fix ✅
+**Error encountered:** `code: '23514'` — "new row for relation inventory_items violates check constraint inventory_items_department_check" when importing.
+
+**Root cause:** The actual Supabase `inventory_items` table had a department check constraint with different or outdated values from what the app sends (uppercase: `'BRIDGE'`, `'ENGINEERING'`, etc.).
+
+**Fixes applied:**
+1. **SQL migration** — `supabase/migrations/FIX_INVENTORY_DEPARTMENT_CONSTRAINT.sql`:
+   ```sql
+   ALTER TABLE public.inventory_items
+     DROP CONSTRAINT IF EXISTS inventory_items_department_check;
+   ALTER TABLE public.inventory_items
+     ADD CONSTRAINT inventory_items_department_check
+     CHECK (department IN ('BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'));
+   ```
+   ✅ Already run in Supabase — confirmed working.
+
+2. **Code-level defence** — The import loop explicitly normalises the department to uppercase before calling `inventoryService.create()`, with a fallback to `'INTERIOR'` for any unrecognised values.
+
+3. **Better error message** — If the constraint error recurs, the import now catches error code `23514` and shows a user-friendly message pointing to the SQL fix.
+
+**Files:** `supabase/migrations/FIX_INVENTORY_DEPARTMENT_CONSTRAINT.sql`, `src/screens/ImportExportScreen.tsx`
 
 ---
 
 ## 🗄️ DATABASE
 
-### Tables (run migrations in Supabase SQL Editor if missing)
+### Tables
 
-| Table                      | Purpose                                                      |
-|----------------------------|--------------------------------------------------------------|
-| `watch_keeping_timetables` | Published timetables (vessel_id, for_date, slots JSONB, etc.) |
-| `watch_keeping_rules`      | One row per vessel: content (text), updated_at, updated_by   |
-| `shopping_lists`          | Per vessel/department: title, items (JSONB: { text, checked }[]) |
-| `inventory_items`         | Per vessel/department: title, description, location, items (JSONB: { amount, item }[]) |
+| Table | Purpose |
+|---|---|
+| `inventory_items` | Per vessel/department: id, vessel_id, department, title, description, location, items (JSONB: `{amount,item}[]`), name (legacy NOT NULL), last_edited_by_name, created_at |
 
-**Migrations:**
-- `CREATE_WATCH_KEEPING_TIMETABLES_TABLE.sql`
-- `CREATE_WATCH_KEEPING_RULES_TABLE.sql`
-- `CREATE_SHOPPING_LISTS_TABLE.sql`
-- `CREATE_INVENTORY_ITEMS_TABLE.sql` — full table; if table already exists without some columns, run:
-- **`FIX_INVENTORY_ITEMS_MISSING_COLUMNS.sql`** — adds `title`, `description`, `location`, `items` if missing.
-- `ADD_INVENTORY_ITEMS_CREATED_BY.sql` (optional) — add `created_by` if desired.
+### Department Constraint
 
-### Department constraint (users)
+| Table | Constraint | Allowed values |
+|---|---|---|
+| `inventory_items` | `inventory_items_department_check` | `'BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'` |
+| `users` | `users_department_check` | `'BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'` |
 
-| Table   | Constraint                 | Allowed values                                  |
-|---------|----------------------------|-------------------------------------------------|
-| `users` | `users_department_check`   | `'BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'` |
+### Migrations (run in Supabase SQL Editor if needed)
+
+| File | When to run |
+|---|---|
+| `CREATE_INVENTORY_ITEMS_TABLE.sql` | If table doesn't exist |
+| `FIX_INVENTORY_DEPARTMENT_CONSTRAINT.sql` | ✅ Already run — fixes department check constraint |
 
 ---
 
 ## 📂 KEY FILES
 
-### Inventory
-- `src/screens/InventoryScreen.tsx` — Department buttons; navigates to DepartmentInventory.
-- `src/screens/DepartmentInventoryScreen.tsx` — List + Create New; tap item → AddEditInventoryItem.
-- `src/screens/AddEditInventoryItemScreen.tsx` — Title, Description, Location; Amount | Item table; + Add New.
-- `src/services/inventory.ts` — getByVesselAndDepartment, create, update, delete; no created_by in insert.
+### Inventory PDF
+- **`src/utils/inventoryPdf.ts`** — `buildInventoryHtml()` (A4 portrait CSS, page breaks, h1 title) + `exportInventoryToPdf()` (print → rename via FileSystem → share). Filename logic: `getInventoryPdfFilename()`.
 
-### Department colors
-- `src/store/index.ts` — useDepartmentColorStore (overrides, loadOverrides, setOverride), getDepartmentColor(dept, overrides).
-- `src/screens/DepartmentColorSettingsScreen.tsx` — Per-department color or No color; swatches + AsyncStorage.
-- All department badges/accents use getDepartmentColor (Inventory, Shopping List, Crew Management, Yard Period, Tasks Calendar, AddEditYardJob).
+### Import/Export
+- **`src/screens/ImportExportScreen.tsx`** — Inventory card: Download Template, Import from File. Import handler normalises department, calls `inventoryService.create()` per row, shows "Go to Inventory" on success.
+- **`src/services/excelTemplates.ts`** — `TemplateType` includes `'inventory'`. `createInventoryWorkbook()` creates 5-tab workbook. `parseInventoryFile()` reads all tabs, infers department from sheet name. `getDataSheetNames('inventory')` returns `['Bridge', 'Engineering', 'Exterior', 'Interior', 'Galley']`.
 
-### Watch Keeping
-- `src/screens/WatchKeepingScreen.tsx`, `WatchScheduleScreen.tsx`, `CreateWatchTimetableScreen.tsx`, `src/services/watchKeeping.ts`.
+### Inventory Service
+- **`src/services/inventory.ts`** — `getByVessel`, `create`, `update`. `create()` sends: `vessel_id`, `department` (normalised), `title`, `name` (legacy), `description`, `location`, `items`, `last_edited_by_name`.
 
-### Shopping List
-- `src/screens/ShoppingListScreen.tsx`, `AddEditShoppingListScreen.tsx`, `src/services/shoppingLists.ts` — items as ShoppingListItem[] (text, checked).
-
-### Shared
-- `src/utils/index.ts` — formatLocalDateString, parseLocalDate.
-- `src/navigation/RootNavigator.tsx` — Routes: Inventory, DepartmentInventory, AddEditInventoryItem, DepartmentColorSettings; loadDepartmentColorOverrides when authenticated.
-- `src/components/Input.tsx` — input style includes textDecorationLine: 'none'.
+### Inventory Screen
+- **`src/screens/InventoryScreen.tsx`** — Department filter dropdown, card list, Export to PDF (select mode), `useFocusEffect` reload. Navigates to `AddEditInventoryItem`.
+- **`src/screens/AddEditInventoryItemScreen.tsx`** — Department chips, Title/Location/Description, Amount|Item table, Create/Save.
 
 ---
 
 ## 🔄 FLOWS
 
-### Inventory
-1. **Home** → Inventory (📦).
-2. **Inventory** → tap department → **Department Inventory** (e.g. Bridge Inventory).
-3. **Department Inventory** → **Create New** or tap item → **Add Edit Inventory Item** (Title, Description, Location, Amount/Item table, + Add New) → Save.
+### Inventory — Manual Create
+1. **Home** → Inventory (📦)
+2. **Inventory Screen** → Create → **AddEditInventoryItem** (department chip, Title, Location, Description, Amount|Item rows) → Save
+3. Inventory screen reloads on focus via `useFocusEffect`
 
-### Department colors
-- **Settings** → Department colors → per-department color or No color; stored in AsyncStorage; used app-wide for department badges/accents.
+### Inventory — Export to PDF
+1. **Inventory Screen** → "Export to PDF" (toggles selection mode)
+2. Tap items to select → "Export selected (N)" → PDF generated → share sheet opens
+3. Filename: `Interior_2026-02-23_Inventory List.pdf` (or `Mixed_...` if multiple departments)
 
-### Shopping List
-- List cards show checkboxes; tap to toggle. Add/Edit: same + Save. Items: `{ text, checked }`.
+### Inventory — Import from Excel
+1. **Home** → Import / Export → **Inventory** card → "Download Template"
+2. Fill in data in any/all department tabs (Bridge, Engineering, Exterior, Interior, Galley)
+3. "Import from File" → pick filled `.xlsx` → items created in Supabase per tab
+4. Alert: "X inventory item(s) imported successfully" → tap "Go to Inventory" → items appear
+
+### Import/Export full list
+- **Tasks** — Download template (3 tabs: Daily/Weekly/Monthly) + import
+- **Maintenance Log** — Download + import
+- **Yard Period** — Download + import
+- **Inventory** — Download template (5 dept tabs) + import ← NEW
 
 ---
 
-## ⚠️ NOTES
+## ⚠️ IMPORTANT NOTES
 
-1. **inventory_items:** Ensure table has `title`, `description`, `location`, `items` (JSONB). If not, run FIX_INVENTORY_ITEMS_MISSING_COLUMNS.sql. App does not send `created_by`.
-2. **useFocusEffect:** Callback must not return a Promise; call async logic inside without returning it.
-3. **Department color overrides:** Loaded on auth in RootNavigator; persisted in AsyncStorage key `nautical_ops_department_color_overrides`.
+1. **`inventory_items` actual schema** — The real Supabase table has more columns than the migration shows: `name` (NOT NULL legacy), `last_edited_by_name`, possibly `last_edited_by` (nullable). The service handles all of these. The migration file is not a complete reflection of the real schema.
+
+2. **Department constraint** — Always use uppercase: `'BRIDGE'`, `'ENGINEERING'`, `'EXTERIOR'`, `'INTERIOR'`, `'GALLEY'`. The `normalizeDepartment()` function in `inventory.ts` enforces this. The DB constraint was fixed to accept uppercase (migration already run).
+
+3. **Import sheet fallback** — If a user imports a non-standard `.xlsx` file (not our template), `parseFile` falls back to the first non-"Info Dump" sheet. The sheet name becomes the department source. If unrecognised, defaults to `'INTERIOR'`.
+
+4. **`parseFile` sheetName param** — The 4th parameter `sheetName: string` was added to the `mapRow` callback in `parseFile`. Existing callers (tasks/maintenance/yard) use 3-param lambdas — this is fine in JS/TS (extra args are silently ignored).
+
+5. **`useFocusEffect`** — Must NOT return a Promise. Always call `async` logic inside without returning it.
+
+6. **Department colors** — Stored in AsyncStorage (`nautical_ops_department_color_overrides`). Loaded on auth in `RootNavigator`. Use `getDepartmentColor(dept, overrides)` from the store everywhere.
 
 ---
 
 ## 🎯 SUGGESTED NEXT STEPS
 
-1. **AI Chat Bot** — Per PROJECT_SPEC / prior Coming Soon (now removed from UI).
-2. **Inventory enhancements** — Categories, search, or export if needed.
-3. **RLS** — Tighten policies for production where still permissive.
-4. **App performance** — Lazy-load heavy screens if needed.
+1. **AI Chat Bot** — Per PROJECT_SPEC.
+2. **Inventory search/filter** — Search by title or location within the inventory screen.
+3. **Inventory delete** — A delete button on the AddEditInventoryItemScreen.
+4. **Export multiple departments** — Allow exporting all inventory filtered by multiple departments to a single PDF.
+5. **RLS tightening** — Production-ready row-level security policies.
+6. **Import for other features** — Apply same import pattern to other data types.
 
 ---
 
@@ -143,25 +207,29 @@ npm start
 npx tsc --noEmit   # TypeScript check
 ```
 
-### Navigation
-- Home → Inventory → (department) → Department Inventory → Create New | tap item → AddEditInventoryItem
-- Settings → Department colors → per-department picker
-- Home → Shopping List → Create | filter | tap card → AddEditShoppingList
-- Watch Keeping → Watch Schedule | Create | Rules
+### Navigation Routes
+- `Inventory` — Main inventory list (department filter, export mode)
+- `AddEditInventoryItem` — Create/edit form (params: `{ itemId?: string }`)
+- `ImportExport` — Import/Export screen (Tasks, Maintenance, Yard, Inventory)
+- `DepartmentColorSettings` — Per-department colour picker
+
+### Git
+- **Repo:** https://github.com/ClintonH99/Yachy-app.git
+- **Branch:** `main`
+- **Last commit:** `83066e7` — Inventory Import/Export: 5-tab department template, remove examples, fix department constraint error
 
 ### Migrations to run (if not applied)
-- `CREATE_INVENTORY_ITEMS_TABLE.sql` (or ensure table exists)
-- **`FIX_INVENTORY_ITEMS_MISSING_COLUMNS.sql`** if inventory_items missing `items`/description/location
-- `ADD_INVENTORY_ITEMS_CREATED_BY.sql` (optional)
+- `CREATE_INVENTORY_ITEMS_TABLE.sql` — base table (if missing)
+- ✅ `FIX_INVENTORY_DEPARTMENT_CONSTRAINT.sql` — already run, constraint fixed
 
 ---
 
 ## 🔒 QUALITY CONTROL GATES (Start of Each Agent Session)
 
-1. **Gate 1:** `npx tsc --noEmit` — TypeScript must pass.
-2. **Gate 2:** `npm start` — App must start.
-3. **Gate 3:** Critical screens (Login, Home, Tasks, Watch Keeping, Shopping List, Inventory) load without crash.
+1. **Gate 1:** `npx tsc --noEmit` — TypeScript must pass with no errors.
+2. **Gate 2:** `npm start` — App must start cleanly.
+3. **Gate 3:** Critical screens load without crash: Login, Home, Inventory, Import/Export, Tasks, Watch Keeping, Shopping List.
 
 ---
 
-**Next agent:** Use PROJECT_SPEC for further features. Keep department values and scroll padding (SIZES.bottomScrollPadding) consistent. Ensure `inventory_items` has `items` (and description, location) in Supabase when testing Inventory.
+**Next agent:** The Inventory feature is complete end-to-end (create, edit, export to PDF, download template, import from Excel). Department values are always uppercase. Use `PROJECT_SPEC.md` for further features. Keep `SIZES.bottomScrollPadding` on all scrollable screens and `getDepartmentColor()` for all department badges.
