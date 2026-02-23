@@ -37,3 +37,5 @@ export { CreateWatchTimetableScreen } from './CreateWatchTimetableScreen';
 export { ShoppingListScreen } from './ShoppingListScreen';
 export { AddEditShoppingListScreen } from './AddEditShoppingListScreen';
 export { InventoryScreen } from './InventoryScreen';
+export { AddEditInventoryItemScreen } from './AddEditInventoryItemScreen';
+export { DepartmentColorSettingsScreen } from './DepartmentColorSettingsScreen';

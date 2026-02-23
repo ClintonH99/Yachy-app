@@ -42,9 +42,11 @@ import {
   ShoppingListScreen,
   AddEditShoppingListScreen,
   InventoryScreen,
+  AddEditInventoryItemScreen,
+  DepartmentColorSettingsScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore } from '../store';
 import authService from '../services/auth';
 import { COLORS } from '../constants/theme';
 
@@ -82,6 +84,11 @@ export const RootNavigator = () => {
       authListener?.subscription?.unsubscribe();
     };
   }, []);
+
+  const loadDepartmentColorOverrides = useDepartmentColorStore((s) => s.loadOverrides);
+  useEffect(() => {
+    if (isAuthenticated) loadDepartmentColorOverrides();
+  }, [isAuthenticated, loadDepartmentColorOverrides]);
 
   if (isLoading) {
     return (
@@ -382,6 +389,22 @@ export const RootNavigator = () => {
               component={InventoryScreen}
               options={{ 
                 title: 'Inventory',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditInventoryItem" 
+              component={AddEditInventoryItemScreen}
+              options={({ route }: any) => ({
+                title: route.params?.itemId ? 'Edit' : 'Create',
+                headerShown: true,
+              })}
+            />
+            <Stack.Screen 
+              name="DepartmentColorSettings" 
+              component={DepartmentColorSettingsScreen}
+              options={{ 
+                title: 'Department colors',
                 headerShown: true,
               }}
             />

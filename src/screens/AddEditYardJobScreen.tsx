@@ -17,13 +17,14 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import yardJobsService from '../services/yardJobs';
 import { Input, Button } from '../components';
 import { Department, YardJobPriority } from '../types';
 
 export const AddEditYardJobScreen = ({ navigation, route }: any) => {
   const { user } = useAuthStore();
+  const overrides = useDepartmentColorStore((s) => s.overrides);
   const jobId = route.params?.jobId as string | undefined;
 
   const [jobTitle, setJobTitle] = useState('');
@@ -210,7 +211,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
               style={[
                 styles.chip,
                 department === dept && styles.chipSelected,
-                { borderColor: COLORS.departmentColors?.[dept] ?? COLORS.primary },
+                { borderColor: getDepartmentColor(dept, overrides) },
               ]}
               onPress={() => setDepartment(dept)}
             >

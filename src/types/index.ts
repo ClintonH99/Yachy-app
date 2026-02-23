@@ -93,34 +93,6 @@ export interface TaskNote {
   createdAt: string;
 }
 
-// ===== INVENTORY TYPES =====
-
-export interface InventoryCategory {
-  id: string;
-  name: string;
-  department: Department;
-  vesselId: string;
-  createdBy: string;
-  createdAt: string;
-}
-
-export interface InventoryItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  name: string;
-  description: string;
-  quantity: number;
-  location: string;
-  department: Department;
-  vesselId: string;
-  photo?: string;
-  lastEditedBy: string;
-  lastEditedByName: string;
-  lastEditedAt: string;
-  createdAt: string;
-}
-
 // ===== WATCH DUTIES TYPES =====
 
 export interface WatchDuty {
@@ -343,7 +315,6 @@ export type RootStackParamList = {
 
 export type MainTabParamList = {
   Tasks: undefined;
-  Inventory: undefined;
   Calendar: undefined;
   More: undefined;
 };
@@ -353,12 +324,4 @@ export type TasksStackParamList = {
   TaskDetail: { taskId: string };
   CreateTask: undefined;
   EditTask: { taskId: string };
-};
-
-export type InventoryStackParamList = {
-  InventoryList: undefined;
-  CategoryDetail: { categoryId: string };
-  CreateCategory: undefined;
-  CreateItem: { categoryId: string };
-  EditItem: { itemId: string };
 };

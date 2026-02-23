@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import shoppingListsService, { ShoppingList, ShoppingListItem } from '../services/shoppingLists';
 import { Department } from '../types';
 import { Button } from '../components';
@@ -26,6 +26,7 @@ const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIO
 
 export const ShoppingListScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
+  const overrides = useDepartmentColorStore((s) => s.overrides);
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -208,7 +209,7 @@ export const ShoppingListScreen = ({ navigation }: any) => {
               <View
                 style={[
                   styles.deptBadge,
-                  { backgroundColor: COLORS.departmentColors?.[list.department] ?? COLORS.gray300 },
+                  { backgroundColor: getDepartmentColor(list.department, overrides) },
                 ]}
               >
                 <Text style={styles.deptBadgeText}>

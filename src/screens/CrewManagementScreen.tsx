@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor as getDeptColor } from '../store';
 import userService from '../services/user';
 import { User, Department } from '../types';
 
@@ -134,22 +134,9 @@ export const CrewManagementScreen = ({ navigation }: any) => {
     );
   };
 
-  const getDepartmentColor = (department: Department): string => {
-    switch (department) {
-      case 'BRIDGE':
-        return '#3B82F6'; // Blue
-      case 'ENGINEERING':
-        return '#EF4444'; // Red
-      case 'EXTERIOR':
-        return '#0EA5E9'; // Sky blue
-      case 'INTERIOR':
-        return '#8B5CF6'; // Purple
-      case 'GALLEY':
-        return '#10B981'; // Green
-      default:
-        return COLORS.textSecondary;
-    }
-  };
+  const overrides = useDepartmentColorStore((s) => s.overrides);
+  const getDepartmentColor = (department: Department) =>
+    getDeptColor(department, overrides);
 
   const renderCrewMember = ({ item }: { item: User }) => {
     const isCurrentUser = item.id === currentUser?.id;

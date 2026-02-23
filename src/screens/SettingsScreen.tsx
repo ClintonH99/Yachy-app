@@ -59,6 +59,13 @@ export const SettingsScreen = ({ navigation }: any) => {
       title: 'App',
       items: [
         {
+          icon: '🎨',
+          label: 'Department colors',
+          description: 'Choose color scheme or no color per crew department',
+          onPress: () => navigation.navigate('DepartmentColorSettings'),
+          disabled: false,
+        },
+        {
           icon: '🔔',
           label: 'Notifications',
           description: 'Manage notification preferences',

@@ -20,14 +20,13 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import vesselTasksService from '../services/vesselTasks';
 import yardJobsService from '../services/yardJobs';
 import { PieDayComponent } from '../components/PieDayComponent';
 import { VesselTask, YardPeriodJob, Department } from '../types';
 import { getTaskUrgencyColor, getUrgencyLevel, UrgencyLevel } from '../utils/taskUrgency';
 
-const DEPARTMENT_COLORS = COLORS.departmentColors;
 const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
 
 const URGENCY_OPTIONS: { value: UrgencyLevel | 'ALL'; label: string }[] = [
@@ -54,7 +53,8 @@ const YARD_JOB_COLOR = COLORS.yardPeriodColor ?? '#0D9488';
 function getMarkedDatesFromTasksAndJobs(
   tasks: VesselTask[],
   yardJobs: YardPeriodJob[],
-  visibleDepartments: Record<Department, boolean>
+  visibleDepartments: Record<Department, boolean>,
+  getDeptColor: (dept: string) => string
 ): MarkedDates {
   const byDate: Record<string, string[]> = {};
 
@@ -66,14 +66,14 @@ function getMarkedDatesFromTasksAndJobs(
   tasks.forEach((task) => {
     if (!task.doneByDate) return;
     if (!visibleDepartments[task.department]) return;
-    addColor(task.doneByDate, DEPARTMENT_COLORS[task.department] ?? COLORS.primary);
+    addColor(task.doneByDate, getDeptColor(task.department) ?? COLORS.primary);
   });
 
   yardJobs.forEach((job) => {
     if (!job.doneByDate) return;
     if (!visibleDepartments[job.department ?? 'INTERIOR']) return;
     const color = job.department
-      ? (DEPARTMENT_COLORS[job.department] ?? YARD_JOB_COLOR)
+      ? getDeptColor(job.department)
       : YARD_JOB_COLOR;
     addColor(job.doneByDate, color);
   });
@@ -92,6 +92,8 @@ function getMarkedDatesFromTasksAndJobs(
 
 export const TasksCalendarScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
+  const overrides = useDepartmentColorStore((s) => s.overrides);
+  const getDeptColor = useCallback((dept: string) => getDepartmentColor(dept, overrides), [overrides]);
   const [tasks, setTasks] = useState<VesselTask[]>([]);
   const [yardJobs, setYardJobs] = useState<YardPeriodJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,8 +171,8 @@ export const TasksCalendarScreen = ({ navigation }: any) => {
   );
 
   const markedDates = useMemo(
-    () => getMarkedDatesFromTasksAndJobs(filteredTasks, filteredYardJobs, visibleDepartments),
-    [filteredTasks, filteredYardJobs, visibleDepartments]
+    () => getMarkedDatesFromTasksAndJobs(filteredTasks, filteredYardJobs, visibleDepartments, getDeptColor),
+    [filteredTasks, filteredYardJobs, visibleDepartments, getDeptColor]
   );
 
   const tasksForSelectedDate = useMemo((): { tasks: VesselTask[]; yardJobs: YardPeriodJob[] } => {
@@ -287,12 +289,12 @@ export const TasksCalendarScreen = ({ navigation }: any) => {
             key={dept}
             style={[
               styles.deptChip,
-              { borderColor: DEPARTMENT_COLORS[dept] ?? COLORS.primary },
+              { borderColor: getDeptColor(dept) ?? COLORS.primary },
               !visibleDepartments[dept] && styles.deptChipHidden,
             ]}
             onPress={() => toggleDepartment(dept)}
           >
-            <View style={[styles.deptDot, { backgroundColor: DEPARTMENT_COLORS[dept] ?? COLORS.primary }]} />
+            <View style={[styles.deptDot, { backgroundColor: getDeptColor(dept) ?? COLORS.primary }]} />
             <Text style={[styles.deptChipText, !visibleDepartments[dept] && styles.deptChipTextDim]}>
               {dept.charAt(0) + dept.slice(1).toLowerCase()}
             </Text>
@@ -331,7 +333,7 @@ export const TasksCalendarScreen = ({ navigation }: any) => {
             <View style={styles.legend}>
               {DEPARTMENTS.filter((d) => visibleDepartments[d]).map((dept) => (
                 <View key={dept} style={styles.legendRow}>
-                  <View style={[styles.legendDot, { backgroundColor: DEPARTMENT_COLORS[dept] }]} />
+                  <View style={[styles.legendDot, { backgroundColor: getDeptColor(dept) }]} />
                   <Text style={styles.legendText}>{dept.charAt(0) + dept.slice(1).toLowerCase()}</Text>
                 </View>
               ))}
@@ -369,7 +371,7 @@ export const TasksCalendarScreen = ({ navigation }: any) => {
                       >
                         {task.title}
                       </Text>
-                      <View style={[styles.deptBadge, { backgroundColor: DEPARTMENT_COLORS[task.department] ?? COLORS.gray300 }]}>
+                      <View style={[styles.deptBadge, { backgroundColor: getDeptColor(task.department) ?? COLORS.gray300 }]}>
                         <Text style={styles.deptBadgeText}>
                           {task.department.charAt(0) + task.department.slice(1).toLowerCase()}
                         </Text>
@@ -410,7 +412,7 @@ export const TasksCalendarScreen = ({ navigation }: any) => {
                       >
                         {job.jobTitle} {isComplete ? '✓' : ''}
                       </Text>
-                      <View style={[styles.deptBadge, { backgroundColor: DEPARTMENT_COLORS[dept] ?? COLORS.gray300 }]}>
+                      <View style={[styles.deptBadge, { backgroundColor: getDeptColor(dept) ?? COLORS.gray300 }]}>
                         <Text style={styles.deptBadgeText}>
                           {dept.charAt(0) + dept.slice(1).toLowerCase()} · Yard
                         </Text>

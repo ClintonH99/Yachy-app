@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import yardJobsService from '../services/yardJobs';
 import { YardPeriodJob, Department } from '../types';
 
@@ -29,6 +29,7 @@ import { getTaskUrgencyColor } from '../utils/taskUrgency';
 
 export const YardPeriodJobsScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
+  const overrides = useDepartmentColorStore((s) => s.overrides);
   const [jobs, setJobs] = useState<YardPeriodJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -167,7 +168,7 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
             <View
               style={[
                 styles.deptBadge,
-                { backgroundColor: COLORS.departmentColors?.[item.department] ?? COLORS.gray300 },
+                { backgroundColor: getDepartmentColor(item.department, overrides) },
               ]}
             >
               <Text style={styles.deptBadgeText}>
