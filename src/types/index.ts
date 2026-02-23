@@ -1,5 +1,5 @@
 /**
- * Core Type Definitions for Yachy App
+ * Core Type Definitions for Nautical Ops
  */
 
 // ===== USER & AUTH TYPES =====

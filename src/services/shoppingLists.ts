@@ -1,0 +1,119 @@
+/**
+ * Shopping Lists Service
+ * Create and fetch shopping lists (title + bullet items) per vessel, filterable by department
+ */
+
+import { supabase } from './supabase';
+import { Department } from '../types';
+
+export interface ShoppingListItem {
+  text: string;
+  checked: boolean;
+}
+
+export interface ShoppingList {
+  id: string;
+  vesselId: string;
+  department: Department;
+  title: string;
+  items: ShoppingListItem[];
+  createdAt: string;
+  createdBy?: string;
+}
+
+export interface CreateShoppingListInput {
+  vesselId: string;
+  department: Department;
+  title: string;
+  items: ShoppingListItem[];
+  createdBy?: string;
+}
+
+function normalizeItems(raw: unknown): ShoppingListItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((entry) => {
+    if (entry && typeof entry === 'object' && 'text' in entry && 'checked' in entry) {
+      return { text: String((entry as ShoppingListItem).text), checked: Boolean((entry as ShoppingListItem).checked) };
+    }
+    return { text: String(entry), checked: false };
+  });
+}
+
+class ShoppingListsService {
+  async getByVessel(vesselId: string): Promise<ShoppingList[]> {
+    try {
+      const { data, error } = await supabase
+        .from('shopping_lists')
+        .select('*')
+        .eq('vessel_id', vesselId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(this.mapRow);
+    } catch (e) {
+      console.error('Get shopping lists error:', e);
+      return [];
+    }
+  }
+
+  async create(input: CreateShoppingListInput): Promise<ShoppingList> {
+    const items = input.items
+      .filter((item) => item.text.trim().length > 0)
+      .map((item) => ({ text: item.text.trim(), checked: item.checked }));
+    const { data, error } = await supabase
+      .from('shopping_lists')
+      .insert([
+        {
+          vessel_id: input.vesselId,
+          department: input.department,
+          title: input.title.trim(),
+          items,
+          created_by: input.createdBy || null,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.mapRow(data);
+  }
+
+  async update(id: string, updates: { title?: string; items?: ShoppingListItem[] }): Promise<ShoppingList> {
+    const payload: Record<string, unknown> = {};
+    if (updates.title !== undefined) payload.title = updates.title.trim();
+    if (updates.items !== undefined) {
+      payload.items = updates.items
+        .filter((item) => item.text.trim().length > 0)
+        .map((item) => ({ text: item.text.trim(), checked: item.checked }));
+    }
+
+    const { data, error } = await supabase
+      .from('shopping_lists')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.mapRow(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from('shopping_lists').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  private mapRow(row: Record<string, unknown>): ShoppingList {
+    return {
+      id: row.id as string,
+      vesselId: row.vessel_id as string,
+      department: row.department as Department,
+      title: row.title as string,
+      items: normalizeItems(row.items),
+      createdAt: row.created_at as string,
+      createdBy: row.created_by as string | undefined,
+    };
+  }
+}
+
+export default new ShoppingListsService();

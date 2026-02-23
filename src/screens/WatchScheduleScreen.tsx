@@ -55,7 +55,7 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
       if (!vesselId) return;
       const timetableId = route?.params?.timetableId;
       loadPublished().then((data) => {
-        if (timetableId && data.length > 0) {
+        if (timetableId && data && data.length > 0) {
           const timetable = data.find((t) => t.id === timetableId);
           if (timetable) {
             setViewingSchedule(timetable);
@@ -236,14 +236,18 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
 
       {viewingSchedule && (
         <Modal visible animationType="slide">
-          <View style={styles.viewModal}>
+          <ScrollView
+            style={styles.viewModal}
+            contentContainerStyle={styles.viewModalContent}
+            showsVerticalScrollIndicator
+          >
             <View style={styles.viewHeader}>
               <Text style={styles.viewTitle}>Watch Schedule</Text>
               <Text style={styles.viewDate}>
                 {formatLocalDateString(viewingSchedule.forDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </Text>
             </View>
-            <ScrollView style={styles.viewContent}>
+            <View style={styles.viewContent}>
               {viewingSchedule.startLocation ? <Text style={styles.viewMeta}>From: {viewingSchedule.startLocation}</Text> : null}
               {viewingSchedule.destination ? <Text style={styles.viewMeta}>To: {viewingSchedule.destination}</Text> : null}
               <Text style={styles.viewMeta}>Start: {viewingSchedule.startTime}</Text>
@@ -256,7 +260,7 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
                   </View>
                 ))}
               </View>
-            </ScrollView>
+            </View>
             <View style={styles.viewActions}>
               <TouchableOpacity
                 style={styles.exportBtn}
@@ -287,7 +291,7 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
                 <Text style={styles.closeBtnText}>Close</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </Modal>
       )}
     </ScrollView>
@@ -310,10 +314,11 @@ const styles = StyleSheet.create({
   cardMeta: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
   cardHint: { fontSize: FONTS.xs, color: COLORS.primary, marginTop: SPACING.sm, fontWeight: '500' },
   viewModal: { flex: 1, backgroundColor: COLORS.background },
+  viewModalContent: { paddingBottom: SIZES.bottomScrollPadding },
   viewHeader: { padding: SPACING.lg, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   viewTitle: { fontSize: FONTS.xl, fontWeight: '700', color: COLORS.primary },
   viewDate: { fontSize: FONTS.base, color: COLORS.textSecondary, marginTop: SPACING.xs },
-  viewContent: { flex: 1, padding: SPACING.lg },
+  viewContent: { padding: SPACING.lg },
   viewMeta: { fontSize: FONTS.base, color: COLORS.textSecondary, marginBottom: SPACING.xs },
   slots: { marginTop: SPACING.lg },
   slotRow: { backgroundColor: COLORS.white, padding: SPACING.md, borderRadius: BORDER_RADIUS.md, marginBottom: SPACING.sm },

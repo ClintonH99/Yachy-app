@@ -34,3 +34,6 @@ export { TasksCalendarScreen } from './TasksCalendarScreen';
 export { WatchKeepingScreen } from './WatchKeepingScreen';
 export { WatchScheduleScreen } from './WatchScheduleScreen';
 export { CreateWatchTimetableScreen } from './CreateWatchTimetableScreen';
+export { ShoppingListScreen } from './ShoppingListScreen';
+export { AddEditShoppingListScreen } from './AddEditShoppingListScreen';
+export { InventoryScreen } from './InventoryScreen';

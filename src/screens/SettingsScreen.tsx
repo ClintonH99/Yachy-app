@@ -40,7 +40,7 @@ export const SettingsScreen = ({ navigation }: any) => {
               {
                 icon: '⚓',
                 label: 'Vessel Settings',
-                description: 'Manage vessel name and invite code',
+                description: 'Manage vessel name. Invite code is here.',
                 onPress: () => navigation.navigate('VesselSettings'),
                 disabled: false,
               },
@@ -144,7 +144,7 @@ export const SettingsScreen = ({ navigation }: any) => {
 
         {/* Version Info */}
         <View style={styles.versionInfo}>
-          <Text style={styles.versionText}>Yachy App v1.0.0</Text>
+          <Text style={styles.versionText}>Nautical Ops v1.0.0</Text>
           <Text style={styles.versionSubtext}>
             Professional yacht operations management
           </Text>

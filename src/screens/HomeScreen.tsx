@@ -54,23 +54,31 @@ export const HomeScreen = ({ navigation }: any) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        {/* Welcome Section */}
+        {/* Header: Vessel name → User name → Department → Position (+ HOD badge) */}
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome, {user?.name}!</Text>
-          <Text style={styles.subtitle}>
-            {user?.position} - {user?.department}
-          </Text>
           {hasVessel && (
-            <View style={styles.vesselBadge}>
-              <Text style={styles.vesselIcon}>⚓</Text>
+            <View style={styles.vesselRow}>
               {loadingVessel ? (
                 <ActivityIndicator size="small" color={COLORS.primary} />
               ) : (
-                <Text style={styles.vesselName}>{vesselName || 'Loading vessel...'}</Text>
+                <Text style={styles.vesselName} numberOfLines={1} ellipsizeMode="tail">
+                  {vesselName || 'Loading vessel...'}
+                </Text>
               )}
-              <Text style={styles.roleBadge}>{user?.role}</Text>
             </View>
           )}
+          <Text style={styles.crewName}>{user?.name}</Text>
+          <Text style={styles.departmentText}>
+            {user?.department ? user.department.charAt(0) + user.department.slice(1).toLowerCase() : ''}
+          </Text>
+          <View style={styles.positionRow}>
+            <Text style={styles.positionText}>{user?.position || ''}</Text>
+            {user?.role === 'HOD' && (
+              <View style={styles.hodBadge}>
+                <Text style={styles.hodBadgeText}>HOD</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* No Vessel Warning */}
@@ -137,6 +145,22 @@ export const HomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shortcutCard}
+            onPress={() => navigation.navigate('ShoppingList')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>🛒</Text>
+            <Text style={styles.shortcutLabel}>Shopping List</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('Inventory')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>📦</Text>
+            <Text style={styles.shortcutLabel}>Inventory</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
             onPress={() => navigation.navigate('ImportExport')}
             activeOpacity={0.8}
           >
@@ -156,19 +180,6 @@ export const HomeScreen = ({ navigation }: any) => {
         {/* Show normal content only if user has a vessel */}
         {hasVessel && (
           <>
-            {/* Coming Soon Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Coming Soon</Text>
-              <View style={styles.featureList}>
-                <Text style={styles.featureItem}>✅ Tasks (Daily, Weekly, Monthly)</Text>
-                <Text style={styles.featureItem}>✅ Inventory Tracking</Text>
-                <Text style={styles.featureItem}>✅ Watch Duties</Text>
-                <Text style={styles.featureItem}>✅ Trips Planning</Text>
-                <Text style={styles.featureItem}>✅ Calendar View</Text>
-                <Text style={styles.featureItem}>✅ AI Store Finder</Text>
-              </View>
-            </View>
-
             {/* Development Info */}
             <View style={styles.devInfo}>
               <Text style={styles.devInfoText}>
@@ -206,32 +217,48 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: SPACING.xl,
   },
-  vesselBadge: {
+  vesselRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    gap: SPACING.sm,
-  },
-  vesselIcon: {
-    fontSize: 20,
   },
   vesselName: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.primary,
+    flex: 1,
+    fontSize: FONTS['3xl'],
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
-  roleBadge: {
-    fontSize: FONTS.xs,
-    fontWeight: 'bold',
-    color: COLORS.white,
+  crewName: {
+    fontSize: FONTS['2xl'],
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: SPACING.sm,
+  },
+  departmentText: {
+    fontSize: FONTS.lg,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+  positionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+    gap: SPACING.sm,
+    flexWrap: 'wrap',
+  },
+  positionText: {
+    fontSize: FONTS.lg,
+    color: COLORS.textSecondary,
+  },
+  hodBadge: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
+  },
+  hodBadgeText: {
+    fontSize: FONTS.xs,
+    fontWeight: '700',
+    color: COLORS.white,
     textTransform: 'uppercase',
   },
   noVesselCard: {
@@ -271,16 +298,6 @@ const styles = StyleSheet.create({
   actionButton: {
     marginBottom: SPACING.sm,
   },
-  title: {
-    fontSize: FONTS['3xl'],
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
-  },
-  subtitle: {
-    fontSize: FONTS.base,
-    color: COLORS.textSecondary,
-  },
   shortcutList: {
     marginBottom: SPACING.xl,
   },
@@ -306,31 +323,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
     flex: 1,
-  },
-  section: {
-    backgroundColor: COLORS.white,
-    padding: SPACING.lg,
-    borderRadius: 12,
-    marginBottom: SPACING.lg,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: FONTS.xl,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.md,
-  },
-  featureList: {
-    gap: SPACING.sm,
-  },
-  featureItem: {
-    fontSize: FONTS.base,
-    color: COLORS.textPrimary,
-    lineHeight: 24,
   },
   devInfo: {
     backgroundColor: COLORS.primaryLight,

@@ -148,8 +148,8 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
 
     try {
       await Share.share({
-        message: `Join our yacht crew on Yachy App!\n\nVessel: ${vessel.name}\nInvite Code: ${vessel.inviteCode}\n\nDownload the app and use this code to get started.`,
-        title: 'Yachy App Invite',
+        message: `Join our yacht crew on Nautical Ops!\n\nVessel: ${vessel.name}\nInvite Code: ${vessel.inviteCode}\n\nDownload the app and use this code to get started.`,
+        title: 'Nautical Ops Invite',
       });
     } catch (error) {
       console.error('Share error:', error);

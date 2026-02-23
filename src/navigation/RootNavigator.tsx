@@ -39,6 +39,9 @@ import {
   WatchKeepingScreen,
   WatchScheduleScreen,
   CreateWatchTimetableScreen,
+  ShoppingListScreen,
+  AddEditShoppingListScreen,
+  InventoryScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore } from '../store';
@@ -93,9 +96,10 @@ export const RootNavigator = () => {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: COLORS.primary,
+            backgroundColor: COLORS.background,
           },
-          headerTintColor: COLORS.white,
+          headerShadowVisible: false,
+          headerTintColor: COLORS.textPrimary,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
@@ -137,7 +141,7 @@ export const RootNavigator = () => {
               name="Home" 
               component={HomeScreen}
               options={{ 
-                title: 'Home',
+                title: '',
                 headerShown: true,
               }}
             />
@@ -354,6 +358,30 @@ export const RootNavigator = () => {
               component={CreateWatchTimetableScreen}
               options={{ 
                 title: 'Create',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="ShoppingList" 
+              component={ShoppingListScreen}
+              options={{ 
+                title: 'Shopping List',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditShoppingList" 
+              component={AddEditShoppingListScreen}
+              options={{ 
+                title: 'Shopping List',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="Inventory" 
+              component={InventoryScreen}
+              options={{ 
+                title: 'Inventory',
                 headerShown: true,
               }}
             />

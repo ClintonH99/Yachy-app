@@ -1,5 +1,6 @@
 /**
  * Login Screen
+ * Maritime / superyacht industry–focused sign-in
  */
 
 import React, { useState } from 'react';
@@ -11,11 +12,22 @@ import {
   Platform,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+
+const MARITIME = {
+  bgDark: '#0f172a',       // Deep navy
+  bgMid: '#1e293b',        // Slate navy
+  accent: '#0ea5e9',       // Ocean blue
+  accentMuted: 'rgba(14, 165, 233, 0.25)',
+  gold: '#c9a227',         // Brass / maritime accent
+  textOnDark: '#f8fafc',
+  textMuted: '#94a3b8',
+};
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
@@ -54,11 +66,10 @@ export const LoginScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
-      const { user, session } = await authService.signIn({ email, password });
-      
+      const { user } = await authService.signIn({ email, password });
+
       if (user) {
         setUser(user);
-        // Navigation will be handled by the auth state change
       } else {
         Alert.alert('Error', 'Invalid credentials');
       }
@@ -70,26 +81,39 @@ export const LoginScreen = ({ navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={MARITIME.bgDark} />
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue to Yachy</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero: maritime branding */}
+          <View style={styles.hero}>
+            <View style={styles.logoMark}>
+              <Text style={styles.logoMarkText}>Y</Text>
+            </View>
+            <Text style={styles.appName}>Nautical Ops</Text>
+            <Text style={styles.tagline}>
+              Operations for superyacht & maritime crews
+            </Text>
+            <View style={styles.horizon} />
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
+          {/* Sign-in card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Sign in</Text>
+            <Text style={styles.cardSubtitle}>
+              Enter your credentials to access your vessel operations
+            </Text>
+
             <Input
               label="Email"
-              placeholder="your@email.com"
+              placeholder="crew@vessel.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -100,7 +124,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
             <Input
               label="Password"
-              placeholder="Enter your password"
+              placeholder="Your password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -109,147 +133,205 @@ export const LoginScreen = ({ navigation }: any) => {
             />
 
             <Button
-              title="Sign In"
+              title="Sign in"
               onPress={handleLogin}
               loading={loading}
               fullWidth
-              style={styles.loginButton}
+              variant="primary"
+              style={styles.signInButton}
             />
           </View>
 
-          {/* Create Account Options */}
-          <View style={styles.createAccountSection}>
-            <Text style={styles.sectionTitle}>Don't have an account?</Text>
-            
-            {/* Captain Registration */}
-            <View style={styles.accountTypeCard}>
-              <Text style={styles.accountTypeIcon}>⚓</Text>
-              <Text style={styles.accountTypeTitle}>Captain</Text>
-              <Text style={styles.accountTypeDescription}>
+          {/* Create account */}
+          <View style={styles.createSection}>
+            <Text style={styles.createSectionTitle}>Don’t have an account?</Text>
+
+            <View style={styles.optionCard}>
+              <View style={styles.optionIconWrap}>
+                <Text style={styles.optionIcon}>⚓</Text>
+              </View>
+              <Text style={styles.optionTitle}>Captain</Text>
+              <Text style={styles.optionDescription}>
                 Create your vessel and invite your crew
               </Text>
               <Button
-                title="Create Captain Account"
+                title="Create captain account"
                 onPress={() => navigation.navigate('RegisterCaptain')}
                 variant="primary"
                 fullWidth
-                style={styles.accountTypeButton}
+                style={styles.optionButton}
               />
             </View>
 
-            {/* Crew Registration */}
-            <View style={styles.accountTypeCard}>
-              <Text style={styles.accountTypeIcon}>👥</Text>
-              <Text style={styles.accountTypeTitle}>Crew Member</Text>
-              <Text style={styles.accountTypeDescription}>
-                Join a vessel using an invite code
+            <View style={styles.optionCard}>
+              <View style={[styles.optionIconWrap, styles.optionIconWrapCrew]}>
+                <Text style={styles.optionIcon}>👥</Text>
+              </View>
+              <Text style={styles.optionTitle}>Crew member</Text>
+              <Text style={styles.optionDescription}>
+                Join a vessel with an invite code
               </Text>
               <Button
-                title="Create Crew Account"
+                title="Create crew account"
                 onPress={() => navigation.navigate('RegisterCrew')}
                 variant="outline"
                 fullWidth
-                style={styles.accountTypeButton}
+                style={styles.optionButtonOutline}
               />
             </View>
           </View>
 
-          {/* Coming Soon: Social Login */}
-          <View style={styles.socialSection}>
-            <Text style={styles.comingSoon}>
-              Apple & Google Sign-In coming soon
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Apple & Google sign-in coming soon
             </Text>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: MARITIME.bgDark,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: 56,
+    paddingBottom: SPACING['2xl'],
   },
-  content: {
-    flex: 1,
-    padding: SPACING.lg,
-    justifyContent: 'center',
-  },
-  header: {
-    marginBottom: SPACING.xl,
+  hero: {
     alignItems: 'center',
+    marginBottom: SPACING.xl,
   },
-  title: {
-    fontSize: FONTS['3xl'],
-    fontWeight: 'bold',
-    color: COLORS.primary,
+  logoMark: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: MARITIME.accentMuted,
+    borderWidth: 1,
+    borderColor: MARITIME.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  logoMarkText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: MARITIME.accent,
+    letterSpacing: -0.5,
+  },
+  appName: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: MARITIME.textOnDark,
+    letterSpacing: -0.5,
     marginBottom: SPACING.xs,
   },
-  subtitle: {
-    fontSize: FONTS.base,
-    color: COLORS.textSecondary,
+  tagline: {
+    fontSize: FONTS.sm,
+    color: MARITIME.textMuted,
+    textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 20,
   },
-  form: {
+  horizon: {
+    width: 48,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: MARITIME.gold,
+    marginTop: SPACING.lg,
+    opacity: 0.9,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xl,
+    marginBottom: SPACING.xl,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  cardTitle: {
+    fontSize: FONTS.xl,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  cardSubtitle: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
-  loginButton: {
+  signInButton: {
     marginTop: SPACING.md,
   },
-  createAccountSection: {
-    marginTop: SPACING.xl,
+  createSection: {
+    marginBottom: SPACING.xl,
   },
-  sectionTitle: {
-    fontSize: FONTS.lg,
+  createSectionTitle: {
+    fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: MARITIME.textOnDark,
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
-  accountTypeCard: {
-    backgroundColor: COLORS.white,
-    padding: SPACING.lg,
+  optionCard: {
+    backgroundColor: MARITIME.bgMid,
     borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
     marginBottom: SPACING.md,
-    alignItems: 'center',
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  accountTypeIcon: {
-    fontSize: 48,
+  optionIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: MARITIME.accentMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  accountTypeTitle: {
-    fontSize: FONTS.xl,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
+  optionIconWrapCrew: {
+    backgroundColor: 'rgba(248, 250, 252, 0.12)',
   },
-  accountTypeDescription: {
+  optionIcon: {
+    fontSize: 22,
+  },
+  optionTitle: {
+    fontSize: FONTS.lg,
+    fontWeight: '700',
+    color: MARITIME.textOnDark,
+    marginBottom: 2,
+  },
+  optionDescription: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+    color: MARITIME.textMuted,
     marginBottom: SPACING.md,
   },
-  accountTypeButton: {
-    marginTop: SPACING.xs,
+  optionButton: {
+    marginTop: 0,
   },
-  socialSection: {
-    marginTop: SPACING.xl,
-    padding: SPACING.md,
-    backgroundColor: COLORS.gray100,
-    borderRadius: BORDER_RADIUS.md,
+  optionButtonOutline: {
+    marginTop: 0,
+    borderColor: MARITIME.textMuted,
+  },
+  footer: {
     alignItems: 'center',
+    paddingVertical: SPACING.md,
   },
-  comingSoon: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
+  footerText: {
+    fontSize: FONTS.xs,
+    color: MARITIME.textMuted,
     fontStyle: 'italic',
   },
 });

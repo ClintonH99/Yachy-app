@@ -177,7 +177,7 @@ export async function downloadTemplate(type: TemplateType): Promise<void> {
 
   const arr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
   const base64 = bytesToBase64(new Uint8Array(arr));
-  const filename = `Yachy_${fileLabel}_Template.xlsx`;
+  const filename = `Nautical_Ops_${fileLabel}_Template.xlsx`;
   const uri = `${FileSystem.cacheDirectory}${filename}`;
   await FileSystem.writeAsStringAsync(uri, base64, {
     encoding: 'base64',

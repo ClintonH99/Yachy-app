@@ -14,21 +14,16 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
-  Share,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import userService from '../services/user';
-import vesselService from '../services/vessel';
-import { User, Department, Vessel } from '../types';
-import { Button } from '../components';
+import { User, Department } from '../types';
 
 export const CrewManagementScreen = ({ navigation }: any) => {
   const { user: currentUser } = useAuthStore();
   const [crew, setCrew] = useState<User[]>([]);
-  const [vessel, setVessel] = useState<Vessel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -54,14 +49,8 @@ export const CrewManagementScreen = ({ navigation }: any) => {
     if (!currentUser?.vesselId) return;
 
     try {
-      // Load both crew and vessel data
-      const [crewData, vesselData] = await Promise.all([
-        userService.getVesselCrew(currentUser.vesselId),
-        vesselService.getVessel(currentUser.vesselId),
-      ]);
-      
+      const crewData = await userService.getVesselCrew(currentUser.vesselId);
       setCrew(crewData);
-      setVessel(vesselData);
     } catch (error) {
       console.error('Load data error:', error);
       Alert.alert('Error', 'Failed to load crew members');
@@ -86,66 +75,6 @@ export const CrewManagementScreen = ({ navigation }: any) => {
     setIsRefreshing(true);
     await loadData();
     setIsRefreshing(false);
-  };
-
-  const handleCopyInviteCode = async () => {
-    if (!vessel?.inviteCode) return;
-
-    await Clipboard.setStringAsync(vessel.inviteCode);
-    Alert.alert(
-      'Invite Code Copied!',
-      `Code: ${vessel.inviteCode}\n\nShare this with new crew members to join ${vessel.name}.`
-    );
-  };
-
-  const handleShareInviteCode = async () => {
-    if (!vessel?.inviteCode) return;
-
-    try {
-      await Share.share({
-        message: `Join our yacht crew on Yachy App!\n\nVessel: ${vessel.name}\nInvite Code: ${vessel.inviteCode}\n\nDownload the app and use this code during registration to get started.`,
-        title: 'Yachy App Invite - ' + vessel.name,
-      });
-    } catch (error) {
-      console.error('Share error:', error);
-    }
-  };
-
-  const handleViewInviteCode = () => {
-    if (!vessel?.inviteCode) return;
-
-    const expiryDate = new Date(vessel.inviteExpiry);
-    const now = new Date();
-    const daysUntilExpiry = Math.ceil(
-      (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    let expiryText = '';
-    if (daysUntilExpiry < 0) {
-      expiryText = 'Expired';
-    } else if (daysUntilExpiry === 0) {
-      expiryText = 'Expires today';
-    } else if (daysUntilExpiry === 1) {
-      expiryText = 'Expires tomorrow';
-    } else if (daysUntilExpiry < 30) {
-      expiryText = `Expires in ${daysUntilExpiry} days`;
-    } else {
-      expiryText = expiryDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    }
-
-    Alert.alert(
-      'Vessel Invite Code',
-      `Code: ${vessel.inviteCode}\nVessel: ${vessel.name}\nStatus: ${expiryText}\n\nShare this code with new crew members during registration.`,
-      [
-        { text: 'Close', style: 'cancel' },
-        { text: 'Copy Code', onPress: handleCopyInviteCode },
-        { text: 'Share', onPress: handleShareInviteCode },
-      ]
-    );
   };
 
   const handleRemoveCrew = (crewMember: User) => {
@@ -321,45 +250,6 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      {/* Invite Code Card - Prominent at Top */}
-      {vessel && (
-        <View style={styles.inviteCard}>
-          <View style={styles.inviteCardHeader}>
-            <View>
-              <Text style={styles.inviteCardTitle}>Invite New Crew</Text>
-              <Text style={styles.inviteCardSubtitle}>
-                Share this code for crew to join
-              </Text>
-            </View>
-            <Text style={styles.inviteCodeLarge}>{vessel.inviteCode}</Text>
-          </View>
-          <View style={styles.inviteActions}>
-            <Button
-              title="📋 Copy Code"
-              onPress={handleCopyInviteCode}
-              variant="outline"
-              size="small"
-              style={styles.inviteButton}
-            />
-            <Button
-              title="📤 Share Code"
-              onPress={handleShareInviteCode}
-              variant="primary"
-              size="small"
-              style={styles.inviteButton}
-            />
-          </View>
-          <TouchableOpacity 
-            style={styles.inviteDetailsButton}
-            onPress={handleViewInviteCode}
-          >
-            <Text style={styles.inviteDetailsText}>
-              View full details & manage code →
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
           <Text style={styles.statNumber}>{crew.length}</Text>
@@ -394,7 +284,7 @@ export const CrewManagementScreen = ({ navigation }: any) => {
       <Text style={styles.emptyIcon}>👥</Text>
       <Text style={styles.emptyTitle}>No Crew Members</Text>
       <Text style={styles.emptyText}>
-        Share your vessel's invite code to add crew members
+        Crew members will appear here once they join. Manage invite code in Vessel Settings.
       </Text>
     </View>
   );
@@ -455,64 +345,6 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: SPACING.lg,
-  },
-  inviteCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  inviteCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  inviteCardTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: 'bold',
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  inviteCardSubtitle: {
-    fontSize: FONTS.sm,
-    color: COLORS.white,
-    opacity: 0.9,
-  },
-  inviteCodeLarge: {
-    fontSize: FONTS['2xl'],
-    fontWeight: 'bold',
-    color: COLORS.white,
-    letterSpacing: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-  },
-  inviteActions: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  inviteButton: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.white,
-  },
-  inviteDetailsButton: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xs,
-  },
-  inviteDetailsText: {
-    fontSize: FONTS.sm,
-    color: COLORS.white,
-    opacity: 0.9,
-    textDecorationLine: 'underline',
   },
   statsContainer: {
     flexDirection: 'row',

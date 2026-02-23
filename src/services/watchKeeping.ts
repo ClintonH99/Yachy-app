@@ -40,7 +40,60 @@ export interface PublishTimetableData {
   createdBy?: string;
 }
 
+export interface WatchKeepingRules {
+  id: string;
+  vesselId: string;
+  content: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
 class WatchKeepingService {
+  async getRules(vesselId: string): Promise<WatchKeepingRules | null> {
+    try {
+      const { data, error } = await supabase
+        .from('watch_keeping_rules')
+        .select('*')
+        .eq('vessel_id', vesselId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ? this.mapRulesRow(data) : null;
+    } catch (e) {
+      console.error('Get watch rules error:', e);
+      return null;
+    }
+  }
+
+  async upsertRules(vesselId: string, content: string, updatedBy?: string): Promise<WatchKeepingRules> {
+    const { data, error } = await supabase
+      .from('watch_keeping_rules')
+      .upsert(
+        {
+          vessel_id: vesselId,
+          content: content.trim(),
+          updated_at: new Date().toISOString(),
+          updated_by: updatedBy || null,
+        },
+        { onConflict: 'vessel_id' }
+      )
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.mapRulesRow(data);
+  }
+
+  private mapRulesRow(row: Record<string, unknown>): WatchKeepingRules {
+    return {
+      id: row.id as string,
+      vesselId: row.vessel_id as string,
+      content: (row.content as string) ?? '',
+      updatedAt: row.updated_at as string,
+      updatedBy: row.updated_by as string | undefined,
+    };
+  }
+
   async getByVessel(vesselId: string): Promise<PublishedWatchTimetable[]> {
     try {
       const { data, error } = await supabase

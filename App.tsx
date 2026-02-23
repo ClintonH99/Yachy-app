@@ -1,5 +1,5 @@
 /**
- * Yachy App - Main Entry Point
+ * Nautical Ops - Main Entry Point
  * Professional yacht operations management app
  */
 

@@ -101,7 +101,7 @@ export const CreateVesselScreen = ({ navigation }: any) => {
 
     try {
       await Share.share({
-        message: `Join ${createdVessel.name} on Yachy!\n\nInvite Code: ${createdVessel.inviteCode}\n\nValid until: ${new Date(createdVessel.inviteExpiry).toLocaleDateString()}`,
+        message: `Join ${createdVessel.name} on Nautical Ops!\n\nInvite Code: ${createdVessel.inviteCode}\n\nValid until: ${new Date(createdVessel.inviteExpiry).toLocaleDateString()}`,
         title: `Join ${createdVessel.name}`,
       });
     } catch (error) {

@@ -1,8 +1,8 @@
 # Next Agent Briefing - Yachy App
 
 **Date:** February 18, 2026  
-**Session Focus:** Watch Keeping restructure – hub page with Watch Schedule and Create buttons  
-**Status:** ✅ Session complete — Watch Keeping is now a single page with two stacked buttons; published timetables appear in Watch Schedule.
+**Session Focus:** Watch Keeping (Export, Edit/Delete, Rules, PDF), Shopping List (full feature), UX fixes  
+**Status:** ✅ Session complete — Watch Keeping has Export/edit/delete and Rules; Shopping List is live with department filter and bullet lists.
 
 ---
 
@@ -10,37 +10,47 @@
 
 ### What Was Built / Fixed (Completed ✅)
 
-1. **Watch Keeping – Hub Layout**
-   - **Removed:** Tab bar; user no longer switches between tabs.
-   - **Added:** Single page with two stacked buttons:
-     - **Watch Schedule** – View published watch timetables (tap to open, export as PDF)
-     - **Create** – Create, generate, and publish new watch timetables (HOD only)
+1. **Watch Keeping – Export & Edit/Delete**
+   - **Removed:** Publish button from the timetable modal.
+   - **Added:** **Export** button in timetable modal → date picker overlay (inside same modal) → saves to `watch_keeping_timetables` and navigates to Watch Schedule. **Edit** and **Delete** in Watch Schedule view modal (HOD only).
+   - **CreateWatchTimetableScreen** supports **edit mode** via route param `timetableId`; pre-fills form and uses `update()` instead of `publish()`.
 
-2. **New Screens**
-   - `WatchScheduleScreen.tsx` – Published timetables list; tap card → view modal; Export as PDF.
-   - `CreateWatchTimetableScreen.tsx` – Full create form (Watch Title, Start Time, crew, etc.) → Generate → Publish modal (date picker) → saves to `watch_keeping_timetables`.
+2. **Watch Keeping Rules**
+   - New section **above** the Watch Schedule button on the Watch Keeping hub (same card style as Coming Soon on Home).
+   - **HOD:** can tap **Edit** to open modal, change rules text, Save. **Crew:** view only.
+   - Table: `watch_keeping_rules` (one row per vessel: `vessel_id`, `content`, `updated_at`, `updated_by`). Migration: `CREATE_WATCH_KEEPING_RULES_TABLE.sql`.
 
-3. **Navigation**
-   - Watch Keeping (hub) → Watch Schedule | Create
-   - Create → Generate timetable → Publish for date → auto-navigates to Watch Schedule on success.
+3. **Watch Schedule PDF**
+   - **Portrait** layout (595×842). **30 slots per page**; page breaks so content continues to next page (no blank/skipped pages). **Position | Crew | Time** columns; borders simplified to avoid solid black line. Date display uses **local date** (no timezone shift) via `formatLocalDateString` in `src/utils/index.ts`.
 
-4. **Previous Session Context**
-   - Excel templates, Task import, Maintenance Log filters, department values (Bridge, Engineering, Exterior, Interior, Galley).
-   - Full scroll on all screens via `SIZES.bottomScrollPadding`.
+4. **Shopping List (full feature)**
+   - **ShoppingListScreen:** Department filter (All / Bridge / Engineering / Exterior / Interior / Galley), **Create** button at top, list of cards (title + department badge + bullet items). Tap card to edit.
+   - **AddEditShoppingListScreen:** Title, Department (on create), **Items** as bullet rows with **+ Add item** button **underneath the list** (follows down as items are added). Remove per row; Save.
+   - Table: `shopping_lists` (`vessel_id`, `department`, `title`, `items` JSONB). Migration: `CREATE_SHOPPING_LISTS_TABLE.sql`. Service: `src/services/shoppingLists.ts`.
+   - **Home:** Shopping List shortcut (🛒) added; **Coming Soon** now shows only Inventory and AI Chat Bot.
+
+5. **Fixes**
+   - **useFocusEffect:** Effect must not return a Promise. Use `() => { loadData(); }` not `() => loadData()` when `loadData` is async (fixed in AddEditShoppingListScreen, ShoppingListScreen).
+   - **Date in app/PDF:** `formatLocalDateString(dateStr, options)` and `parseLocalDate(dateStr)` in `src/utils/index.ts` parse `YYYY-MM-DD` as local date to avoid “day before” in timezones behind UTC.
 
 ---
 
 ## 🗄️ DATABASE
 
-### Watch Keeping
+### Tables (run migrations in Supabase SQL Editor if missing)
 
 | Table                      | Purpose                                                      |
 |----------------------------|--------------------------------------------------------------|
 | `watch_keeping_timetables` | Published timetables (vessel_id, for_date, slots JSONB, etc.) |
+| `watch_keeping_rules`      | One row per vessel: content (text), updated_at, updated_by  |
+| `shopping_lists`          | Per vessel/department: title, items (JSONB array of strings) |
 
-**Migration:** `supabase/migrations/CREATE_WATCH_KEEPING_TIMETABLES_TABLE.sql` – run in Supabase SQL Editor if table doesn’t exist.
+**Migrations:**  
+- `CREATE_WATCH_KEEPING_TIMETABLES_TABLE.sql`  
+- `CREATE_WATCH_KEEPING_RULES_TABLE.sql`  
+- `CREATE_SHOPPING_LISTS_TABLE.sql`  
 
-### Other Constraints
+### Department constraint (users)
 
 | Table   | Constraint                 | Allowed values                                  |
 |---------|----------------------------|-------------------------------------------------|
@@ -50,44 +60,55 @@
 
 ## 📂 KEY FILES
 
-### Watch Keeping (this session)
-- `src/screens/WatchKeepingScreen.tsx` – Hub with two buttons only.
-- `src/screens/WatchScheduleScreen.tsx` – Published timetables list; view modal; PDF export.
-- `src/screens/CreateWatchTimetableScreen.tsx` – Create form, generate, publish flow.
-- `src/services/watchKeeping.ts` – `getByVessel`, `publish`, `PublishedWatchTimetable` type.
+### Watch Keeping
+- `src/screens/WatchKeepingScreen.tsx` – Hub: Watch Keeping Rules (view/Edit) + Watch Schedule + Create buttons.
+- `src/screens/WatchScheduleScreen.tsx` – List of timetables; view modal with Export PDF, Edit, Delete (HOD).
+- `src/screens/CreateWatchTimetableScreen.tsx` – Create/edit form; Generate; Export/Update modal (date overlay).
+- `src/services/watchKeeping.ts` – Timetables: getByVessel, publish, update, delete, getById. Rules: getRules, upsertRules.
 
-### Navigation
-- `src/navigation/RootNavigator.tsx` – Routes: WatchKeeping, WatchSchedule, CreateWatchTimetable.
-- `src/screens/index.ts` – Exports for new screens.
+### Shopping List
+- `src/screens/ShoppingListScreen.tsx` – Department filter, Create button, list of shopping list cards.
+- `src/screens/AddEditShoppingListScreen.tsx` – Title, Department (create only), Items (bullet rows), “+ Add item” under list.
+- `src/services/shoppingLists.ts` – getByVessel, create, update, delete.
 
-### Other Important
-- `expo-file-system/legacy` – Use for FileSystem (cacheDirectory) to avoid deprecation.
-- `SIZES.bottomScrollPadding` – Add to scroll content for tab bar clearance.
+### Shared
+- `src/utils/index.ts` – `formatLocalDateString`, `parseLocalDate` for YYYY-MM-DD display without timezone shift.
+- `src/navigation/RootNavigator.tsx` – Routes include WatchKeeping, WatchSchedule, CreateWatchTimetable, ShoppingList, AddEditShoppingList.
+- `src/screens/index.ts` – Exports all screens.
+
+### Other
+- `expo-file-system/legacy` for FileSystem; `SIZES.bottomScrollPadding` for scroll clearance.
 
 ---
 
-## 🔄 WATCH KEEPING FLOW
+## 🔄 FLOWS
 
-1. **Watch Keeping (hub)** – User sees two buttons: Watch Schedule, Create.
-2. **Watch Schedule** – Loads published timetables from Supabase. Tap card → view modal. Export as PDF.
-3. **Create** – HOD fills form → Generate Watch Keeping Timetable → Review → Publish → choose date → timetable saved; user navigated to Watch Schedule.
+### Watch Keeping
+1. **Hub** – Rules (view / HOD Edit) → Watch Schedule → Create.
+2. **Watch Schedule** – Load timetables; tap card → view modal → Export as PDF, Edit (→ Create screen), Delete.
+3. **Create** – Form → Generate → Export (pick date) → save and go to Watch Schedule. Edit mode: pre-filled form → Update.
+
+### Shopping List
+1. **Home** → Shopping List (🛒).
+2. **Shopping List** – Department filter, Create, then cards (title + dept + bullets). Tap card → edit.
+3. **Add/Edit** – Title, Department (create), Items with “+ Add item” under the list → Save.
 
 ---
 
 ## ⚠️ NOTES
 
-1. **RLS:** `watch_keeping_timetables` uses permissive policy (`USING (true)`). Consider tightening for production.
-2. **PDF Export:** Uses `expo-print` and `expo-sharing`; same approach as Maintenance Log.
-3. **Create:** Only HODs can access; non-HODs see “Only HODs can create watch timetables.”
+1. **RLS:** Watch Keeping and Shopping List tables use permissive policies; consider tightening for production.
+2. **useFocusEffect:** Never return a Promise from the callback; call async functions inside the callback without returning them.
+3. **PDF:** Portrait, 30 rows per page, `page-break-after`; no `min-height` on page divs to avoid blank pages.
 
 ---
 
 ## 🎯 SUGGESTED NEXT STEPS
 
 1. **Inventory** – Categories and items by department (PROJECT_SPEC).
-2. **Watch duties checklist** – Extend Watch Keeping if needed.
-3. **App performance** – Lazy-load heavy screens.
-4. **New features** – Per PROJECT_SPEC and product backlog.
+2. **AI Chat Bot** – Per Coming Soon / PROJECT_SPEC.
+3. **Watch duties checklist** – Extend Watch Keeping if needed.
+4. **App performance** – Lazy-load heavy screens.
 
 ---
 
@@ -101,21 +122,24 @@ npx tsc --noEmit   # TypeScript check
 ```
 
 ### Navigation
-- Home → Watch Keeping → Watch Schedule | Create
-- Create → Generate → Publish (date modal) → Watch Schedule
+- Home → Watch Keeping → Watch Schedule | Create | (Rules at top)
+- Home → Shopping List → Create | (filter by department) | tap card → AddEditShoppingList
+- Watch Schedule view modal → Edit → CreateWatchTimetable (edit mode)
 
-### Migrations to Run (if not applied)
-- `CREATE_WATCH_KEEPING_TIMETABLES_TABLE.sql` – for Watch Keeping
-- `UPDATE_USERS_DEPARTMENT_CHECK.sql` – for department constraint
+### Migrations to run (if not applied)
+- `CREATE_WATCH_KEEPING_TIMETABLES_TABLE.sql`
+- `CREATE_WATCH_KEEPING_RULES_TABLE.sql`
+- `CREATE_SHOPPING_LISTS_TABLE.sql`
+- `UPDATE_USERS_DEPARTMENT_CHECK.sql` (department constraint)
 
 ---
 
 ## 🔒 QUALITY CONTROL GATES (Start of Each Agent Session)
 
-1. **Gate 1:** `npx tsc --noEmit` – TypeScript must pass
-2. **Gate 2:** `npm start` – App must start
-3. **Gate 3:** Critical screens (Login, Home, Tasks, Watch Keeping) must load without crash
+1. **Gate 1:** `npx tsc --noEmit` – TypeScript must pass.
+2. **Gate 2:** `npm start` – App must start.
+3. **Gate 3:** Critical screens (Login, Home, Tasks, Watch Keeping, Shopping List) load without crash.
 
 ---
 
-**Next agent:** Use PROJECT_SPEC for Inventory and other features. Keep scroll padding and department values consistent. Ensure `watch_keeping_timetables` exists in Supabase before testing Watch Schedule.
+**Next agent:** Use PROJECT_SPEC for Inventory and AI Chat Bot. Keep department values and scroll padding consistent. Ensure `watch_keeping_timetables`, `watch_keeping_rules`, and `shopping_lists` exist in Supabase when testing those features.
