@@ -29,7 +29,7 @@ function bytesToBase64(bytes: Uint8Array): string {
   return out + (pad === 1 ? '==' : pad === 2 ? '=' : '');
 }
 
-export type TemplateType = 'tasks' | 'maintenance' | 'yard';
+export type TemplateType = 'tasks' | 'maintenance' | 'yard' | 'inventory';
 
 // --- TASKS TEMPLATE ---
 const TASKS_HEADERS = [
@@ -63,6 +63,15 @@ const YARD_HEADERS = [
   'Contractor Company Name',
   'Contact Details',
   'Done By Date (YYYY-MM-DD)',
+];
+
+// --- INVENTORY TEMPLATE ---
+// One row per inventory entry. Department is inferred from the sheet/tab name.
+const INVENTORY_HEADERS = [
+  'Title',
+  'Location',
+  'Description',
+  'Amount 1', 'Item 1',
 ];
 
 const INFO_DUMP_EXPLANATION =
@@ -156,6 +165,27 @@ function createYardWorkbook(): XLSX.WorkBook {
   return wb;
 }
 
+const INVENTORY_DEPARTMENTS: { label: string }[] = [
+  { label: 'Bridge'      },
+  { label: 'Engineering' },
+  { label: 'Exterior'    },
+  { label: 'Interior'    },
+  { label: 'Galley'      },
+];
+
+function createInventoryWorkbook(): XLSX.WorkBook {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, createInfoDumpSheet(), 'Info Dump');
+  for (const dept of INVENTORY_DEPARTMENTS) {
+    XLSX.utils.book_append_sheet(
+      wb,
+      createSheetWithHeaders(INVENTORY_HEADERS),
+      dept.label
+    );
+  }
+  return wb;
+}
+
 export async function downloadTemplate(type: TemplateType): Promise<void> {
   let wb: XLSX.WorkBook;
   let fileLabel: string;
@@ -172,6 +202,10 @@ export async function downloadTemplate(type: TemplateType): Promise<void> {
     case 'yard':
       wb = createYardWorkbook();
       fileLabel = 'Yard_Period_Jobs';
+      break;
+    case 'inventory':
+      wb = createInventoryWorkbook();
+      fileLabel = 'Inventory';
       break;
   }
 
@@ -298,6 +332,39 @@ export function parseYardFile(uri: string): Promise<ParseResult<ParsedYardJob>> 
   });
 }
 
+export interface ParsedInventoryItem {
+  department: string;
+  title: string;
+  location?: string;
+  description?: string;
+  items: { amount: string; item: string }[];
+}
+
+export function parseInventoryFile(uri: string): Promise<ParseResult<ParsedInventoryItem>> {
+  return parseFile(uri, 'inventory', (_row, _rowNum, headerMap, sheetName) => {
+    const title = (headerMap['Title'] ?? '').trim();
+    if (!title) return null;
+    // Department is derived from the tab name (e.g. "Interior" → "INTERIOR")
+    const deptRaw = sheetName.trim().toUpperCase();
+    const department = VALID_DEPARTMENTS.includes(deptRaw as (typeof VALID_DEPARTMENTS)[number])
+      ? deptRaw
+      : 'INTERIOR';
+    const itemPairs: { amount: string; item: string }[] = [];
+    for (let n = 1; n <= 10; n++) {
+      const amount = (headerMap[`Amount ${n}`] ?? '').trim();
+      const item = (headerMap[`Item ${n}`] ?? '').trim();
+      if (amount || item) itemPairs.push({ amount, item });
+    }
+    return {
+      department,
+      title,
+      location: (headerMap['Location'] ?? '').trim() || undefined,
+      description: (headerMap['Description'] ?? '').trim() || undefined,
+      items: itemPairs,
+    };
+  });
+}
+
 /** Which sheet names to read for each template type (skips "Info Dump"). */
 function getDataSheetNames(type: TemplateType): string[] {
   switch (type) {
@@ -307,13 +374,15 @@ function getDataSheetNames(type: TemplateType): string[] {
       return ['Maintenance Log'];
     case 'yard':
       return ['Yard Period Jobs'];
+    case 'inventory':
+      return ['Bridge', 'Engineering', 'Exterior', 'Interior', 'Galley'];
   }
 }
 
 async function parseFile<T>(
   uri: string,
   type: TemplateType,
-  mapRow: (row: string[], rowNum: number, headerMap: Record<string, string>) => T | null
+  mapRow: (row: string[], rowNum: number, headerMap: Record<string, string>, sheetName: string) => T | null
 ): Promise<ParseResult<T>> {
   const success: T[] = [];
   const errors: { row: number; message: string }[] = [];
@@ -361,7 +430,7 @@ async function parseFile<T>(
         if (isBlank) continue;
 
         try {
-          const parsed = mapRow(strRow, globalRow + 1, headerMap);
+          const parsed = mapRow(strRow, globalRow + 1, headerMap, sheetName);
           if (parsed) success.push(parsed);
         } catch (e) {
           errors.push({ row: globalRow + 1, message: (e as Error).message });

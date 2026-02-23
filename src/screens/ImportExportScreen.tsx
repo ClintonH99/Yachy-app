@@ -22,9 +22,11 @@ import {
   parseTasksFile,
   parseMaintenanceFile,
   parseYardFile,
+  parseInventoryFile,
   TemplateType,
 } from '../services/excelTemplates';
 import { Button } from '../components';
+import inventoryService from '../services/inventory';
 
 export const ImportExportScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
@@ -152,6 +154,53 @@ export const ImportExportScreen = ({ navigation }: any) => {
         }
         const errMsg = errors.length > 0 ? `\n\n${errors.length} row(s) had errors.` : '';
         Alert.alert('Import complete', `Imported ${imported} yard period job(s).${errMsg}`);
+      } else if (type === 'inventory') {
+        const { success, errors } = await parseInventoryFile(uri);
+        if (success.length === 0 && errors.length > 0) {
+          Alert.alert(
+            'Import failed',
+            errors.map((e) => `Row ${e.row}: ${e.message}`).join('\n')
+          );
+          return;
+        }
+        const VALID_DEPTS = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
+        let imported = 0;
+        for (const row of success) {
+          const safeDept = VALID_DEPTS.includes((row.department ?? '').toUpperCase())
+            ? row.department.toUpperCase()
+            : 'INTERIOR';
+          try {
+            await inventoryService.create({
+              vesselId,
+              department: safeDept as any,
+              title: row.title,
+              location: row.location ?? '',
+              description: row.description ?? '',
+              items: row.items,
+              lastEditedByName: user?.name ?? 'Unknown',
+            });
+            imported++;
+          } catch (e: any) {
+            console.error('Import inventory error — row data:', { dept: safeDept, title: row.title }, e);
+            const isConstraintError = e?.code === '23514' || e?.message?.includes('department_check');
+            const msg = isConstraintError
+              ? `Department "${safeDept}" rejected by database. Run FIX_INVENTORY_DEPARTMENT_CONSTRAINT.sql in Supabase.`
+              : (e as Error).message;
+            errors.push({ row: imported + 1, message: msg });
+          }
+        }
+        const errMsg = errors.length > 0 ? `\n\n${errors.length} row(s) had errors.` : '';
+        Alert.alert(
+          'Import complete',
+          `${imported} inventory item(s) imported successfully.${errMsg}`,
+          [
+            {
+              text: 'Go to Inventory',
+              onPress: () => navigation.navigate('Inventory'),
+            },
+            { text: 'OK', style: 'cancel' },
+          ]
+        );
       }
     } catch (e) {
       console.error('Import error:', e);
@@ -226,6 +275,34 @@ export const ImportExportScreen = ({ navigation }: any) => {
           icon="🔧"
           description="Yard period jobs. Columns: Job Title, Description, Yard Location, Contractor, Contact."
         />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📦 Inventory</Text>
+          <Text style={styles.sectionDesc}>
+            Download a template, fill it with your inventory items, then import it here. You can also export all current inventory to PDF.
+          </Text>
+          {!vesselId && (
+            <Text style={styles.vesselNote}>Join a vessel to import or export inventory.</Text>
+          )}
+          <View style={styles.actions}>
+            <Button
+              title={downloading === 'inventory' ? 'Creating…' : 'Download Template'}
+              onPress={() => handleDownload('inventory')}
+              variant="outline"
+              disabled={!!downloading}
+              loading={downloading === 'inventory'}
+              style={styles.btn}
+            />
+            <Button
+              title={importing === 'inventory' ? 'Importing…' : 'Import from File'}
+              onPress={() => handleImport('inventory')}
+              variant="primary"
+              disabled={!!importing || !vesselId}
+              loading={importing === 'inventory'}
+              style={styles.btn}
+            />
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
