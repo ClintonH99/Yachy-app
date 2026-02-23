@@ -107,10 +107,10 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
       const dateStr = formatLocalDateString(t.forDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
       const headerMeta = `
           <h1>Watch Schedule</h1>
-          <p class="meta meta-row"><strong>Date:</strong> ${dateStr}</p>
-          ${t.startLocation ? `<p class="meta meta-row"><strong>From:</strong> ${t.startLocation}</p>` : ''}
-          ${t.destination ? `<p class="meta meta-row"><strong>To:</strong> ${t.destination}</p>` : ''}
-          <p class="meta meta-row"><strong>Start:</strong> ${t.startTime}</p>`;
+          <p class="subtitle">${dateStr}</p>
+          ${t.startLocation ? `<p class="meta"><strong>From:</strong> ${t.startLocation}</p>` : ''}
+          ${t.destination ? `<p class="meta"><strong>To:</strong> ${t.destination}</p>` : ''}
+          <p class="meta"><strong>Start:</strong> ${t.startTime}</p>`;
 
       const slotToRow = (s: (typeof t.slots)[0]) =>
         `<tr><td>${s.crewPosition || '—'}</td><td>${s.crewName}</td><td>${s.startTimeStr} – ${s.endTimeStr}</td></tr>`;
@@ -144,41 +144,31 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
           </div>`;
       });
 
-      const html = `
-        <!DOCTYPE html>
+      const html = `<!DOCTYPE html>
         <html>
         <head><meta charset="utf-8"><title>Watch Schedule</title>
         <style>
-          @page { size: A4 portrait; margin: 16px; }
-          * { box-sizing: border-box; }
-          html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; font-size: 12px; line-height: 1.3; }
-          .content { padding: 14px; }
-          h1 { margin: 0 0 8px 0; font-size: 18px; }
-          .meta { margin: 2px 0; }
-          .meta-row { margin-bottom: 4px; }
-          .table-container { width: 50%; margin-top: 10px; }
-          table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid #ddd; }
-          th, td { padding: 5px 8px; text-align: left; }
-          th { background: #1E3A8A; color: white; font-weight: 600; border-bottom: 2px solid #1E3A8A; }
-          td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; }
-          td:last-child { border-right: none; }
-          tr:last-child td { border-bottom: none; }
-          tr:nth-child(even) td { background: #f5f5f5; }
+          @page { size: A4 portrait; margin: 20mm 16mm; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          html, body { font-family: system-ui, sans-serif; font-size: 12px; color: #111; line-height: 1.4; }
+          h1 { font-size: 20px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px; }
+          .subtitle { font-size: 11px; color: #666; margin-bottom: 16px; }
+          .meta { font-size: 11px; color: #555; margin-bottom: 4px; }
+          .table-container { width: 55%; margin-top: 14px; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; }
+          thead tr { background: #1E3A8A; color: #fff; }
+          th { padding: 8px 10px; text-align: left; font-weight: 600; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+          tr:nth-child(even) td { background: #f9fafb; }
           .col-position { width: 30%; }
           .col-crew { width: 35%; }
           .col-time { width: 35%; }
-          .page-num { font-size: 11px; color: #666; margin-top: 12px; }
+          .page-num { font-size: 11px; color: #999; margin-top: 14px; text-align: right; }
         </style>
         </head>
         <body>${pageBlocks.join('')}</body>
-        </html>
-      `;
-      const { uri } = await Print.printToFileAsync({
-        html,
-        width: 595,
-        height: 842,
-        base64: false,
-      });
+        </html>`;
+      const { uri } = await Print.printToFileAsync({ html });
       const filename = `Watch_Schedule_${t.forDate}.pdf`;
       const newUri = `${FileSystem.cacheDirectory}${filename}`;
       await FileSystem.moveAsync({ from: uri, to: newUri });

@@ -9,100 +9,106 @@ import { InventoryItem } from '../services/inventory';
 
 const deptLabel = (d: string) => (d ?? '').charAt(0) + (d ?? '').slice(1).toLowerCase();
 
-/** Sanitize string for use in a filename (alphanumeric, spaces → underscores). */
 function sanitizeFilename(s: string): string {
   return s.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').trim() || 'Inventory';
 }
 
-/** Build PDF filename: Department_YYYY-MM-DD_Inventory List.pdf */
 function getInventoryPdfFilename(items: InventoryItem[]): string {
   const departments = [...new Set(items.map((i) => i.department ?? 'INTERIOR'))];
-  const departmentName =
-    departments.length === 1 ? deptLabel(departments[0]) : 'Mixed';
-  const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const safeDept = sanitizeFilename(departmentName);
-  return `${safeDept}_${dateStr}_Inventory List.pdf`;
+  const departmentName = departments.length === 1 ? deptLabel(departments[0]) : 'Mixed';
+  const dateStr = new Date().toISOString().slice(0, 10);
+  return `${sanitizeFilename(departmentName)}_${dateStr}_Inventory_List.pdf`;
 }
 
 function escapeHtml(s: string): string {
-  return s
+  return String(s ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
 
-export function buildInventoryHtml(items: InventoryItem[], title: string = 'Inventory Export'): string {
-  const rows = items.map((item) => {
+export function buildInventoryHtml(items: InventoryItem[], title: string = 'Inventory'): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const accent = '#1E3A8A';
+
+  const cards = items.map((item) => {
     const dept = deptLabel(item.department ?? 'INTERIOR');
-    const tableRows =
-      (item.items?.length
-        ? item.items
-            .filter((r) => r.amount?.trim() || r.item?.trim())
-            .map(
-              (r) =>
-                `<tr><td>${escapeHtml(r.amount)}</td><td>${escapeHtml(r.item)}</td></tr>`
-            )
-            .join('')
-        : '') || '<tr><td colspan="2">—</td></tr>';
+    const itemRows = (item.items?.length
+      ? item.items
+          .filter((r) => r.amount?.trim() || r.item?.trim())
+          .map((r) => `<tr><td>${escapeHtml(r.amount)}</td><td>${escapeHtml(r.item)}</td></tr>`)
+          .join('')
+      : '') || '<tr><td colspan="2" style="color:#999;font-style:italic">—</td></tr>';
+
     return `
-      <div class="item">
-        <h3>${escapeHtml(item.title)}</h3>
-        <p class="meta"><strong>Department:</strong> ${escapeHtml(dept)}${item.location ? ` &nbsp;|&nbsp; <strong>Location:</strong> ${escapeHtml(item.location)}` : ''}</p>
-        ${item.description ? `<p class="desc">${escapeHtml(item.description)}</p>` : ''}
-        <table>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${escapeHtml(item.title)}</span>
+          <span class="dept-badge">${escapeHtml(dept)}</span>
+        </div>
+        ${item.location ? `<p class="card-meta"><strong>Location:</strong> ${escapeHtml(item.location)}</p>` : ''}
+        ${item.description ? `<p class="card-desc">${escapeHtml(item.description)}</p>` : ''}
+        <table class="items-table">
           <thead><tr><th>Amount</th><th>Item</th></tr></thead>
-          <tbody>${tableRows}</tbody>
+          <tbody>${itemRows}</tbody>
         </table>
-      </div>
-    `;
+      </div>`;
   });
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>${escapeHtml(title)}</title>
   <style>
-    @page {
-      size: A4 portrait;
-      margin-top: 22mm;
-      margin-bottom: 22mm;
-      margin-left: 16mm;
-      margin-right: 16mm;
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, sans-serif;
-      font-size: 12px;
-      color: #111;
-      padding: 0;
-      margin: 0;
-    }
-    h1 { font-size: 18px; margin: 0 0 16px 0; }
-    .item {
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #eee;
+    @page { size: A4 portrait; margin: 20mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; font-size: 12px; color: #111; }
+    h1 { font-size: 20px; font-weight: 700; color: ${accent}; margin-bottom: 4px; }
+    .subtitle { font-size: 11px; color: #666; margin-bottom: 24px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 14px;
       page-break-inside: avoid;
     }
-    .item h3 { font-size: 14px; margin: 0 0 6px 0; }
-    .meta { color: #555; margin: 4px 0; font-size: 11px; }
-    .desc { margin: 6px 0; color: #333; font-size: 11px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
-    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-    th { background: #f5f5f5; font-weight: 600; }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .card-title { font-size: 13px; font-weight: 700; color: #111; }
+    .dept-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: ${accent};
+      background: #EFF6FF;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-meta { font-size: 11px; color: #555; margin-bottom: 4px; }
+    .card-desc { font-size: 11px; color: #444; margin-bottom: 8px; font-style: italic; }
+
+    .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+    .items-table thead tr { background: ${accent}; color: #fff; }
+    .items-table th { padding: 6px 10px; text-align: left; font-weight: 600; }
+    .items-table td { padding: 5px 10px; border-bottom: 1px solid #e5e7eb; }
+    .items-table tr:nth-child(even) td { background: #f9fafb; }
   </style>
 </head>
 <body>
-  <div class="content">
-    <h1>${escapeHtml(title)}</h1>
-    ${rows.join('')}
-  </div>
+  <h1>${escapeHtml(title)}</h1>
+  <p class="subtitle">Generated ${today} &nbsp;·&nbsp; ${items.length} item${items.length === 1 ? '' : 's'}</p>
+  ${cards.join('')}
 </body>
-</html>
-  `.trim();
+</html>`.trim();
 }
 
 export async function exportInventoryToPdf(items: InventoryItem[]): Promise<void> {

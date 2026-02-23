@@ -304,6 +304,48 @@ export interface SavedChat {
   createdAt: string;
 }
 
+// ===== VESSEL LOG TYPES =====
+
+export interface GeneralWasteLog {
+  id: string;
+  vesselId: string;
+  logDate: string;
+  logTime: string;
+  positionLocation: string;
+  descriptionOfGarbage: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export type DischargeType = 'DIRECT_DISCHARGE' | 'TREATMENT_PLANT' | 'PUMPOUT_SERVICE';
+
+export interface PumpOutLog {
+  id: string;
+  vesselId: string;
+  dischargeType: DischargeType;
+  pumpoutServiceName: string;
+  location: string;
+  amountInGallons: number;
+  description: string;
+  logDate: string;
+  logTime: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface FuelLog {
+  id: string;
+  vesselId: string;
+  locationOfRefueling: string;
+  logDate: string;
+  logTime: string;
+  amountOfFuel: number;
+  pricePerGallon: number;
+  totalPrice: number;
+  createdByName: string;
+  createdAt: string;
+}
+
 // ===== NAVIGATION TYPES =====
 
 export type RootStackParamList = {

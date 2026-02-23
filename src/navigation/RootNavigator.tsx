@@ -44,6 +44,13 @@ import {
   InventoryScreen,
   AddEditInventoryItemScreen,
   DepartmentColorSettingsScreen,
+  VesselLogsScreen,
+  GeneralWasteLogScreen,
+  AddEditGeneralWasteLogScreen,
+  FuelLogScreen,
+  AddEditFuelLogScreen,
+  PumpOutLogScreen,
+  AddEditPumpOutLogScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore, useDepartmentColorStore } from '../store';
@@ -405,6 +412,62 @@ export const RootNavigator = () => {
               component={DepartmentColorSettingsScreen}
               options={{ 
                 title: 'Department colors',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="VesselLogs" 
+              component={VesselLogsScreen}
+              options={{ 
+                title: 'Vessel Logs',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="GeneralWasteLog" 
+              component={GeneralWasteLogScreen}
+              options={{ 
+                title: 'General Waste Log',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditGeneralWasteLog" 
+              component={AddEditGeneralWasteLogScreen}
+              options={{ 
+                title: 'New Waste Log Entry',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="FuelLog" 
+              component={FuelLogScreen}
+              options={{ 
+                title: 'Fuel Log',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditFuelLog" 
+              component={AddEditFuelLogScreen}
+              options={{ 
+                title: 'New Fuel Log Entry',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="PumpOutLog" 
+              component={PumpOutLogScreen}
+              options={{ 
+                title: 'Pump Out Log',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditPumpOutLog" 
+              component={AddEditPumpOutLogScreen}
+              options={{ 
+                title: 'New Pump Out Entry',
                 headerShown: true,
               }}
             />

@@ -277,22 +277,27 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
           </tr>`
       ).join('');
 
-      const html = `
-        <!DOCTYPE html>
+      const html = `<!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <title>Maintenance Log</title>
           <style>
-            table { border-collapse: collapse; width: 100%; font-size: 10px; }
-            th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-            th { background: #1e3a5f; color: white; }
-            tr:nth-child(even) { background: #f5f5f5; }
+            @page { size: A4 landscape; margin: 16mm 14mm; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: system-ui, sans-serif; font-size: 11px; color: #111; }
+            h1 { font-size: 20px; font-weight: 700; color: #1E3A8A; margin-bottom: 4px; }
+            .subtitle { font-size: 11px; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            thead tr { background: #1E3A8A; color: #fff; }
+            th { padding: 8px 8px; text-align: left; font-weight: 600; font-size: 10px; }
+            td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+            tr:nth-child(even) td { background: #f9fafb; }
           </style>
         </head>
         <body>
           <h1>Maintenance Log</h1>
-          <p>Generated ${new Date().toLocaleString()}</p>
+          <p class="subtitle">${vesselName} &nbsp;·&nbsp; Generated ${dateStr}</p>
           <table>
             <thead>
               <tr>
@@ -308,19 +313,13 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
               </tr>
             </thead>
             <tbody>
-              ${rows.length ? rows : '<tr><td colspan="9">No entries</td></tr>'}
+              ${rows.length ? rows : '<tr><td colspan="9" style="color:#999;font-style:italic;padding:12px">No entries</td></tr>'}
             </tbody>
           </table>
         </body>
-        </html>
-      `;
+        </html>`;
 
-      const { uri } = await Print.printToFileAsync({
-        html,
-        width: 842,
-        height: 595,
-        base64: false,
-      });
+      const { uri } = await Print.printToFileAsync({ html });
       
       // Rename file with vessel name, date, and "Maintenance Log"
       const newUri = `${FileSystem.cacheDirectory}${filename}`;
