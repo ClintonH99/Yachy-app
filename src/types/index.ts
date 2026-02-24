@@ -8,6 +8,32 @@ export type UserRole = 'HOD' | 'CREW' | 'MANAGEMENT';
 
 export type Department = 'BRIDGE' | 'ENGINEERING' | 'EXTERIOR' | 'INTERIOR' | 'GALLEY';
 
+export type NotificationPreferenceKey =
+  | 'tasks'
+  | 'trips'
+  | 'preDeparture'
+  | 'maintenance'
+  | 'yardJobs'
+  | 'watchSchedule';
+
+export interface NotificationPreferences {
+  tasks: boolean;
+  trips: boolean;
+  preDeparture: boolean;
+  maintenance: boolean;
+  yardJobs: boolean;
+  watchSchedule: boolean;
+}
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  tasks: true,
+  trips: true,
+  preDeparture: true,
+  maintenance: true,
+  yardJobs: true,
+  watchSchedule: true,
+};
+
 export interface User {
   id: string;
   email: string;

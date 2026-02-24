@@ -123,6 +123,11 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
   const filteredTrips = trips.filter((t) => visibleTypes[t.type]);
   const markedDates = getMarkedDatesFromTrips(filteredTrips, typeColorMap);
 
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const tripsStartingTomorrow = trips.filter((t) => t.startDate === tomorrowStr);
+
   const calendarTheme = {
     backgroundColor: COLORS.white,
     calendarBackground: COLORS.white,
@@ -197,16 +202,27 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
         </View>
       </View>
 
-      <View style={styles.preDepartureRow}>
+      {tripsStartingTomorrow.length > 0 && (
+        <View style={styles.tripTomorrowBanner}>
+          <Text style={styles.tripTomorrowBannerText}>
+            Trip{tripsStartingTomorrow.length > 1 ? 's' : ''} starting tomorrow – review your pre-departure checklist
+          </Text>
+        </View>
+      )}
+      <View style={[styles.preDepartureRow, tripsStartingTomorrow.length > 0 && styles.preDepartureRowHighlight]}>
         <TouchableOpacity
-          style={styles.preDepartureBtn}
+          style={[styles.preDepartureBtn, tripsStartingTomorrow.length > 0 && styles.preDepartureBtnHighlight]}
           onPress={() => navigation.navigate('PreDepartureChecklist')}
           activeOpacity={0.8}
         >
           <Text style={styles.preDepartureEmoji}>📋</Text>
           <View style={styles.preDepartureTextWrap}>
-          <Text style={styles.preDepartureLabel}>Pre-Departure Checklist</Text>
-          <Text style={styles.preDepartureHint}>HODs: Add tasks for crew before departure</Text>
+            <Text style={styles.preDepartureLabel}>Pre-Departure Checklist</Text>
+            <Text style={styles.preDepartureHint}>
+              {tripsStartingTomorrow.length > 0
+                ? `Trip${tripsStartingTomorrow.length > 1 ? 's' : ''} tomorrow: ${tripsStartingTomorrow.map((t) => t.title).join(', ')}`
+                : 'HODs: Add tasks for crew before departure'}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -345,8 +361,23 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     marginBottom: SPACING.sm,
   },
+  tripTomorrowBanner: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  tripTomorrowBannerText: {
+    color: COLORS.white,
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   preDepartureRow: {
     marginBottom: SPACING.lg,
+  },
+  preDepartureRowHighlight: {
+    // Extra emphasis when trip is tomorrow
   },
   preDepartureBtn: {
     backgroundColor: COLORS.white,
@@ -361,6 +392,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+  },
+  preDepartureBtnHighlight: {
+    borderLeftWidth: 6,
+    borderLeftColor: COLORS.primary,
   },
   preDepartureEmoji: {
     fontSize: 32,

@@ -95,3 +95,50 @@ export async function clearPushToken(userId: string): Promise<void> {
     throw error;
   }
 }
+
+export async function getNotificationPreferences(
+  userId: string
+): Promise<Record<string, boolean>> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('notification_preferences')
+    .eq('id', userId)
+    .single();
+
+  if (error || !data?.notification_preferences) {
+    return {
+      tasks: true,
+      trips: true,
+      preDeparture: true,
+      maintenance: true,
+      yardJobs: true,
+      watchSchedule: true,
+    };
+  }
+  return { ...data.notification_preferences } as Record<string, boolean>;
+}
+
+export async function saveNotificationPreference(
+  userId: string,
+  key: string,
+  enabled: boolean
+): Promise<void> {
+  const { data: current } = await supabase
+    .from('users')
+    .select('notification_preferences')
+    .eq('id', userId)
+    .single();
+
+  const prefs = (current?.notification_preferences ?? {}) as Record<string, boolean>;
+  const updated = { ...prefs, [key]: enabled };
+
+  const { error } = await supabase
+    .from('users')
+    .update({ notification_preferences: updated })
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Save notification preference error:', error);
+    throw error;
+  }
+}

@@ -23,3 +23,9 @@ jobs:
 
       - name: TypeScript check (QC Gate 1)
         run: npx tsc --noEmit
+
+      - name: Expo dependency check (QC Gate 2)
+        run: npx expo install --check
+
+      - name: Expo export / build validation (QC Gate 3)
+        run: npx expo export --platform ios
