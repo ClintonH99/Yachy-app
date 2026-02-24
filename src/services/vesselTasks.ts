@@ -127,14 +127,8 @@ class VesselTasksService {
   ): Promise<{ createdNext?: VesselTask }> {
     const task = await this.getById(taskId);
     if (!task) throw new Error('Task not found');
-    const completedAt = new Date().toISOString();
-    await this.update(taskId, {
-      status: 'COMPLETED',
-      completedBy,
-      completedAt,
-      completedByName,
-    });
-    // If recurring, create next occurrence
+
+    // Recurring tasks: create next occurrence and delete the completed one (don't keep it populated)
     if (task.recurring && task.doneByDate) {
       const days = task.recurring === '7_DAYS' ? 7 : task.recurring === '14_DAYS' ? 14 : 30;
       const nextDate = new Date(task.doneByDate);
@@ -148,8 +142,18 @@ class VesselTasksService {
         doneByDate: nextDate.toISOString().slice(0, 10),
         recurring: task.recurring,
       });
+      await this.delete(taskId);
       return { createdNext: next };
     }
+
+    // Non-recurring: mark as completed
+    const completedAt = new Date().toISOString();
+    await this.update(taskId, {
+      status: 'COMPLETED',
+      completedBy,
+      completedAt,
+      completedByName,
+    });
     return {};
   }
 
@@ -199,6 +203,23 @@ class VesselTasksService {
       return (data || []).map(this.mapRowToTask);
     } catch (error) {
       console.error('Get tasks in date range error:', error);
+      return [];
+    }
+  }
+
+  async getCompletedTasks(vesselId: string): Promise<VesselTask[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vessel_tasks')
+        .select('*')
+        .eq('vessel_id', vesselId)
+        .eq('status', 'COMPLETED')
+        .order('completed_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(this.mapRowToTask);
+    } catch (error) {
+      console.error('Get completed tasks error:', error);
       return [];
     }
   }

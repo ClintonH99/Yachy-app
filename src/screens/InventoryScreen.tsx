@@ -22,7 +22,7 @@ import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../st
 import inventoryService, { InventoryItem } from '../services/inventory';
 import { Department } from '../types';
 import { exportInventoryToPdf } from '../utils/inventoryPdf';
-import { Button } from '../components';
+import { Button, Input } from '../components';
 
 const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
 
@@ -43,10 +43,26 @@ export const InventoryScreen = ({ navigation }: any) => {
   const [exportMode, setExportMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const vesselId = user?.vesselId ?? null;
 
-  const filteredItems = (items ?? []).filter((item) => visibleDepartments[item.department ?? 'INTERIOR']);
+  const matchesSearch = (item: InventoryItem) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    if ((item.title ?? '').toLowerCase().includes(q)) return true;
+    if ((item.description ?? '').toLowerCase().includes(q)) return true;
+    if ((item.location ?? '').toLowerCase().includes(q)) return true;
+    for (const row of item.items ?? []) {
+      if ((row.item ?? '').toLowerCase().includes(q)) return true;
+      if ((row.amount ?? '').toLowerCase().includes(q)) return true;
+    }
+    return false;
+  };
+
+  const filteredItems = (items ?? [])
+    .filter((item) => visibleDepartments[item.department ?? 'INTERIOR'])
+    .filter(matchesSearch);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -149,6 +165,15 @@ export const InventoryScreen = ({ navigation }: any) => {
         />
       }
     >
+      <View style={styles.searchRow}>
+        <Input
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by item, title, location…"
+          style={styles.searchInput}
+          returnKeyType="search"
+        />
+      </View>
       <View style={styles.createRow}>
         <Button
           title="Create"
@@ -248,7 +273,7 @@ export const InventoryScreen = ({ navigation }: any) => {
         <Text style={styles.empty}>
           {items.length === 0
             ? 'No inventory items yet. Tap Create to add one.'
-            : 'No items for the selected department(s).'}
+            : 'No items match your search or department filter.'}
         </Text>
       ) : (
         filteredItems.map((item) => {
@@ -309,6 +334,8 @@ const styles = StyleSheet.create({
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
   message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
+  searchRow: { marginBottom: SPACING.sm },
+  searchInput: { backgroundColor: COLORS.white },
   createRow: { marginBottom: SPACING.lg },
   exportBtn: { marginTop: SPACING.sm },
   exportBar: { marginBottom: SPACING.lg, paddingVertical: SPACING.sm },

@@ -19,7 +19,17 @@ Key tech stack:
 
 ## 2. What Was Done This Session
 
-### 2.1 Vessel Logs Module (NEW)
+### 2.1 Shopping List — General / Trip (NEW)
+The Shopping List page was restructured into two sections:
+- **General Shopping** — primary button, department filter, list of general shopping lists
+- **Trip Shopping** — outline button, department filter, list of trip shopping lists
+
+Each section has its own department filter. Lists are categorized by `list_type` ('general' | 'trip').
+- Migration: `ADD_SHOPPING_LIST_TYPE.sql` (adds `list_type` column to `shopping_lists`)
+- Service: `shoppingLists.ts` updated with `listType` in create/read
+- Screens: `ShoppingListScreen.tsx` (two sections), `AddEditShoppingListScreen.tsx` (passes `listType`)
+
+### 2.2 Vessel Logs Module (NEW)
 A brand-new module was added to the app. Users can now log three types of operational records:
 
 | Log Type | Screen (List) | Screen (Add/Edit) | Service | Migration |
@@ -40,7 +50,15 @@ A brand-new module was added to the app. Users can now log three types of operat
 
 **Entry point:** HomeScreen → "Vessel Logs" card (notepad icon 🗒️) → `VesselLogsScreen` → category selection
 
-### 2.2 Unified PDF Design
+### 2.3 Search / Filter on Vessel Logs (NEW)
+Search fields were added to all three vessel log list screens:
+- **General Waste Log** — search by date, time, position, description
+- **Fuel Log** — search by date, time, location
+- **Pump Out Log** — search by date, time, location, service, description, discharge type
+
+Search is case-insensitive and filters as you type. Select All / PDF export work on filtered results.
+
+### 2.4 Unified PDF Design
 All PDF exports in the app now share the same visual design (matching the Vessel Logs style):
 
 | File | Change |
@@ -58,7 +76,7 @@ All PDF exports in the app now share the same visual design (matching the Vessel
 - `20px` bold navy page title + `11px` grey subtitle (`VesselName · Generated YYYY-MM-DD`)
 - `system-ui, sans-serif` font
 
-### 2.3 Date/Time Picker Rule
+### 2.5 Date/Time Picker Rule
 A `.cursor/rules/date-time-picker.mdc` Cursor rule was created. All future date/time pickers must follow this pattern:
 - **iOS**: `display="compact"` — auto-collapses after selection; do **not** use `is24Hour` with compact mode
 - **Android**: `display="default"` (dialog) triggered by a `TouchableOpacity`
@@ -72,6 +90,7 @@ If starting fresh or testing on a new Supabase project, run these SQL files in t
 1. `supabase/migrations/CREATE_GENERAL_WASTE_LOGS_TABLE.sql`
 2. `supabase/migrations/CREATE_FUEL_LOGS_TABLE.sql`
 3. `supabase/migrations/CREATE_PUMP_OUT_LOGS_TABLE.sql`
+4. `supabase/migrations/ADD_SHOPPING_LIST_TYPE.sql` (if using Shopping List)
 
 All three tables use RLS with a policy allowing authenticated users to SELECT/INSERT/UPDATE/DELETE their own vessel's rows via `vessel_id`.
 
@@ -132,5 +151,5 @@ supabase/migrations/
 - **Engine Room Waste log** — was originally in scope but removed; could be re-added following the same pattern as the other three log types
 - **Crew management / profiles** — per-crew member views, hours tracking
 - **Push notifications** — watch schedule reminders, maintenance due alerts
-- **Search / filter** on log list screens (currently shows all entries, newest first)
+- ~~**Search / filter** on log list screens~~ — done
 - **Edit button on log detail** — currently logs show in a card; a detail modal with edit/delete could be added

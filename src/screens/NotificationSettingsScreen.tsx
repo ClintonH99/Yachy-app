@@ -1,0 +1,220 @@
+/**
+ * Notification Settings Screen
+ * Enable/disable push notifications and view status
+ */
+
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useAuthStore } from '../store';
+import {
+  registerForPushNotificationsAsync,
+  savePushToken,
+  clearPushToken,
+} from '../services/notifications';
+import { supabase } from '../services/supabase';
+import * as Device from 'expo-device';
+
+export const NotificationSettingsScreen = () => {
+  const { user } = useAuthStore();
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true;
+
+      const check = async () => {
+        if (!user?.id) {
+          if (mounted) setChecking(false);
+          return;
+        }
+        try {
+          const { data } = await supabase
+            .from('users')
+            .select('push_token')
+            .eq('id', user.id)
+            .single();
+          if (mounted) setEnabled(!!data?.push_token);
+        } catch {
+          if (mounted) setEnabled(false);
+        } finally {
+          if (mounted) setChecking(false);
+        }
+      };
+
+      check();
+      return () => { mounted = false; };
+    }, [user?.id])
+  );
+
+  const handleToggle = async (value: boolean) => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      if (value) {
+        if (!Device.isDevice) {
+          Alert.alert(
+            'Physical device required',
+            'Push notifications only work on a physical device, not on simulators.'
+          );
+          setLoading(false);
+          return;
+        }
+
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          await savePushToken(user.id, token);
+          setEnabled(true);
+        } else {
+          Alert.alert(
+            'Permission denied',
+            'Please enable notifications in your device Settings to receive push notifications.'
+          );
+        }
+      } else {
+        await clearPushToken(user.id);
+        setEnabled(false);
+      }
+    } catch (e: any) {
+      const msg = String(e?.message ?? '');
+      if (
+        e?.code === 'PROJECT_ID_REQUIRED' ||
+        msg.includes('projectId') ||
+        msg.includes('project_id')
+      ) {
+        Alert.alert(
+          'Setup required',
+          'Push notifications need EAS configuration. Run "npx eas init" in your project, then restart the app.'
+        );
+      } else {
+        console.error('Toggle notifications error:', e);
+        Alert.alert('Error', 'Could not update notification settings. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (checking) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.title}>Notifications</Text>
+      <Text style={styles.subtitle}>
+        Receive push notifications for tasks, trips, and important updates.
+      </Text>
+
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Push notifications</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Switch
+              value={enabled}
+              onValueChange={handleToggle}
+              trackColor={{ false: COLORS.gray200, true: COLORS.primary }}
+              thumbColor={COLORS.white}
+            />
+          )}
+        </View>
+        {enabled && (
+          <Text style={styles.statusText}>You will receive push notifications.</Text>
+        )}
+      </View>
+
+      {!Device.isDevice && (
+        <View style={styles.warning}>
+          <Text style={styles.warningText}>
+            Use a physical device to test push notifications. They do not work on simulators.
+          </Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  content: {
+    padding: SPACING.lg,
+    paddingBottom: SIZES.bottomScrollPadding,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: FONTS['2xl'],
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  subtitle: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xl,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rowLabel: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  statusText: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+  },
+  warning: {
+    marginTop: SPACING.xl,
+    padding: SPACING.md,
+    backgroundColor: COLORS.gray100,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  warningText: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+  },
+});

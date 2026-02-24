@@ -3,7 +3,7 @@
  * Fields: Location of Refueling, Date, Time, Amount of Fuel, Price per Gallon, Total Price (auto-calculated)
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -47,18 +47,12 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
   const [locationOfRefueling, setLocationOfRefueling] = useState('');
   const [amountOfFuel, setAmountOfFuel] = useState('');
   const [pricePerGallon, setPricePerGallon] = useState('');
+  const [totalPriceInput, setTotalPriceInput] = useState('');
   const [loading, setLoading] = useState(!!logId);
   const [saving, setSaving] = useState(false);
 
   const vesselId = user?.vesselId ?? null;
 
-  // Auto-calculate total price
-  const totalPrice = useMemo(() => {
-    const amount = parseFloat(amountOfFuel);
-    const price = parseFloat(pricePerGallon);
-    if (!isNaN(amount) && !isNaN(price)) return amount * price;
-    return null;
-  }, [amountOfFuel, pricePerGallon]);
 
   useEffect(() => {
     navigation.setOptions({ title: isEdit ? 'Edit Fuel Entry' : 'New Fuel Log Entry' });
@@ -78,6 +72,7 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
           setLocationOfRefueling(log.locationOfRefueling);
           setAmountOfFuel(String(log.amountOfFuel));
           setPricePerGallon(String(log.pricePerGallon));
+          setTotalPriceInput(String(log.totalPrice));
         }
       } catch {
         Alert.alert('Error', 'Could not load entry.');
@@ -101,13 +96,15 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
       Alert.alert('Required', 'Please enter a valid amount of fuel.');
       return;
     }
-    const parsedPrice = parseFloat(pricePerGallon);
-    if (!pricePerGallon || isNaN(parsedPrice) || parsedPrice <= 0) {
-      Alert.alert('Required', 'Please enter a valid price per gallon.');
+    let parsedPrice = parseFloat(pricePerGallon);
+    let parsedTotal = parseFloat(totalPriceInput);
+    if (!isNaN(parsedTotal) && parsedTotal > 0 && parsedAmount > 0) {
+      parsedPrice = parsedTotal / parsedAmount;
+    } else if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      Alert.alert('Required', 'Please enter either price per gallon or total price.');
       return;
     }
-
-    const total = parsedAmount * parsedPrice;
+    parsedTotal = parsedAmount * parsedPrice;
 
     setSaving(true);
     try {
@@ -118,7 +115,7 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
           logTime: formatTime(time),
           amountOfFuel: parsedAmount,
           pricePerGallon: parsedPrice,
-          totalPrice: total,
+          totalPrice: parsedTotal,
         });
         Alert.alert('Updated', 'Entry updated.', [
           { text: 'OK', onPress: () => navigation.goBack() },
@@ -131,7 +128,7 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
           logTime: formatTime(time),
           amountOfFuel: parsedAmount,
           pricePerGallon: parsedPrice,
-          totalPrice: total,
+          totalPrice: parsedTotal,
           createdByName: user?.name ?? '',
         });
         Alert.alert('Saved', 'Entry added.', [
@@ -262,24 +259,37 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
           keyboardType="decimal-pad"
         />
 
-        {/* Price per Gallon */}
+        {/* Price per Gallon — enter this OR total price; the other is calculated */}
         <Input
           label="Price per Gallon ($)"
           value={pricePerGallon}
-          onChangeText={setPricePerGallon}
+          onChangeText={(text) => {
+            setPricePerGallon(text);
+            const amt = parseFloat(amountOfFuel);
+            const val = parseFloat(text);
+            if (!isNaN(amt) && !isNaN(val) && amt > 0) {
+              setTotalPriceInput((amt * val).toFixed(2));
+            }
+          }}
           placeholder="e.g. 4.50"
           keyboardType="decimal-pad"
         />
 
-        {/* Total Price — auto-calculated, read only */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Total Price</Text>
-          <View style={styles.totalBox}>
-            <Text style={[styles.totalText, totalPrice === null && styles.totalPlaceholder]}>
-              {totalPrice !== null ? `$${totalPrice.toFixed(2)}` : 'Enter amount and price per gallon'}
-            </Text>
-          </View>
-        </View>
+        {/* Total Price — enter this OR price per gallon; the other is calculated */}
+        <Input
+          label="Total Price ($)"
+          value={totalPriceInput}
+          onChangeText={(text) => {
+            setTotalPriceInput(text);
+            const amt = parseFloat(amountOfFuel);
+            const val = parseFloat(text);
+            if (!isNaN(amt) && !isNaN(val) && amt > 0) {
+              setPricePerGallon((val / amt).toFixed(2));
+            }
+          }}
+          placeholder="e.g. 1125.00"
+          keyboardType="decimal-pad"
+        />
 
         <View style={styles.actions}>
           <Button
@@ -352,25 +362,6 @@ const styles = StyleSheet.create({
   },
   pickerIcon: {
     fontSize: 18,
-  },
-  totalBox: {
-    height: SIZES.inputHeight,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    justifyContent: 'center',
-  },
-  totalText: {
-    fontSize: FONTS.lg,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  totalPlaceholder: {
-    fontSize: FONTS.base,
-    fontWeight: '400',
-    color: COLORS.gray400,
   },
   actions: {
     marginTop: SPACING.lg,

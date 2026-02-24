@@ -67,15 +67,21 @@ export async function exportGeneralWasteLogPdf(
   vesselName: string
 ): Promise<void> {
   const rows = logs.length
-    ? logs.map((l) => `
+    ? logs.map((l) => {
+        const weightDisplay = l.weight != null
+          ? `${l.weight} ${l.weightUnit ?? 'kgs'}`
+          : '—';
+        return `
         <tr>
           <td>${escapeHtml(l.logDate)}</td>
           <td>${escapeHtml(l.logTime)}</td>
           <td>${escapeHtml(l.positionLocation) || '—'}</td>
           <td>${escapeHtml(l.descriptionOfGarbage) || '—'}</td>
+          <td>${weightDisplay}</td>
           <td>${escapeHtml(l.createdByName) || '—'}</td>
-        </tr>`).join('')
-    : `<tr><td colspan="5" class="empty">No entries</td></tr>`;
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="6" class="empty">No entries</td></tr>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>${baseStyles('#1E3A8A')}</style></head><body>
@@ -84,7 +90,7 @@ export async function exportGeneralWasteLogPdf(
     <table>
       <thead><tr>
         <th>Date</th><th>Time</th><th>Position / Location</th>
-        <th>Description of Garbage</th><th>Logged By</th>
+        <th>Description of Garbage</th><th>Weight</th><th>Logged By</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>

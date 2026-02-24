@@ -19,6 +19,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import generalWasteLogsService from '../services/generalWasteLogs';
+import { WeightUnit } from '../types';
 import { Input, Button } from '../components';
 
 function formatDate(d: Date): string {
@@ -46,6 +47,8 @@ export const AddEditGeneralWasteLogScreen = ({ navigation, route }: any) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [positionLocation, setPositionLocation] = useState('');
   const [descriptionOfGarbage, setDescriptionOfGarbage] = useState('');
+  const [weight, setWeight] = useState('');
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kgs');
   const [loading, setLoading] = useState(!!logId);
   const [saving, setSaving] = useState(false);
 
@@ -68,6 +71,8 @@ export const AddEditGeneralWasteLogScreen = ({ navigation, route }: any) => {
           setTime(t);
           setPositionLocation(log.positionLocation);
           setDescriptionOfGarbage(log.descriptionOfGarbage);
+          setWeight(log.weight != null ? String(log.weight) : '');
+          setWeightUnit((log.weightUnit as WeightUnit) ?? 'kgs');
         }
       } catch {
         Alert.alert('Error', 'Could not load entry.');
@@ -94,22 +99,28 @@ export const AddEditGeneralWasteLogScreen = ({ navigation, route }: any) => {
     setSaving(true);
     try {
       if (isEdit) {
+        const parsedWeight = weight.trim() ? parseFloat(weight) : null;
         await generalWasteLogsService.update(logId!, {
           logDate: formatDate(date),
           logTime: formatTime(time),
           positionLocation: positionLocation.trim(),
           descriptionOfGarbage: descriptionOfGarbage.trim(),
+          weight: parsedWeight != null && !isNaN(parsedWeight) ? parsedWeight : null,
+          weightUnit,
         });
         Alert.alert('Updated', 'Entry updated.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       } else {
+        const parsedWeight = weight.trim() ? parseFloat(weight) : null;
         await generalWasteLogsService.create({
           vesselId,
           logDate: formatDate(date),
           logTime: formatTime(time),
           positionLocation: positionLocation.trim(),
           descriptionOfGarbage: descriptionOfGarbage.trim(),
+          weight: parsedWeight != null && !isNaN(parsedWeight) ? parsedWeight : null,
+          weightUnit,
           createdByName: user?.name ?? '',
         });
         Alert.alert('Saved', 'Entry added.', [
@@ -231,6 +242,36 @@ export const AddEditGeneralWasteLogScreen = ({ navigation, route }: any) => {
           placeholder="e.g. 25°N 80°W or Port Miami"
         />
 
+        {/* Weight */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Weight</Text>
+          <View style={styles.weightRow}>
+            <Input
+              value={weight}
+              onChangeText={setWeight}
+              placeholder="e.g. 5.2"
+              keyboardType="decimal-pad"
+              containerStyle={styles.weightInput}
+            />
+            <View style={styles.unitSelector}>
+              <TouchableOpacity
+                style={[styles.unitBtn, weightUnit === 'kgs' && styles.unitBtnSelected]}
+                onPress={() => setWeightUnit('kgs')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.unitLabel, weightUnit === 'kgs' && styles.unitLabelSelected]}>kgs</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.unitBtn, weightUnit === 'lbs' && styles.unitBtnSelected]}
+                onPress={() => setWeightUnit('lbs')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.unitLabel, weightUnit === 'lbs' && styles.unitLabelSelected]}>lbs</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* Description of Garbage */}
         <Input
           label="Description of Garbage"
@@ -324,5 +365,40 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: FONTS.base,
     color: COLORS.textSecondary,
+  },
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: SPACING.sm,
+  },
+  weightInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    height: SIZES.inputHeight,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    overflow: 'hidden',
+  },
+  unitBtn: {
+    flex: 1,
+    minWidth: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unitBtnSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  unitLabel: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  unitLabelSelected: {
+    color: COLORS.white,
   },
 });

@@ -235,7 +235,8 @@ export const AddEditPumpOutLogScreen = ({ navigation, route }: any) => {
           label="Description (optional)"
           value={description}
           onChangeText={setDescription}
-          placeholder="Any additional notes..."
+          placeholder="Tipped the dockhand $20"
+          placeholderTextColor={COLORS.gray300}
           multiline
           numberOfLines={3}
         />

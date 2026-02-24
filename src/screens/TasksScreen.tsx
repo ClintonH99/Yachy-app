@@ -93,6 +93,17 @@ export const TasksScreen = ({ navigation }: any) => {
           <Text style={styles.cardHint}>Tasks past their deadline</Text>
         </View>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('CompletedTasks')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.cardIcon}>✓</Text>
+        <View style={styles.cardLabelWrap}>
+          <Text style={styles.cardLabel}>Completed Tasks</Text>
+          <Text style={styles.cardHint}>Tasks you've finished</Text>
+        </View>
+      </TouchableOpacity>
       {CATEGORIES.map((cat) => (
         <TouchableOpacity
           key={cat.key}

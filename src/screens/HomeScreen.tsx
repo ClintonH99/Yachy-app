@@ -145,7 +145,7 @@ export const HomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shortcutCard}
-            onPress={() => navigation.navigate('ShoppingList')}
+            onPress={() => navigation.navigate('ShoppingListCategory')}
             activeOpacity={0.8}
           >
             <Text style={styles.shortcutIcon}>🛒</Text>
@@ -166,6 +166,14 @@ export const HomeScreen = ({ navigation }: any) => {
           >
             <Text style={styles.shortcutIcon}>🗒️</Text>
             <Text style={styles.shortcutLabel}>Vessel Logs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shortcutCard}
+            onPress={() => navigation.navigate('ContractorDatabase')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.shortcutIcon}>👷</Text>
+            <Text style={styles.shortcutLabel}>Contractor Database</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shortcutCard}

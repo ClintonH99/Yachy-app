@@ -69,11 +69,8 @@ export const SettingsScreen = ({ navigation }: any) => {
           icon: '🔔',
           label: 'Notifications',
           description: 'Manage notification preferences',
-          onPress: () => {
-            // TODO: Implement notifications settings
-            console.log('Notifications settings coming soon');
-          },
-          disabled: true,
+          onPress: () => navigation.navigate('NotificationSettings'),
+          disabled: false,
         },
         {
           icon: '📱',

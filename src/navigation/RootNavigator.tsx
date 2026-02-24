@@ -22,6 +22,8 @@ import {
   GuestTripsScreen,
   BossTripsScreen,
   AddEditTripScreen,
+  PreDepartureChecklistScreen,
+  AddEditPreDepartureChecklistScreen,
   DeliveryTripsScreen,
   YardPeriodTripsScreen,
   TripColorSettingsScreen,
@@ -30,6 +32,7 @@ import {
   AddEditTaskScreen,
   OverdueTasksScreen,
   UpcomingTasksScreen,
+  CompletedTasksScreen,
   YardPeriodJobsScreen,
   AddEditYardJobScreen,
   MaintenanceLogScreen,
@@ -39,11 +42,13 @@ import {
   WatchKeepingScreen,
   WatchScheduleScreen,
   CreateWatchTimetableScreen,
+  ShoppingListCategoryScreen,
   ShoppingListScreen,
   AddEditShoppingListScreen,
   InventoryScreen,
   AddEditInventoryItemScreen,
   DepartmentColorSettingsScreen,
+  NotificationSettingsScreen,
   VesselLogsScreen,
   GeneralWasteLogScreen,
   AddEditGeneralWasteLogScreen,
@@ -51,6 +56,8 @@ import {
   AddEditFuelLogScreen,
   PumpOutLogScreen,
   AddEditPumpOutLogScreen,
+  ContractorDatabaseScreen,
+  AddEditContractorScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { useAuthStore, useDepartmentColorStore } from '../store';
@@ -240,6 +247,22 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
+              name="PreDepartureChecklist" 
+              component={PreDepartureChecklistScreen}
+              options={{ 
+                title: 'Pre-Departure Checklist',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditPreDepartureChecklist" 
+              component={AddEditPreDepartureChecklistScreen}
+              options={{ 
+                title: 'Pre-Departure Checklist',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
               name="DeliveryTrips" 
               component={DeliveryTripsScreen}
               options={{ 
@@ -300,6 +323,14 @@ export const RootNavigator = () => {
               component={UpcomingTasksScreen}
               options={{ 
                 title: 'Upcoming Tasks',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="CompletedTasks" 
+              component={CompletedTasksScreen}
+              options={{ 
+                title: 'Completed Tasks',
                 headerShown: true,
               }}
             />
@@ -376,12 +407,20 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
-              name="ShoppingList" 
-              component={ShoppingListScreen}
+              name="ShoppingListCategory" 
+              component={ShoppingListCategoryScreen}
               options={{ 
                 title: 'Shopping List',
                 headerShown: true,
               }}
+            />
+            <Stack.Screen 
+              name="ShoppingList" 
+              component={ShoppingListScreen}
+              options={({ route }: any) => ({
+                title: route.params?.listType === 'trip' ? 'Trip Shopping' : 'General Shopping',
+                headerShown: true,
+              })}
             />
             <Stack.Screen 
               name="AddEditShoppingList" 
@@ -412,6 +451,14 @@ export const RootNavigator = () => {
               component={DepartmentColorSettingsScreen}
               options={{ 
                 title: 'Department colors',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="NotificationSettings" 
+              component={NotificationSettingsScreen}
+              options={{ 
+                title: 'Notifications',
                 headerShown: true,
               }}
             />
@@ -470,6 +517,22 @@ export const RootNavigator = () => {
                 title: 'New Pump Out Entry',
                 headerShown: true,
               }}
+            />
+            <Stack.Screen 
+              name="ContractorDatabase" 
+              component={ContractorDatabaseScreen}
+              options={{ 
+                title: 'Contractor Database',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="AddEditContractor" 
+              component={AddEditContractorScreen}
+              options={({ route }: any) => ({
+                title: route.params?.contractorId ? 'Edit Contractor' : 'New Contractor',
+                headerShown: true,
+              })}
             />
           </>
         )}

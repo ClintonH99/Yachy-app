@@ -186,6 +186,26 @@ export interface TripPreference {
   preference: string;
 }
 
+export interface PreDepartureChecklistItem {
+  id: string;
+  checklistId: string;
+  label: string;
+  sortOrder: number;
+  checked: boolean;
+  createdAt: string;
+}
+
+export interface PreDepartureChecklist {
+  id: string;
+  vesselId: string;
+  tripId: string | null;
+  department: Department | null;
+  title: string;
+  items: PreDepartureChecklistItem[];
+  createdAt: string;
+  createdBy?: string;
+}
+
 // ===== YARD PERIOD JOBS TYPES =====
 
 export type YardJobPriority = 'GREEN' | 'YELLOW' | 'RED';
@@ -306,6 +326,8 @@ export interface SavedChat {
 
 // ===== VESSEL LOG TYPES =====
 
+export type WeightUnit = 'kgs' | 'lbs';
+
 export interface GeneralWasteLog {
   id: string;
   vesselId: string;
@@ -313,6 +335,8 @@ export interface GeneralWasteLog {
   logTime: string;
   positionLocation: string;
   descriptionOfGarbage: string;
+  weight?: number | null;
+  weightUnit?: WeightUnit | null;
   createdByName: string;
   createdAt: string;
 }

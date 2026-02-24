@@ -3,7 +3,7 @@
  * Title, department (on create), bullet-point list of items
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
-import shoppingListsService, { ShoppingList, ShoppingListItem } from '../services/shoppingLists';
+import shoppingListsService, { ShoppingList, ShoppingListItem, ShoppingListType } from '../services/shoppingLists';
 import { Department } from '../types';
 import { Input, Button } from '../components';
 
@@ -30,14 +30,17 @@ const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIO
 export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
   const { user } = useAuthStore();
   const listId = route?.params?.listId as string | undefined;
+  const presetTitle = route?.params?.presetTitle as string | undefined;
+  const listType = (route?.params?.listType as ShoppingListType) ?? 'general';
   const isEdit = !!listId;
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(presetTitle ?? '');
   const [department, setDepartment] = useState<Department>(user?.department ?? 'INTERIOR');
   const [items, setItems] = useState<ShoppingListItem[]>([{ text: '', checked: false }]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false);
+  const [isMaster, setIsMaster] = useState(false);
 
   const vesselId = user?.vesselId ?? null;
 
@@ -53,6 +56,7 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
         setTitle(list.title);
         setDepartment(list.department);
         setItems(list.items.length > 0 ? list.items : [{ text: '', checked: false }]);
+        setIsMaster(!!list.isMaster);
       } else {
         Alert.alert('Error', 'Shopping list not found.');
         navigation.goBack();
@@ -69,6 +73,12 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
   useFocusEffect(useCallback(() => {
     loadList();
   }, [loadList]));
+
+  useEffect(() => {
+    if (!isEdit && presetTitle) {
+      setTitle(presetTitle);
+    }
+  }, [isEdit, presetTitle]);
 
   const addItem = () => setItems((prev) => [...prev, { text: '', checked: false }]);
   const removeItem = (index: number) => {
@@ -109,6 +119,7 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
         await shoppingListsService.create({
           vesselId,
           department,
+          listType,
           title: trimmedTitle,
           items: trimmedItems,
           createdBy: user?.id,
@@ -122,6 +133,25 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (isMaster || !listId) return;
+    Alert.alert('Delete list', `Delete "${title.trim()}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await shoppingListsService.delete(listId);
+            navigation.goBack();
+          } catch {
+            Alert.alert('Error', 'Could not delete list.');
+          }
+        },
+      },
+    ]);
   };
 
   if (!vesselId) {
@@ -247,6 +277,11 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
             disabled={saving}
             fullWidth
           />
+          {isEdit && !isMaster && (
+            <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
+              <Text style={styles.deleteBtnText}>Delete list</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -313,4 +348,6 @@ const styles = StyleSheet.create({
   removeBtnText: { fontSize: FONTS.sm, color: COLORS.danger },
   removeBtnDisabled: { color: COLORS.textTertiary },
   actions: { marginTop: SPACING.xl },
+  deleteBtn: { marginTop: SPACING.md, alignItems: 'center', paddingVertical: SPACING.sm },
+  deleteBtnText: { fontSize: FONTS.sm, color: COLORS.danger, fontWeight: '600' },
 });

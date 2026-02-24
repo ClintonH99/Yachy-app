@@ -11,10 +11,14 @@ export interface ShoppingListItem {
   checked: boolean;
 }
 
+export type ShoppingListType = 'general' | 'trip';
+
 export interface ShoppingList {
   id: string;
   vesselId: string;
   department: Department;
+  listType: ShoppingListType;
+  isMaster?: boolean;
   title: string;
   items: ShoppingListItem[];
   createdAt: string;
@@ -24,9 +28,11 @@ export interface ShoppingList {
 export interface CreateShoppingListInput {
   vesselId: string;
   department: Department;
+  listType: ShoppingListType;
   title: string;
   items: ShoppingListItem[];
   createdBy?: string;
+  isMaster?: boolean;
 }
 
 function normalizeItems(raw: unknown): ShoppingListItem[] {
@@ -66,9 +72,11 @@ class ShoppingListsService {
         {
           vessel_id: input.vesselId,
           department: input.department,
+          list_type: input.listType,
           title: input.title.trim(),
           items,
           created_by: input.createdBy || null,
+          is_master: input.isMaster ?? false,
         },
       ])
       .select()
@@ -103,11 +111,29 @@ class ShoppingListsService {
     if (error) throw error;
   }
 
+  async getOrCreateMasterTripList(vesselId: string, createdBy?: string): Promise<ShoppingList> {
+    const existing = await this.getByVessel(vesselId);
+    const master = existing.find((l) => l.listType === 'trip' && l.isMaster);
+    if (master) return master;
+    return this.create({
+      vesselId,
+      department: 'INTERIOR',
+      listType: 'trip',
+      title: 'Standard Trip Items',
+      items: [{ text: '', checked: false }],
+      createdBy,
+      isMaster: true,
+    });
+  }
+
   private mapRow(row: Record<string, unknown>): ShoppingList {
+    const listType = row.list_type as string;
     return {
       id: row.id as string,
       vesselId: row.vessel_id as string,
       department: row.department as Department,
+      listType: listType === 'trip' ? 'trip' : 'general',
+      isMaster: Boolean(row.is_master),
       title: row.title as string,
       items: normalizeItems(row.items),
       createdAt: row.created_at as string,

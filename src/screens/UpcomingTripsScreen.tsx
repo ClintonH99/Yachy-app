@@ -197,6 +197,20 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
         </View>
       </View>
 
+      <View style={styles.preDepartureRow}>
+        <TouchableOpacity
+          style={styles.preDepartureBtn}
+          onPress={() => navigation.navigate('PreDepartureChecklist')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.preDepartureEmoji}>📋</Text>
+          <View style={styles.preDepartureTextWrap}>
+          <Text style={styles.preDepartureLabel}>Pre-Departure Checklist</Text>
+          <Text style={styles.preDepartureHint}>HODs: Add tasks for crew before departure</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <Text style={styles.sectionTitle}>Trip types</Text>
       <Text style={styles.filterHint}>Tap card to open • Tap Show/Hide to filter calendar</Text>
       <View style={styles.optionsRow}>
@@ -330,6 +344,40 @@ const styles = StyleSheet.create({
     fontSize: FONTS.xs,
     color: COLORS.textTertiary,
     marginBottom: SPACING.sm,
+  },
+  preDepartureRow: {
+    marginBottom: SPACING.lg,
+  },
+  preDepartureBtn: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.secondary,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  preDepartureEmoji: {
+    fontSize: 32,
+    marginRight: SPACING.md,
+  },
+  preDepartureTextWrap: {
+    flex: 1,
+  },
+  preDepartureLabel: {
+    fontSize: FONTS.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  preDepartureHint: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   optionCard: {
     flex: 1,

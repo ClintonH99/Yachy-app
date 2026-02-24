@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './supabase';
-import { GeneralWasteLog } from '../types';
+import { GeneralWasteLog, WeightUnit } from '../types';
 
 export interface CreateGeneralWasteLogData {
   vesselId: string;
@@ -12,6 +12,8 @@ export interface CreateGeneralWasteLogData {
   logTime: string;
   positionLocation: string;
   descriptionOfGarbage: string;
+  weight?: number | null;
+  weightUnit?: WeightUnit | null;
   createdByName: string;
 }
 
@@ -20,6 +22,8 @@ export interface UpdateGeneralWasteLogData {
   logTime?: string;
   positionLocation?: string;
   descriptionOfGarbage?: string;
+  weight?: number | null;
+  weightUnit?: WeightUnit | null;
 }
 
 class GeneralWasteLogsService {
@@ -31,6 +35,8 @@ class GeneralWasteLogsService {
       logTime: row.log_time,
       positionLocation: row.position_location ?? '',
       descriptionOfGarbage: row.description_of_garbage ?? '',
+      weight: row.weight != null ? Number(row.weight) : null,
+      weightUnit: row.weight_unit ?? null,
       createdByName: row.created_by_name ?? '',
       createdAt: row.created_at,
     };
@@ -78,6 +84,8 @@ class GeneralWasteLogsService {
           log_time: input.logTime,
           position_location: input.positionLocation.trim() || null,
           description_of_garbage: input.descriptionOfGarbage.trim() || null,
+          weight: input.weight ?? null,
+          weight_unit: input.weightUnit ?? 'kgs',
           created_by_name: input.createdByName,
         },
       ])
@@ -94,6 +102,8 @@ class GeneralWasteLogsService {
     if (input.logTime !== undefined) patch.log_time = input.logTime;
     if (input.positionLocation !== undefined) patch.position_location = input.positionLocation.trim() || null;
     if (input.descriptionOfGarbage !== undefined) patch.description_of_garbage = input.descriptionOfGarbage.trim() || null;
+    if (input.weight !== undefined) patch.weight = input.weight;
+    if (input.weightUnit !== undefined) patch.weight_unit = input.weightUnit;
 
     const { error } = await supabase
       .from('general_waste_logs')

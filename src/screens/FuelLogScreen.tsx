@@ -20,7 +20,7 @@ import { useAuthStore } from '../store';
 import fuelLogsService from '../services/fuelLogs';
 import vesselService from '../services/vessel';
 import { FuelLog } from '../types';
-import { Button } from '../components';
+import { Button, Input } from '../components';
 import { exportFuelLogPdf } from '../utils/vesselLogsPdf';
 
 function formatCurrency(value: number): string {
@@ -46,8 +46,20 @@ export const FuelLogScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   const vesselId = user?.vesselId ?? null;
+
+  const filteredLogs = searchQuery.trim()
+    ? logs.filter((log) => {
+        const q = searchQuery.toLowerCase().trim();
+        return (
+          (log.logDate?.toLowerCase().includes(q)) ||
+          (log.logTime?.toLowerCase().includes(q)) ||
+          (log.locationOfRefueling?.toLowerCase().includes(q))
+        );
+      })
+    : logs;
 
   const loadLogs = useCallback(async () => {
     if (!vesselId) return;
@@ -73,9 +85,9 @@ export const FuelLogScreen = ({ navigation }: any) => {
     });
   };
 
-  const allSelected = logs.length > 0 && logs.every((l) => selectedIds.has(l.id));
+  const allSelected = filteredLogs.length > 0 && filteredLogs.every((l) => selectedIds.has(l.id));
   const toggleSelectAll = () => {
-    setSelectedIds(allSelected ? new Set() : new Set(logs.map((l) => l.id)));
+    setSelectedIds(allSelected ? new Set() : new Set(filteredLogs.map((l) => l.id)));
   };
 
   const onRefresh = () => { setRefreshing(true); loadLogs(); };
@@ -139,26 +151,43 @@ export const FuelLogScreen = ({ navigation }: any) => {
       </View>
 
       {logs.length > 0 && !loading && (
-        <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllRow}>
-          <Text style={styles.selectAllText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
-        </TouchableOpacity>
+        <>
+          <View style={styles.searchRow}>
+            <Input
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search by date, time, location…"
+              style={styles.searchInput}
+              returnKeyType="search"
+            />
+          </View>
+          <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllRow}>
+            <Text style={styles.selectAllText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
       ) : (
         <ScrollView
-          contentContainerStyle={[styles.listContent, logs.length === 0 && styles.emptyContent]}
+          contentContainerStyle={[styles.listContent, filteredLogs.length === 0 && styles.emptyContent]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
         >
-          {logs.length === 0 ? (
+          {filteredLogs.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>⛽</Text>
-              <Text style={styles.emptyTitle}>No entries yet</Text>
-              <Text style={styles.emptyText}>Tap "Add Log" to record your first fuel entry.</Text>
+              <Text style={styles.emptyTitle}>
+                {logs.length === 0 ? 'No entries yet' : 'No matching entries'}
+              </Text>
+              <Text style={styles.emptyText}>
+                {logs.length === 0
+                  ? 'Tap "Add Log" to record your first fuel entry.'
+                  : 'Try a different search term.'}
+              </Text>
             </View>
           ) : (
-            logs.map((log) => {
+            filteredLogs.map((log) => {
               const selected = selectedIds.has(log.id);
               return (
                 <TouchableOpacity
@@ -232,6 +261,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.sm,
   },
   actionBtn: { flex: 1 },
+  searchRow: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  searchInput: { backgroundColor: COLORS.white },
   selectAllRow: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
   selectAllText: { fontSize: FONTS.sm, color: COLORS.primary, fontWeight: '600' },
   loader: { marginTop: SPACING.xl },
