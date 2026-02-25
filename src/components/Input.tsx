@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: SIZES.inputHeight,
     height: SIZES.inputHeight,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
@@ -99,6 +100,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     paddingVertical: 0,
     textDecorationLine: 'none',
+    lineHeight: FONTS.base * 1.4,
   },
   inputMultiline: {
     minHeight: 60,

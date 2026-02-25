@@ -16,14 +16,16 @@ import {
   TextInput,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES, SHADOWS } from '../constants/theme';
+import { useAuthStore, useThemeStore, BACKGROUND_THEMES } from '../store';
 import { Button } from '../components';
 import userService from '../services/user';
 import { Department } from '../types';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const { user, setUser } = useAuthStore();
+  const backgroundTheme = useThemeStore((s) => s.backgroundTheme);
+  const themeColors = BACKGROUND_THEMES[backgroundTheme];
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -167,6 +169,66 @@ export const ProfileScreen = ({ navigation }: any) => {
     setIsEditing(false);
   };
 
+  const isHOD = user?.role === 'HOD';
+  const settingsSections = [
+    ...(isHOD
+      ? [
+          {
+            title: 'Vessel Management',
+            items: [
+              {
+                icon: '⚓',
+                label: 'Vessel Settings',
+                description: 'Manage vessel name. Invite code is here.',
+                onPress: () => navigation.navigate('VesselSettings'),
+                disabled: false,
+              },
+              {
+                icon: '👥',
+                label: 'Crew Management',
+                description: 'View and manage crew members',
+                onPress: () => navigation.navigate('CrewManagement'),
+                disabled: false,
+              },
+            ],
+          },
+        ]
+      : []),
+    {
+      title: 'App',
+      items: [
+        {
+          icon: '🖼️',
+          label: 'Appearance',
+          description: 'Background theme: Light, Ocean, Sand, Navy',
+          onPress: () => navigation.navigate('ThemeSettings'),
+          disabled: false,
+        },
+        {
+          icon: '🎨',
+          label: 'Department colors',
+          description: 'Choose color scheme per crew department',
+          onPress: () => navigation.navigate('DepartmentColorSettings'),
+          disabled: false,
+        },
+        {
+          icon: '🔔',
+          label: 'Notifications',
+          description: 'Manage notification preferences',
+          onPress: () => navigation.navigate('NotificationSettings'),
+          disabled: false,
+        },
+        {
+          icon: '📱',
+          label: 'About',
+          description: 'App version and information',
+          onPress: () => {},
+          disabled: true,
+        },
+      ],
+    },
+  ];
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
@@ -192,6 +254,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               title="Change Photo"
               onPress={handlePickImage}
               variant="outline"
+              shape="pill"
               size="small"
               style={styles.photoButton}
               disabled={isUploadingPhoto}
@@ -201,6 +264,7 @@ export const ProfileScreen = ({ navigation }: any) => {
                 title="Remove"
                 onPress={handleRemovePhoto}
                 variant="outline"
+                shape="pill"
                 size="small"
                 style={styles.photoButton}
                 disabled={isUploadingPhoto}
@@ -212,7 +276,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         {/* Profile Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Profile Information</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Profile Information</Text>
             {!isEditing && (
               <TouchableOpacity onPress={() => setIsEditing(true)}>
                 <Text style={styles.editButton}>Edit</Text>
@@ -220,42 +284,42 @@ export const ProfileScreen = ({ navigation }: any) => {
             )}
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             {/* Name */}
             <View style={styles.field}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Name</Text>
               {isEditing ? (
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: themeColors.background, color: themeColors.textPrimary }]}
                   value={name}
                   onChangeText={setName}
                   placeholder="Enter your name"
-                  placeholderTextColor={COLORS.textTertiary}
+                  placeholderTextColor={themeColors.textSecondary}
                 />
               ) : (
-                <Text style={styles.value}>{user?.name}</Text>
+                <Text style={[styles.value, { color: themeColors.textPrimary }]}>{user?.name}</Text>
               )}
             </View>
 
             {/* Position */}
             <View style={styles.field}>
-              <Text style={styles.label}>Position</Text>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Position</Text>
               {isEditing ? (
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: themeColors.background, color: themeColors.textPrimary }]}
                   value={position}
                   onChangeText={setPosition}
                   placeholder="Enter your position"
-                  placeholderTextColor={COLORS.textTertiary}
+                  placeholderTextColor={themeColors.textSecondary}
                 />
               ) : (
-                <Text style={styles.value}>{user?.position}</Text>
+                <Text style={[styles.value, { color: themeColors.textPrimary }]}>{user?.position}</Text>
               )}
             </View>
 
             {/* Department */}
             <View style={styles.field}>
-              <Text style={styles.label}>Department</Text>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Department</Text>
               {isEditing ? (
                 <View style={styles.departmentSelector}>
                   {departments.map((dept) => (
@@ -279,31 +343,31 @@ export const ProfileScreen = ({ navigation }: any) => {
                   ))}
                 </View>
               ) : (
-                <Text style={styles.value}>{user?.department}</Text>
+                <Text style={[styles.value, { color: themeColors.textPrimary }]}>{user?.department}</Text>
               )}
             </View>
 
             {/* Email (read-only) */}
             <View style={[styles.field, styles.fieldLast]}>
-              <Text style={styles.label}>Email</Text>
-              <Text style={[styles.value, styles.valueDisabled]}>{user?.email}</Text>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Email</Text>
+              <Text style={[styles.value, styles.valueDisabled, { color: themeColors.textSecondary }]}>{user?.email}</Text>
             </View>
           </View>
         </View>
 
         {/* Account Information (read-only) */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Account Information</Text>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             <View style={styles.field}>
-              <Text style={styles.label}>Role</Text>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Role</Text>
               <View style={styles.roleBadge}>
                 <Text style={styles.roleText}>{user?.role}</Text>
               </View>
             </View>
             <View style={[styles.field, styles.fieldLast]}>
-              <Text style={styles.label}>Member Since</Text>
-              <Text style={styles.value}>
+              <Text style={[styles.label, { color: themeColors.textSecondary }]}>Member Since</Text>
+              <Text style={[styles.value, { color: themeColors.textPrimary }]}>
                 {user?.createdAt
                   ? new Date(user.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -316,6 +380,47 @@ export const ProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
+        {/* Settings Sections */}
+        {settingsSections.map((section, sectionIndex) => (
+          <View key={sectionIndex} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.settingsCard, { backgroundColor: themeColors.surface }]}>
+              {section.items.map((item, itemIndex) => (
+                <TouchableOpacity
+                  key={itemIndex}
+                  style={[
+                    styles.settingsItem,
+                    item.disabled && styles.settingsItemDisabled,
+                    itemIndex === section.items.length - 1 && styles.settingsItemLast,
+                  ]}
+                  onPress={item.onPress}
+                  disabled={item.disabled}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingsItemLeft}>
+                    <Text style={styles.settingsIcon}>{item.icon}</Text>
+                    <View style={styles.settingsTextContainer}>
+                      <Text style={[styles.settingsLabel, { color: themeColors.textPrimary }]}>{item.label}</Text>
+                      <Text style={[styles.settingsDescription, { color: themeColors.textSecondary }]}>
+                        {item.description}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.chevron, { color: themeColors.textSecondary }]}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        {/* Version Info */}
+        <View style={styles.versionInfo}>
+          <Text style={[styles.versionText, { color: themeColors.textSecondary }]}>Nautical Ops v1.0.0</Text>
+          <Text style={[styles.versionSubtext, { color: themeColors.textSecondary }]}>
+            Professional yacht operations management
+          </Text>
+        </View>
+
         {/* Save/Cancel Buttons */}
         {isEditing && (
           <View style={styles.actions}>
@@ -323,6 +428,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               title="Cancel"
               onPress={handleCancel}
               variant="outline"
+              shape="pill"
               fullWidth
               style={styles.actionButton}
               disabled={isSaving}
@@ -331,6 +437,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               title={isSaving ? 'Saving...' : 'Save Changes'}
               onPress={handleSave}
               variant="primary"
+              shape="pill"
               fullWidth
               style={styles.actionButton}
               disabled={isSaving}
@@ -350,6 +457,47 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.lg,
     paddingBottom: SIZES.bottomScrollPadding,
+  },
+  heroSection: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xl,
+    marginBottom: SPACING.xl,
+    ...SHADOWS.md,
+  },
+  heroTitle: {
+    fontSize: FONTS['2xl'],
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    color: COLORS.textPrimary,
+  },
+  heroSubtitle: {
+    fontSize: FONTS.base,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+    letterSpacing: 0.2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.lg,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: FONTS.lg,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  statLabel: {
+    fontSize: FONTS.xs,
+    color: COLORS.textSecondary,
+    marginTop: 4,
   },
   photoSection: {
     alignItems: 'center',
@@ -403,9 +551,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   sectionTitle: {
-    fontSize: FONTS.lg,
+    fontSize: FONTS.xs,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: COLORS.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   editButton: {
     fontSize: FONTS.base,
@@ -416,11 +566,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...SHADOWS.md,
   },
   field: {
     marginBottom: SPACING.lg,
@@ -495,5 +641,59 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  settingsCard: {
+    borderRadius: BORDER_RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.md,
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  settingsItemLast: {
+    borderBottomWidth: 0,
+  },
+  settingsItemDisabled: {
+    opacity: 0.5,
+  },
+  settingsItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingsIcon: {
+    fontSize: 24,
+    marginRight: SPACING.md,
+  },
+  settingsTextContainer: {
+    flex: 1,
+  },
+  settingsLabel: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingsDescription: {
+    fontSize: FONTS.sm,
+  },
+  chevron: {
+    fontSize: 24,
+    fontWeight: '300',
+  },
+  versionInfo: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+  },
+  versionText: {
+    fontSize: FONTS.sm,
+    marginBottom: 4,
+  },
+  versionSubtext: {
+    fontSize: FONTS.xs,
   },
 });

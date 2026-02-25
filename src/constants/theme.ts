@@ -67,15 +67,15 @@ export const COLORS = {
   gray800: '#1F2937',
   gray900: '#111827',
   
-  // Background colors
-  background: '#F9FAFB',
+  // Background - refined neutrals
+  background: '#F8F9FA',
   surface: '#FFFFFF',
-  surfaceAlt: '#F3F4F6',
+  surfaceAlt: '#F1F3F5',
   
-  // Text colors
-  textPrimary: '#111827',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
+  // Text - clear hierarchy
+  textPrimary: '#0D0D0D',
+  textSecondary: '#64748B',
+  textTertiary: '#94A3B8',
   textInverse: '#FFFFFF',
   
   // Border colors
@@ -89,21 +89,27 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  // Font families (using system fonts for now)
   regular: 'System',
   medium: 'System',
   semiBold: 'System',
   bold: 'System',
-  
-  // Font sizes
+  // Typography scale — accessible sizes (16px body for readability)
   xs: 12,
   sm: 14,
   base: 16,
   lg: 18,
   xl: 20,
   '2xl': 24,
-  '3xl': 30,
-  '4xl': 36,
+  '3xl': 28,
+  '4xl': 34,
+};
+
+// Line heights for readability (1.4–1.5 for body)
+export const LINE_HEIGHTS = {
+  tight: 1.2,
+  normal: 1.4,
+  relaxed: 1.5,
+  loose: 1.6,
 };
 
 export const SPACING = {
@@ -117,53 +123,56 @@ export const SPACING = {
 };
 
 export const BORDER_RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 6,
+  md: 12,
+  lg: 16,
+  xl: 20,
   '2xl': 24,
+  pill: 9999,
   full: 9999,
 };
 
+// Dribbble-style soft, layered shadows
 export const SHADOWS = {
   sm: {
-    shadowColor: COLORS.black,
+    shadowColor: '#0D0D0D',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 2,
   },
   md: {
-    shadowColor: COLORS.black,
+    shadowColor: '#0D0D0D',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 4,
   },
   lg: {
-    shadowColor: COLORS.black,
+    shadowColor: '#0D0D0D',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 8,
   },
 };
 
 export const SIZES = {
-  // Common sizes
+  // Touch targets — min 44pt (Apple HIG, Material Design)
+  minTouchTarget: 44,
   buttonHeight: 48,
   inputHeight: 48,
   iconSize: 24,
-  avatarSize: 40,
+  avatarSize: 48,
 
   // Header
-  headerHeight: 60,
+  headerHeight: 56,
 
   // Tab bar
-  tabBarHeight: 60,
+  tabBarHeight: 64,
 
-  /** Extra padding at bottom of scroll content so last item is not cut off (tab bar + safe area). */
-  bottomScrollPadding: 88,
+  /** Extra padding at bottom of scroll content (tab bar + safe area). */
+  bottomScrollPadding: 100,
 };
 
 export default {
@@ -173,4 +182,5 @@ export default {
   BORDER_RADIUS,
   SHADOWS,
   SIZES,
+  LINE_HEIGHTS,
 };

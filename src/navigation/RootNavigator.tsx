@@ -12,9 +12,7 @@ import {
   RegisterScreen, 
   RegisterCaptainScreen, 
   RegisterCrewScreen, 
-  HomeScreen, 
   JoinVesselScreen,
-  SettingsScreen,
   ProfileScreen,
   VesselSettingsScreen,
   CrewManagementScreen,
@@ -35,6 +33,7 @@ import {
   CompletedTasksScreen,
   YardPeriodJobsScreen,
   AddEditYardJobScreen,
+  MaintenanceHomeScreen,
   MaintenanceLogScreen,
   AddEditMaintenanceLogScreen,
   ImportExportScreen,
@@ -48,6 +47,7 @@ import {
   InventoryScreen,
   AddEditInventoryItemScreen,
   DepartmentColorSettingsScreen,
+  ThemeSettingsScreen,
   NotificationSettingsScreen,
   VesselLogsScreen,
   GeneralWasteLogScreen,
@@ -60,7 +60,8 @@ import {
   AddEditContractorScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
-import { useAuthStore, useDepartmentColorStore } from '../store';
+import { MainTabsNavigator } from './MainTabsNavigator';
+import { useAuthStore, useDepartmentColorStore, useThemeStore } from '../store';
 import authService from '../services/auth';
 import { COLORS } from '../constants/theme';
 
@@ -100,9 +101,13 @@ export const RootNavigator = () => {
   }, []);
 
   const loadDepartmentColorOverrides = useDepartmentColorStore((s) => s.loadOverrides);
+  const loadTheme = useThemeStore((s) => s.loadTheme);
   useEffect(() => {
-    if (isAuthenticated) loadDepartmentColorOverrides();
-  }, [isAuthenticated, loadDepartmentColorOverrides]);
+    if (isAuthenticated) {
+      loadDepartmentColorOverrides();
+      loadTheme();
+    }
+  }, [isAuthenticated, loadDepartmentColorOverrides, loadTheme]);
 
   if (isLoading) {
     return (
@@ -156,15 +161,12 @@ export const RootNavigator = () => {
             />
           </>
         ) : (
-          // Main App Stack
+          // Main App Stack (tabs = Home, Explore, Profile)
           <>
             <Stack.Screen 
-              name="Home" 
-              component={HomeScreen}
-              options={{ 
-                title: '',
-                headerShown: true,
-              }}
+              name="MainTabs" 
+              component={MainTabsNavigator}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="JoinVessel" 
@@ -184,17 +186,9 @@ export const RootNavigator = () => {
             />
             <Stack.Screen 
               name="Settings" 
-              component={SettingsScreen}
-              options={{ 
-                title: 'Settings',
-                headerShown: true,
-              }}
-            />
-            <Stack.Screen 
-              name="Profile" 
               component={ProfileScreen}
               options={{ 
-                title: 'My Profile',
+                title: 'Settings & Profile',
                 headerShown: true,
               }}
             />
@@ -359,6 +353,14 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
+              name="MaintenanceHome" 
+              component={MaintenanceHomeScreen}
+              options={{ 
+                title: 'Maintenance',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
               name="MaintenanceLog" 
               component={MaintenanceLogScreen}
               options={{ 
@@ -451,6 +453,14 @@ export const RootNavigator = () => {
               component={DepartmentColorSettingsScreen}
               options={{ 
                 title: 'Department colors',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="ThemeSettings" 
+              component={ThemeSettingsScreen}
+              options={{ 
+                title: 'Appearance',
                 headerShown: true,
               }}
             />

@@ -94,3 +94,81 @@ export function getDepartmentColor(
   if (v === null) return COLORS.gray300;
   return v ?? COLORS.departmentColors?.[department] ?? COLORS.gray300;
 }
+
+// ===== BACKGROUND THEME (home/explore/profile background and surfaces) =====
+
+export type BackgroundThemeId = 'light' | 'ocean' | 'sand' | 'navy';
+
+interface BackgroundThemeColors {
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  textPrimary: string;
+  textSecondary: string;
+  isDark: boolean;
+}
+
+export const BACKGROUND_THEMES: Record<BackgroundThemeId, BackgroundThemeColors> = {
+  light: {
+    background: '#F8F9FA',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F1F3F5',
+    textPrimary: '#0D0D0D',
+    textSecondary: '#64748B',
+    isDark: false,
+  },
+  ocean: {
+    background: '#EFF6FF',
+    surface: '#FFFFFF',
+    surfaceAlt: '#DBEAFE',
+    textPrimary: '#0D0D0D',
+    textSecondary: '#475569',
+    isDark: false,
+  },
+  sand: {
+    background: '#FFFBEB',
+    surface: '#FFFFFF',
+    surfaceAlt: '#FEF3C7',
+    textPrimary: '#78350F',
+    textSecondary: '#92400E',
+    isDark: false,
+  },
+  navy: {
+    background: '#0F172A',
+    surface: '#1E293B',
+    surfaceAlt: '#334155',
+    textPrimary: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    isDark: true,
+  },
+};
+
+interface ThemeState {
+  backgroundTheme: BackgroundThemeId;
+  loaded: boolean;
+  loadTheme: () => Promise<void>;
+  setBackgroundTheme: (id: BackgroundThemeId) => Promise<void>;
+}
+
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  backgroundTheme: 'light',
+  loaded: false,
+  loadTheme: async () => {
+    try {
+      const raw = await AsyncStorage.getItem(BACKGROUND_THEME_STORAGE_KEY);
+      const id = (raw as BackgroundThemeId) || 'light';
+      const valid = ['light', 'ocean', 'sand', 'navy'].includes(id);
+      set({ backgroundTheme: valid ? id : 'light', loaded: true });
+    } catch {
+      set({ loaded: true });
+    }
+  },
+  setBackgroundTheme: async (id) => {
+    set({ backgroundTheme: id });
+    try {
+      await AsyncStorage.setItem(BACKGROUND_THEME_STORAGE_KEY, id);
+    } catch (e) {
+      console.error('Save background theme:', e);
+    }
+  },
+}));

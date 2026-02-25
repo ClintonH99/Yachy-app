@@ -16,7 +16,7 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'text';
+  variant?: 'primary' | 'secondary' | 'outline' | 'outlineLight' | 'danger' | 'text';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
@@ -30,15 +30,19 @@ export const Button: React.FC<ButtonProps> = ({
   onPress,
   variant = 'primary',
   size = 'medium',
+  shape = 'default',
   disabled = false,
   loading = false,
   fullWidth = false,
   style,
   textStyle,
 }) => {
-  const variantStyle = variant === 'text' ? styles.textVariant : styles[variant];
+  const variantKey = variant === 'outlineLight' ? 'outlineLight' : variant;
+  const variantStyle: ViewStyle =
+    variant === 'text' ? styles.textVariant : (styles[variantKey as keyof typeof styles] as ViewStyle);
+  const textKey = `${variantKey}Text`;
   const buttonStyles: ViewStyle[] = [styles.button, variantStyle];
-  const textStyles: TextStyle[] = [styles.baseText, styles[`${variant}Text`]];
+  const textStyles: TextStyle[] = [styles.baseText, styles[textKey as keyof typeof styles] as TextStyle];
 
   // Size variations
   if (size === 'small') {
@@ -47,6 +51,10 @@ export const Button: React.FC<ButtonProps> = ({
   } else if (size === 'large') {
     buttonStyles.push(styles.large);
     textStyles.push(styles.largeText);
+  }
+
+  if (shape === 'pill') {
+    buttonStyles.push(styles.pill);
   }
 
   if (fullWidth) {
@@ -74,7 +82,13 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'text' ? COLORS.primary : COLORS.white}
+          color={
+            variant === 'outlineLight'
+              ? COLORS.white
+              : variant === 'outline' || variant === 'text'
+                ? COLORS.primary
+                : COLORS.white
+          }
         />
       ) : (
         <Text style={textStyles}>{title}</Text>
@@ -92,12 +106,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
+  pill: {
+    borderRadius: BORDER_RADIUS.pill,
+  },
   fullWidth: {
     width: '100%',
   },
   baseText: {
     fontSize: FONTS.base,
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
   // Variants
   primary: {
@@ -119,6 +137,14 @@ const styles = StyleSheet.create({
   },
   outlineText: {
     color: COLORS.primary,
+  },
+  outlineLight: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
+  },
+  outlineLightText: {
+    color: COLORS.white,
   },
   danger: {
     backgroundColor: COLORS.danger,

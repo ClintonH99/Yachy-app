@@ -172,6 +172,36 @@ class VesselService {
   }
 
   /**
+   * Upload a banner image for the vessel to Supabase Storage.
+   * Stores as vessel-banners/<vesselId>/banner.jpg
+   */
+  async uploadBannerImage(vesselId: string, localUri: string): Promise<void> {
+    const response = await fetch(localUri);
+    const blob = await response.blob();
+    const arrayBuffer = await new Response(blob).arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    const { error } = await supabase.storage
+      .from('vessel-banners')
+      .upload(`${vesselId}/banner.jpg`, uint8Array, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (error) throw error;
+  }
+
+  /**
+   * Return the public URL for a vessel's banner image.
+   */
+  getBannerPublicUrl(vesselId: string): string {
+    const { data } = supabase.storage
+      .from('vessel-banners')
+      .getPublicUrl(`${vesselId}/banner.jpg`);
+    return data.publicUrl;
+  }
+
+  /**
    * Update vessel name (HOD only)
    */
   async updateVesselName(vesselId: string, name: string): Promise<void> {
