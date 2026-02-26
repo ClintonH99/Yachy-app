@@ -12,12 +12,14 @@ import {
   Platform,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import { Department } from '../types';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const DEPARTMENTS = [
   { label: 'Bridge', value: 'BRIDGE' },
@@ -28,6 +30,7 @@ const DEPARTMENTS = [
 ];
 
 export const RegisterCrewScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -136,7 +139,7 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -144,13 +147,18 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.backButtonText, { color: themeColors.textPrimary }]}>← Back</Text>
+          </TouchableOpacity>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.icon}>👥</Text>
             <Text style={styles.title}>Create Crew Account</Text>
-            <Text style={styles.subtitle}>
-              Join your vessel using an invite code
-            </Text>
+            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>Join your vessel using an invite code</Text>
           </View>
 
           {/* Info Banner */}
@@ -211,7 +219,7 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
 
             {/* Department Selection */}
             <View style={styles.departmentSection}>
-              <Text style={styles.label}>Department</Text>
+              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
               <View style={styles.departmentButtons}>
                 {DEPARTMENTS.map((dept) => (
                   <Button
@@ -253,7 +261,7 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>Already have an account? </Text>
             <Button
               title="Sign In"
               onPress={() => navigation.navigate('Login')}
@@ -263,9 +271,9 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
           </View>
 
           {/* Don't have invite code */}
-          <View style={styles.helpSection}>
-            <Text style={styles.helpText}>Don't have an invite code?</Text>
-            <Text style={styles.helpSubtext}>
+          <View style={[styles.helpSection, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.helpText, { color: themeColors.textPrimary }]}>Don't have an invite code?</Text>
+            <Text style={[styles.helpSubtext, { color: themeColors.textSecondary }]}>
               Ask your captain for the vessel's invite code, or create a captain account if you're starting your own vessel.
             </Text>
           </View>
@@ -276,9 +284,18 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 0,
+    marginBottom: SPACING.md,
+  },
+  backButtonText: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -304,7 +321,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   infoBanner: {
@@ -326,7 +342,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
   departmentSection: {
@@ -354,24 +369,20 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   helpSection: {
     padding: SPACING.md,
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     marginBottom: SPACING.xl,
   },
   helpText: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   helpSubtext: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
   },

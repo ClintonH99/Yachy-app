@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const LOG_CATEGORIES = [
   {
@@ -31,18 +32,19 @@ const LOG_CATEGORIES = [
 ];
 
 export const VesselLogsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
       {LOG_CATEGORIES.map((category) => (
         <TouchableOpacity
           key={category.route}
-          style={styles.card}
+          style={[styles.card, { backgroundColor: themeColors.surface }]}
           onPress={() => navigation.navigate(category.route)}
           activeOpacity={0.8}
         >
           <Text style={styles.cardIcon}>{category.icon}</Text>
-          <Text style={styles.cardLabel}>{category.label}</Text>
-          <Text style={styles.cardChevron}>›</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>{category.label}</Text>
+          <Text style={[styles.cardChevron, { color: themeColors.textSecondary }]}>›</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -52,7 +54,6 @@ export const VesselLogsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -61,7 +62,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: 12,
     marginBottom: SPACING.md,
@@ -79,11 +79,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   cardChevron: {
     fontSize: 24,
-    color: COLORS.textSecondary,
     fontWeight: '300',
   },
 });

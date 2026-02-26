@@ -185,6 +185,7 @@ export interface Trip {
   title: string;
   startDate: string;
   endDate: string;
+  department?: Department | null;
   itinerary?: Itinerary[];
   preferences?: TripPreference[];
   specialRequests?: string;

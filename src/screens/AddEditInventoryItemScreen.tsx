@@ -19,6 +19,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import inventoryService, { InventoryItemRow } from '../services/inventory';
 import { Department } from '../types';
 import { Input, Button } from '../components';
@@ -28,6 +29,7 @@ const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIO
 const defaultRow: InventoryItemRow = { amount: '', item: '' };
 
 export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const overrides = useDepartmentColorStore((s) => s.overrides);
   const itemId = route?.params?.itemId as string | undefined;
@@ -133,15 +135,15 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to create inventory items.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to create inventory items.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -149,7 +151,7 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -159,23 +161,24 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.label}>Department</Text>
-        <Text style={styles.hint}>Which department is this for?</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>Which department is this for?</Text>
         <View style={styles.deptRow}>
           {DEPARTMENTS.map((dept) => (
             <TouchableOpacity
               key={dept}
-              style={[
-                styles.chip,
-                department === dept && styles.chipSelected,
-                { borderColor: getDepartmentColor(dept, overrides) },
-                department === dept && { backgroundColor: getDepartmentColor(dept, overrides) },
-              ]}
+                style={[
+                  styles.chip,
+                  { borderColor: getDepartmentColor(dept, overrides) },
+                  department === dept && styles.chipSelected,
+                  department === dept && { backgroundColor: getDepartmentColor(dept, overrides) },
+                ]}
               onPress={() => setDepartment(dept)}
             >
               <Text
                 style={[
                   styles.chipText,
+                  { color: department === dept ? COLORS.textInverse : themeColors.textPrimary },
                   department === dept && styles.chipTextSelected,
                 ]}
                 numberOfLines={1}
@@ -210,24 +213,24 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
           style={styles.descriptionInput}
         />
 
-        <Text style={styles.tableLabel}>Amount & Item</Text>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.amountCol]}>Amount</Text>
-            <Text style={[styles.tableHeaderCell, styles.itemCol]}>Item</Text>
+        <Text style={[styles.tableLabel, { color: themeColors.textSecondary }]}>Amount & Item</Text>
+        <View style={[styles.table, { backgroundColor: themeColors.surface }]}>
+          <View style={[styles.tableHeader, { backgroundColor: themeColors.surfaceAlt }]}>
+            <Text style={[styles.tableHeaderCell, styles.amountCol, { color: themeColors.textPrimary }]}>Amount</Text>
+            <Text style={[styles.tableHeaderCell, styles.itemCol, { color: themeColors.textPrimary }]}>Item</Text>
             <View style={styles.actionsCol} />
           </View>
           {rows.map((row, index) => (
             <View key={index} style={styles.tableRow}>
               <TextInput
-                style={[styles.tableInput, styles.amountCol]}
+                style={[styles.tableInput, styles.amountCol, { color: themeColors.textPrimary, backgroundColor: themeColors.surface }]}
                 value={row.amount}
                 onChangeText={(v) => setRowAt(index, 'amount', v)}
                 placeholder="Amount"
                 placeholderTextColor={COLORS.gray400}
               />
               <TextInput
-                style={[styles.tableInput, styles.itemCol]}
+                style={[styles.tableInput, styles.itemCol, { color: themeColors.textPrimary, backgroundColor: themeColors.surface }]}
                 value={row.item}
                 onChangeText={(v) => setRowAt(index, 'item', v)}
                 placeholder="Item"
@@ -263,6 +266,42 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
             disabled={saving}
             fullWidth
           />
+          {isEdit && (
+            <Button
+              title="Remove item"
+              onPress={() => {
+                Alert.alert(
+                  'Remove item',
+                  'Remove this inventory item?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Remove',
+                      style: 'destructive',
+                      onPress: async () => {
+                        if (!itemId) return;
+                        setSaving(true);
+                        try {
+                          await inventoryService.delete(itemId);
+                          Alert.alert('Removed', 'Item has been removed.');
+                          navigation.goBack();
+                        } catch (e) {
+                          console.error('Delete inventory item error:', e);
+                          Alert.alert('Error', 'Could not remove item.');
+                        } finally {
+                          setSaving(false);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              variant="danger"
+              fullWidth
+              style={styles.deleteBtn}
+              disabled={saving}
+            />
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -270,19 +309,18 @@ export const AddEditInventoryItemScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
     padding: SPACING.lg,
   },
-  message: { fontSize: FONTS.base, fontFamily: FONTS.regular, color: COLORS.textSecondary },
-  label: { fontSize: FONTS.sm, fontFamily: FONTS.medium, color: COLORS.textPrimary, marginBottom: SPACING.xs },
-  hint: { fontSize: FONTS.xs, fontFamily: FONTS.regular, color: COLORS.textSecondary, marginBottom: SPACING.sm },
+  message: { fontSize: FONTS.base, fontFamily: FONTS.regular },
+  label: { fontSize: FONTS.sm, fontFamily: FONTS.medium, marginBottom: SPACING.xs },
+  hint: { fontSize: FONTS.xs, fontFamily: FONTS.regular, marginBottom: SPACING.sm },
   deptRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: SPACING.lg },
   chip: {
     marginRight: SPACING.sm,
@@ -293,18 +331,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   chipSelected: { borderWidth: 2 },
-  chipText: { fontSize: FONTS.sm, fontFamily: FONTS.medium, color: COLORS.textPrimary },
+  chipText: { fontSize: FONTS.sm, fontFamily: FONTS.medium },
   chipTextSelected: { color: COLORS.textInverse },
   descriptionInput: { minHeight: 80, textAlignVertical: 'top' as const },
   tableLabel: {
     fontSize: FONTS.sm,
     fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
   table: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -312,13 +348,12 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surfaceAlt,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  tableHeaderCell: { fontSize: FONTS.sm, fontFamily: FONTS.bold, color: COLORS.textPrimary },
+  tableHeaderCell: { fontSize: FONTS.sm, fontFamily: FONTS.bold },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -332,9 +367,7 @@ const styles = StyleSheet.create({
     height: SIZES.inputHeight,
     fontSize: FONTS.base,
     fontFamily: FONTS.regular,
-    color: COLORS.textPrimary,
     paddingHorizontal: SPACING.sm,
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -348,4 +381,5 @@ const styles = StyleSheet.create({
   addRowBtn: { marginTop: SPACING.md, paddingVertical: SPACING.sm, alignItems: 'center' },
   addRowBtnText: { fontSize: FONTS.base, fontFamily: FONTS.medium, color: COLORS.primary },
   actions: { marginTop: SPACING.xl },
+  deleteBtn: { marginTop: SPACING.md },
 });

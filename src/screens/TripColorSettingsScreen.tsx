@@ -16,6 +16,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import tripColorsService, { DEFAULT_COLORS } from '../services/tripColors';
 import { Button } from '../components';
 
@@ -29,6 +30,7 @@ const TRIP_LABELS: { key: ColorKey; label: string; emoji: string }[] = [
 ];
 
 export const TripColorSettingsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [colors, setColors] = useState(DEFAULT_COLORS);
   const [loading, setLoading] = useState(true);
@@ -102,37 +104,37 @@ export const TripColorSettingsScreen = ({ navigation }: any) => {
 
   if (!isHOD) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Only HODs can edit trip colors.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Only HODs can edit trip colors.</Text>
       </View>
     );
   }
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to edit trip colors.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to edit trip colors.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.intro}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+      <Text style={[styles.intro, { color: themeColors.textSecondary }]}>
         Choose a color for each trip type. These colors appear on the Upcoming Trips calendar.
       </Text>
 
       {TRIP_LABELS.map(({ key, label, emoji }) => (
         <View key={key} style={styles.section}>
-          <Text style={styles.sectionLabel}>
+          <Text style={[styles.sectionLabel, { color: themeColors.textPrimary }]}>
             {emoji} {label}
           </Text>
           <View style={styles.swatchRow}>
@@ -144,7 +146,7 @@ export const TripColorSettingsScreen = ({ navigation }: any) => {
                   style={[
                     styles.swatch,
                     { backgroundColor: hex },
-                    isSelected && styles.swatchSelected,
+                    isSelected && [styles.swatchSelected, { borderColor: themeColors.textPrimary }],
                   ]}
                   onPress={() => handlePick(key, hex)}
                   disabled={saving}
@@ -171,7 +173,6 @@ export const TripColorSettingsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -185,12 +186,10 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   intro: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xl,
     lineHeight: 22,
   },
@@ -200,7 +199,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
   swatchRow: {
@@ -216,7 +214,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   swatchSelected: {
-    borderColor: COLORS.textPrimary,
     borderWidth: 3,
   },
   footer: {

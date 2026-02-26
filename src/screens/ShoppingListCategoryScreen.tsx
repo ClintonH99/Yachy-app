@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 
 const CATEGORIES = [
@@ -28,29 +29,30 @@ const CATEGORIES = [
 ];
 
 export const ShoppingListCategoryScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const vesselId = user?.vesselId ?? null;
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to use Shopping List.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to use Shopping List.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
       {CATEGORIES.map((category) => (
         <TouchableOpacity
           key={category.listType}
-          style={styles.card}
+          style={[styles.card, { backgroundColor: themeColors.surface }]}
           onPress={() => navigation.navigate('ShoppingList', { listType: category.listType })}
           activeOpacity={0.8}
         >
           <Text style={styles.cardIcon}>{category.icon}</Text>
-          <Text style={styles.cardLabel}>{category.label}</Text>
-          <Text style={styles.cardChevron}>›</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>{category.label}</Text>
+          <Text style={[styles.cardChevron, { color: themeColors.textSecondary }]}>›</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -60,7 +62,6 @@ export const ShoppingListCategoryScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -74,13 +75,11 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: 12,
     marginBottom: SPACING.md,
@@ -98,11 +97,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   cardChevron: {
     fontSize: 24,
-    color: COLORS.textSecondary,
     fontWeight: '300',
   },
 });

@@ -15,16 +15,19 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import watchKeepingService, { PublishedWatchTimetable } from '../services/watchKeeping';
 import { formatLocalDateString } from '../utils';
 
 export const WatchScheduleScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [publishedTimetables, setPublishedTimetables] = useState<PublishedWatchTimetable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,15 +189,15 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to use Watch Schedule.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to use Watch Schedule.</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={loadPublished} colors={[COLORS.primary]} />
@@ -203,23 +206,33 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
       {loading && publishedTimetables.length === 0 ? (
         <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.xl }} />
       ) : publishedTimetables.length === 0 ? (
-        <Text style={styles.empty}>
+        <Text style={[styles.empty, { color: themeColors.textSecondary }]}>
           No Watch Schedules yet. Create a timetable in Create, generate it, then tap Export to add it here.
         </Text>
       ) : (
         publishedTimetables.map((t) => (
           <TouchableOpacity
             key={t.id}
-            style={styles.card}
+            style={[styles.card, { backgroundColor: themeColors.surface }]}
             onPress={() => setViewingSchedule(t)}
             activeOpacity={0.8}
           >
-            <Text style={styles.cardTitle}>{t.watchTitle}</Text>
-            <Text style={styles.cardMeta}>{formatLocalDateString(t.forDate, { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
-            {t.startLocation ? <Text style={styles.cardMeta}>From: {t.startLocation}</Text> : null}
-            {t.destination ? <Text style={styles.cardMeta}>To: {t.destination}</Text> : null}
-            <Text style={styles.cardMeta}>Start: {t.startTime}</Text>
-            <Text style={styles.cardHint}>Tap to view · Export PDF</Text>
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>{t.watchTitle}</Text>
+              {isHOD && (
+                <TouchableOpacity
+                  onPress={() => handleDelete(t)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  disabled={deleting}
+                >
+                  <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={[styles.cardMeta, { color: themeColors.textSecondary }]}>{formatLocalDateString(t.forDate, { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
+            {t.startLocation ? <Text style={[styles.cardMeta, { color: themeColors.textSecondary }]}>From: {t.startLocation}</Text> : null}
+            {t.destination ? <Text style={[styles.cardMeta, { color: themeColors.textSecondary }]}>To: {t.destination}</Text> : null}
+            <Text style={[styles.cardMeta, { color: themeColors.textSecondary }]}>Start: {t.startTime}</Text>
           </TouchableOpacity>
         ))
       )}
@@ -227,25 +240,25 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
       {viewingSchedule && (
         <Modal visible animationType="slide">
           <ScrollView
-            style={styles.viewModal}
+            style={[styles.viewModal, { backgroundColor: themeColors.background }]}
             contentContainerStyle={styles.viewModalContent}
             showsVerticalScrollIndicator
           >
-            <View style={styles.viewHeader}>
+            <View style={[styles.viewHeader, { backgroundColor: themeColors.surface }]}>
               <Text style={styles.viewTitle}>Watch Schedule</Text>
-              <Text style={styles.viewDate}>
+              <Text style={[styles.viewDate, { color: themeColors.textSecondary }]}>
                 {formatLocalDateString(viewingSchedule.forDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </Text>
             </View>
             <View style={styles.viewContent}>
-              {viewingSchedule.startLocation ? <Text style={styles.viewMeta}>From: {viewingSchedule.startLocation}</Text> : null}
-              {viewingSchedule.destination ? <Text style={styles.viewMeta}>To: {viewingSchedule.destination}</Text> : null}
-              <Text style={styles.viewMeta}>Start: {viewingSchedule.startTime}</Text>
+              {viewingSchedule.startLocation ? <Text style={[styles.viewMeta, { color: themeColors.textSecondary }]}>From: {viewingSchedule.startLocation}</Text> : null}
+              {viewingSchedule.destination ? <Text style={[styles.viewMeta, { color: themeColors.textSecondary }]}>To: {viewingSchedule.destination}</Text> : null}
+              <Text style={[styles.viewMeta, { color: themeColors.textSecondary }]}>Start: {viewingSchedule.startTime}</Text>
               <View style={styles.slots}>
                 {viewingSchedule.slots.map((slot, idx) => (
-                  <View key={idx} style={styles.slotRow}>
-                    <Text style={styles.slotCrew}>{slot.crewName}</Text>
-                    {slot.crewPosition ? <Text style={styles.slotRole}>{slot.crewPosition}</Text> : null}
+                  <View key={idx} style={[styles.slotRow, { backgroundColor: themeColors.surface }]}>
+                    <Text style={[styles.slotCrew, { color: themeColors.textPrimary }]}>{slot.crewName}</Text>
+                    {slot.crewPosition ? <Text style={[styles.slotRole, { color: themeColors.textSecondary }]}>{slot.crewPosition}</Text> : null}
                     <Text style={styles.slotTime}>{slot.startTimeStr} – {slot.endTimeStr}</Text>
                   </View>
                 ))}
@@ -278,7 +291,7 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
                 </>
               )}
               <TouchableOpacity style={styles.closeBtn} onPress={() => setViewingSchedule(null)}>
-                <Text style={styles.closeBtnText}>Close</Text>
+                <Text style={[styles.closeBtnText, { color: themeColors.textSecondary }]}>Close</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -289,31 +302,30 @@ export const WatchScheduleScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
-  empty: { fontSize: FONTS.base, color: COLORS.textSecondary, padding: SPACING.xl },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
+  empty: { fontSize: FONTS.base, padding: SPACING.xl },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
   },
-  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', color: COLORS.textPrimary },
-  cardMeta: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
-  cardHint: { fontSize: FONTS.xs, color: COLORS.primary, marginTop: SPACING.sm, fontWeight: '500' },
-  viewModal: { flex: 1, backgroundColor: COLORS.background },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.xs },
+  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', flex: 1 },
+  cardMeta: { fontSize: FONTS.sm, marginTop: SPACING.xs },
+  viewModal: { flex: 1 },
   viewModalContent: { paddingBottom: SIZES.bottomScrollPadding },
-  viewHeader: { padding: SPACING.lg, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  viewHeader: { padding: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   viewTitle: { fontSize: FONTS.xl, fontWeight: '700', color: COLORS.primary },
-  viewDate: { fontSize: FONTS.base, color: COLORS.textSecondary, marginTop: SPACING.xs },
+  viewDate: { fontSize: FONTS.base, marginTop: SPACING.xs },
   viewContent: { padding: SPACING.lg },
-  viewMeta: { fontSize: FONTS.base, color: COLORS.textSecondary, marginBottom: SPACING.xs },
+  viewMeta: { fontSize: FONTS.base, marginBottom: SPACING.xs },
   slots: { marginTop: SPACING.lg },
-  slotRow: { backgroundColor: COLORS.white, padding: SPACING.md, borderRadius: BORDER_RADIUS.md, marginBottom: SPACING.sm },
-  slotCrew: { fontSize: FONTS.base, fontWeight: '600', color: COLORS.textPrimary },
-  slotRole: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: 2 },
+  slotRow: { padding: SPACING.md, borderRadius: BORDER_RADIUS.md, marginBottom: SPACING.sm },
+  slotCrew: { fontSize: FONTS.base, fontWeight: '600' },
+  slotRole: { fontSize: FONTS.sm, marginTop: 2 },
   slotTime: { fontSize: FONTS.sm, color: COLORS.primary, fontWeight: '600', marginTop: SPACING.xs },
   viewActions: { padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.border, gap: SPACING.sm },
   exportBtn: { padding: SPACING.md, backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md, alignItems: 'center' },
@@ -323,5 +335,5 @@ const styles = StyleSheet.create({
   deleteBtn: { padding: SPACING.md, backgroundColor: '#dc2626', borderRadius: BORDER_RADIUS.md, alignItems: 'center' },
   deleteBtnText: { fontSize: FONTS.base, fontWeight: '600', color: COLORS.white },
   closeBtn: { padding: SPACING.sm, alignItems: 'center' },
-  closeBtnText: { fontSize: FONTS.base, color: COLORS.textSecondary },
+  closeBtnText: { fontSize: FONTS.base },
 });

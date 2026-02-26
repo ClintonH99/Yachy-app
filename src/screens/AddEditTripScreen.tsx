@@ -14,12 +14,15 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import tripsService from '../services/trips';
-import { TripType } from '../types';
+import { TripType, Department } from '../types';
 import { Input, Button } from '../components';
 import { useVesselTripColors } from '../hooks/useVesselTripColors';
 import { DEFAULT_COLORS } from '../services/tripColors';
@@ -43,6 +46,7 @@ function getMarkedRange(start: string, end: string, color: string): MarkedDates 
 }
 
 export const AddEditTripScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const type = (route.params?.type ?? 'GUEST') as TripType;
   const tripId = route.params?.tripId as string | undefined;
@@ -60,10 +64,20 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
     });
   }, [navigation, tripId, typeLabel]);
 
+  const DEPARTMENT_OPTIONS: { value: Department | null; label: string }[] = [
+    { value: null, label: 'Select' },
+    { value: 'BRIDGE', label: 'Bridge' },
+    { value: 'ENGINEERING', label: 'Engineering' },
+    { value: 'EXTERIOR', label: 'Exterior' },
+    { value: 'INTERIOR', label: 'Interior' },
+    { value: 'GALLEY', label: 'Galley' },
+  ];
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
+  const [department, setDepartment] = useState<Department | null>(null);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
   const [loading, setLoading] = useState(!!tripId);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<'start' | 'end'>('start');
@@ -89,6 +103,7 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
         if (trip) {
           setTitle(trip.title);
           setNotes(trip.notes ?? '');
+          setDepartment(trip.department ?? null);
           setStartDate(trip.startDate);
           setEndDate(trip.endDate);
         }
@@ -160,6 +175,7 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
           startDate,
           endDate,
           notes: notes.trim() || undefined,
+          department: type === 'YARD_PERIOD' ? (department ?? null) : undefined,
         });
         Alert.alert('Updated', 'Trip updated.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
@@ -170,6 +186,7 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
           startDate,
           endDate,
           notes: notes.trim() || undefined,
+          department: type === 'YARD_PERIOD' ? (department ?? null) : undefined,
         });
         Alert.alert('Created', 'Trip added.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
       }
@@ -183,23 +200,23 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
 
   if (!isHOD) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Only HODs can add or edit trips.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Only HODs can add or edit trips.</Text>
       </View>
     );
   }
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to add trips.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to add trips.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -207,7 +224,7 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -231,15 +248,52 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
           }
           autoCapitalize="words"
         />
-        <Text style={styles.label}>Select dates</Text>
-        <Text style={styles.hint}>
+        {type === 'YARD_PERIOD' && (
+          <>
+            <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
+              onPress={() => setDepartmentModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.dropdownText, { color: department ? themeColors.textPrimary : themeColors.textSecondary }]}>
+                {DEPARTMENT_OPTIONS.find((o) => o.value === department)?.label ?? 'Select'}
+              </Text>
+              <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>
+                {departmentModalVisible ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+            {departmentModalVisible && (
+              <Modal visible transparent animationType="fade">
+                <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
+                  <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+                    {DEPARTMENT_OPTIONS.map((opt) => (
+                      <TouchableOpacity
+                        key={opt.value ?? 'select'}
+                        style={[styles.modalItem, department === opt.value && styles.modalItemSelected]}
+                        onPress={() => {
+                          setDepartment(opt.value);
+                          setDepartmentModalVisible(false);
+                        }}
+                      >
+                        <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Pressable>
+              </Modal>
+            )}
+          </>
+        )}
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Select dates</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
           {!startDate
             ? 'Tap a start date on the calendar'
             : !endDate
             ? 'Tap the end date'
             : `${startDate} – ${endDate}`}
         </Text>
-        <View style={styles.calendarWrap}>
+        <View style={[styles.calendarWrap, { backgroundColor: themeColors.surface }]}>
           <Calendar
             current={startDate || new Date().toISOString().slice(0, 10)}
             minDate={new Date().toISOString().slice(0, 10)}
@@ -272,7 +326,7 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
             onPress={() => navigation.goBack()}
             disabled={saving}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -283,7 +337,6 @@ export const AddEditTripScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -300,7 +353,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   label: {
@@ -311,11 +363,44 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+  },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalBox: {
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.sm,
+    minWidth: 260,
+  },
+  modalItem: {
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+  },
+  modalItemSelected: {
+    backgroundColor: COLORS.primaryLight + '20',
+  },
+  modalItemText: {
+    fontSize: FONTS.base,
+  },
   calendarWrap: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.sm,
     marginBottom: SPACING.lg,
@@ -331,6 +416,5 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
 });

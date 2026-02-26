@@ -14,6 +14,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import vesselTasksService from '../services/vesselTasks';
 import maintenanceLogsService from '../services/maintenanceLogs';
 import yardJobsService from '../services/yardJobs';
@@ -29,6 +30,7 @@ import { Button } from '../components';
 import inventoryService from '../services/inventory';
 
 export const ImportExportScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [downloading, setDownloading] = useState<TemplateType | null>(null);
   const [importing, setImporting] = useState<TemplateType | null>(null);
@@ -221,13 +223,13 @@ export const ImportExportScreen = ({ navigation }: any) => {
     icon: string;
     description: string;
   }) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>
+    <View style={[styles.section, { backgroundColor: themeColors.surface }]}>
+      <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>
         {icon} {title}
       </Text>
-      <Text style={styles.sectionDesc}>{description}</Text>
+      <Text style={[styles.sectionDesc, { color: themeColors.textSecondary }]}>{description}</Text>
       {!vesselId && (
-        <Text style={styles.vesselNote}>Join a vessel to import data.</Text>
+        <Text style={[styles.vesselNote, { color: themeColors.textSecondary }]}>Join a vessel to import data.</Text>
       )}
       <View style={styles.actions}>
         <Button
@@ -251,9 +253,9 @@ export const ImportExportScreen = ({ navigation }: any) => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.content}>
-        <Text style={styles.intro}>
+        <Text style={[styles.intro, { color: themeColors.textSecondary }]}>
           Download a template, fill it with your data in Excel or Google Sheets, then import it here.
         </Text>
 
@@ -276,13 +278,13 @@ export const ImportExportScreen = ({ navigation }: any) => {
           description="Yard period jobs. Columns: Job Title, Description, Yard Location, Contractor, Contact."
         />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📦 Inventory</Text>
-          <Text style={styles.sectionDesc}>
+        <View style={[styles.section, { backgroundColor: themeColors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>📦 Inventory</Text>
+          <Text style={[styles.sectionDesc, { color: themeColors.textSecondary }]}>
             Download a template, fill it with your inventory items, then import it here. You can also export all current inventory to PDF.
           </Text>
           {!vesselId && (
-            <Text style={styles.vesselNote}>Join a vessel to import or export inventory.</Text>
+            <Text style={[styles.vesselNote, { color: themeColors.textSecondary }]}>Join a vessel to import or export inventory.</Text>
           )}
           <View style={styles.actions}>
             <Button
@@ -311,7 +313,6 @@ export const ImportExportScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -330,7 +331,6 @@ const styles = StyleSheet.create({
   },
   intro: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xl,
     lineHeight: 22,
   },
@@ -340,7 +340,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   section: {
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.lg,
@@ -353,12 +352,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   sectionDesc: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.md,
     lineHeight: 20,
   },

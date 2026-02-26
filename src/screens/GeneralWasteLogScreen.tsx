@@ -15,7 +15,9 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import generalWasteLogsService from '../services/generalWasteLogs';
 import vesselService from '../services/vessel';
@@ -23,11 +25,11 @@ import { GeneralWasteLog } from '../types';
 import { Button, Input } from '../components';
 import { exportGeneralWasteLogPdf } from '../utils/vesselLogsPdf';
 
-function Checkbox({ checked, onPress }: { checked: boolean; onPress: () => void }) {
+function Checkbox({ checked, onPress, themeColors }: { checked: boolean; onPress: () => void; themeColors: { surface: string } }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.checkbox, checked && styles.checkboxChecked]}
+      style={[styles.checkbox, !checked && { backgroundColor: themeColors.surface }, checked && styles.checkboxChecked]}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       {checked && <Text style={styles.checkmark}>✓</Text>}
@@ -36,6 +38,7 @@ function Checkbox({ checked, onPress }: { checked: boolean; onPress: () => void 
 }
 
 export const GeneralWasteLogScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [logs, setLogs] = useState<GeneralWasteLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,14 +135,14 @@ export const GeneralWasteLogScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to view waste logs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to view waste logs.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.actionBar}>
         <Button title="Add Log" onPress={onAdd} variant="primary" style={styles.actionBtn} />
         <Button
@@ -158,7 +161,7 @@ export const GeneralWasteLogScreen = ({ navigation }: any) => {
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search by date, location, description…"
-              style={styles.searchInput}
+              style={[styles.searchInput, { backgroundColor: themeColors.surface }]}
               returnKeyType="search"
             />
           </View>
@@ -176,12 +179,12 @@ export const GeneralWasteLogScreen = ({ navigation }: any) => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
         >
           {filteredLogs.length === 0 ? (
-            <View style={styles.emptyState}>
+            <View style={[styles.emptyState, { backgroundColor: themeColors.surface }]}>
               <Text style={styles.emptyIcon}>🗑️</Text>
-              <Text style={styles.emptyTitle}>
+              <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>
                 {logs.length === 0 ? 'No entries yet' : 'No matching entries'}
               </Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
                 {logs.length === 0
                   ? 'Tap "Add Log" to create your first general waste entry.'
                   : 'Try a different search term.'}
@@ -193,49 +196,49 @@ export const GeneralWasteLogScreen = ({ navigation }: any) => {
               return (
                 <TouchableOpacity
                   key={log.id}
-                  style={[styles.card, selected && styles.cardSelected]}
+                  style={[styles.card, { backgroundColor: themeColors.surface }, selected && styles.cardSelected]}
                   onPress={() => toggleSelect(log.id)}
                   activeOpacity={0.85}
                 >
                   <View style={styles.cardHeader}>
                     <View style={styles.cardLeft}>
-                      <Checkbox checked={selected} onPress={() => toggleSelect(log.id)} />
+                      <Checkbox checked={selected} onPress={() => toggleSelect(log.id)} themeColors={themeColors} />
                       <View style={styles.cardMeta}>
-                        <Text style={styles.cardDate}>{log.logDate}</Text>
-                        <Text style={styles.cardDot}>·</Text>
-                        <Text style={styles.cardTime}>{log.logTime}</Text>
+                        <Text style={[styles.cardDate, { color: COLORS.primary }]}>{log.logDate}</Text>
+                        <Text style={[styles.cardDot, { color: themeColors.textSecondary }]}>·</Text>
+                        <Text style={[styles.cardTime, { color: themeColors.textSecondary }]}>{log.logTime}</Text>
                       </View>
                     </View>
                     <View style={styles.cardActions}>
+                      <TouchableOpacity onPress={() => onDelete(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+                      </TouchableOpacity>
                       <TouchableOpacity onPress={() => onEdit(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                         <Text style={styles.editBtn}>Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => onDelete(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                        <Text style={styles.deleteBtn}>Delete</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
 
                   {!!log.positionLocation && (
                     <View style={styles.cardRow}>
-                      <Text style={styles.cardLabel}>Position / Location</Text>
-                      <Text style={styles.cardValue}>{log.positionLocation}</Text>
+                      <Text style={[styles.cardLabel, { color: themeColors.textSecondary }]}>Position / Location</Text>
+                      <Text style={[styles.cardValue, { color: themeColors.textPrimary }]}>{log.positionLocation}</Text>
                     </View>
                   )}
                   {!!log.descriptionOfGarbage && (
                     <View style={styles.cardRow}>
-                      <Text style={styles.cardLabel}>Description of Garbage</Text>
-                      <Text style={styles.cardValue}>{log.descriptionOfGarbage}</Text>
+                      <Text style={[styles.cardLabel, { color: themeColors.textSecondary }]}>Description of Garbage</Text>
+                      <Text style={[styles.cardValue, { color: themeColors.textPrimary }]}>{log.descriptionOfGarbage}</Text>
                     </View>
                   )}
                   {log.weight != null && (
                     <View style={styles.cardRow}>
-                      <Text style={styles.cardLabel}>Weight</Text>
-                      <Text style={styles.cardValue}>{log.weight} {log.weightUnit ?? 'kgs'}</Text>
+                      <Text style={[styles.cardLabel, { color: themeColors.textSecondary }]}>Weight</Text>
+                      <Text style={[styles.cardValue, { color: themeColors.textPrimary }]}>{log.weight} {log.weightUnit ?? 'kgs'}</Text>
                     </View>
                   )}
                   {!!log.createdByName && (
-                    <Text style={styles.cardCreatedBy}>Logged by {log.createdByName}</Text>
+                    <Text style={[styles.cardCreatedBy, { color: themeColors.textSecondary }]}>Logged by {log.createdByName}</Text>
                   )}
                 </TouchableOpacity>
               );
@@ -248,30 +251,30 @@ export const GeneralWasteLogScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
   actionBar: {
     flexDirection: 'row', gap: SPACING.sm,
     paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.sm,
   },
   actionBtn: { flex: 1 },
   searchRow: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
-  searchInput: { backgroundColor: COLORS.white },
+  searchInput: {},
   selectAllRow: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
   selectAllText: { fontSize: FONTS.sm, color: COLORS.primary, fontWeight: '600' },
   loader: { marginTop: SPACING.xl },
   listContent: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   emptyContent: { flexGrow: 1, justifyContent: 'center' },
   emptyState: {
-    backgroundColor: COLORS.white, borderRadius: 12, padding: SPACING.xl, alignItems: 'center',
+    borderRadius: 12, padding: SPACING.xl, alignItems: 'center',
     shadowColor: COLORS.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
   emptyIcon: { fontSize: 48, marginBottom: SPACING.md },
-  emptyTitle: { fontSize: FONTS.xl, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.sm },
-  emptyText: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: FONTS.xl, fontWeight: '700', marginBottom: SPACING.sm },
+  emptyText: { fontSize: FONTS.base, textAlign: 'center', lineHeight: 22 },
   card: {
-    backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.md,
     shadowColor: COLORS.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3,
     borderWidth: 2, borderColor: 'transparent',
   },
@@ -279,19 +282,19 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, flex: 1 },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  cardDate: { fontSize: FONTS.base, fontWeight: '700', color: COLORS.primary },
-  cardDot: { fontSize: FONTS.base, color: COLORS.textSecondary },
-  cardTime: { fontSize: FONTS.base, fontWeight: '600', color: COLORS.textSecondary },
+  cardDate: { fontSize: FONTS.base, fontWeight: '700' },
+  cardDot: { fontSize: FONTS.base },
+  cardTime: { fontSize: FONTS.base, fontWeight: '600' },
   cardActions: { flexDirection: 'row', gap: SPACING.md },
   editBtn: { fontSize: FONTS.sm, color: COLORS.primary, fontWeight: '600' },
   deleteBtn: { fontSize: FONTS.sm, color: COLORS.danger, fontWeight: '600' },
   cardRow: { marginBottom: SPACING.sm },
-  cardLabel: { fontSize: FONTS.xs, fontWeight: '600', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-  cardValue: { fontSize: FONTS.base, color: COLORS.textPrimary, lineHeight: 20 },
-  cardCreatedBy: { fontSize: FONTS.xs, color: COLORS.textSecondary, marginTop: SPACING.xs, fontStyle: 'italic' },
+  cardLabel: { fontSize: FONTS.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  cardValue: { fontSize: FONTS.base, lineHeight: 20 },
+  cardCreatedBy: { fontSize: FONTS.xs, marginTop: SPACING.xs, fontStyle: 'italic' },
   checkbox: {
     width: 22, height: 22, borderRadius: BORDER_RADIUS.sm, borderWidth: 2,
-    borderColor: COLORS.gray300, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white,
+    borderColor: COLORS.gray300, justifyContent: 'center', alignItems: 'center',
   },
   checkboxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   checkmark: { color: COLORS.white, fontSize: 13, fontWeight: '700' },

@@ -12,13 +12,16 @@ import {
   Platform,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export const RegisterCaptainScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -103,7 +106,7 @@ export const RegisterCaptainScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -115,7 +118,7 @@ export const RegisterCaptainScreen = ({ navigation }: any) => {
           <View style={styles.header}>
             <Text style={styles.icon}>⚓</Text>
             <Text style={styles.title}>Create Captain Account</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
               Set up your account and create your vessel
             </Text>
           </View>
@@ -194,9 +197,18 @@ export const RegisterCaptainScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 0,
+    marginBottom: SPACING.md,
+  },
+  backButtonText: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -222,7 +234,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   infoBanner: {

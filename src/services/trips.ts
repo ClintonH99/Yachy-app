@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './supabase';
-import { Trip, TripType } from '../types';
+import { Trip, TripType, Department } from '../types';
 
 export interface CreateTripData {
   vesselId: string;
@@ -13,6 +13,7 @@ export interface CreateTripData {
   startDate: string; // YYYY-MM-DD
   endDate: string;
   notes?: string;
+  department?: Department | null;
 }
 
 export interface UpdateTripData {
@@ -20,6 +21,7 @@ export interface UpdateTripData {
   startDate?: string;
   endDate?: string;
   notes?: string;
+  department?: Department | null;
 }
 
 class TripsService {
@@ -99,6 +101,7 @@ class TripsService {
             start_date: input.startDate,
             end_date: input.endDate,
             notes: input.notes?.trim() || null,
+            department: input.department ?? null,
             created_by: user?.id ?? null,
             updated_at: new Date().toISOString(),
           },
@@ -126,6 +129,7 @@ class TripsService {
       if (input.startDate !== undefined) payload.start_date = input.startDate;
       if (input.endDate !== undefined) payload.end_date = input.endDate;
       if (input.notes !== undefined) payload.notes = input.notes?.trim() || null;
+      if (input.department !== undefined) payload.department = input.department ?? null;
 
       const { error } = await supabase
         .from('trips')
@@ -179,6 +183,7 @@ class TripsService {
       title: row.title,
       startDate: row.start_date,
       endDate: row.end_date,
+      department: row.department ?? undefined,
       notes: row.notes ?? '',
       createdBy: row.created_by ?? undefined,
       createdAt: row.created_at,

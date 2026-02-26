@@ -21,9 +21,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import watchKeepingService, { WatchKeepingRules } from '../services/watchKeeping';
 
 export const WatchKeepingScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const vesselId = user?.vesselId ?? null;
   const isHOD = user?.role === 'HOD';
@@ -82,7 +84,7 @@ export const WatchKeepingScreen = ({ navigation }: any) => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
       {/* Watch Keeping Rules - same style as Coming Soon on Home */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -109,26 +111,26 @@ export const WatchKeepingScreen = ({ navigation }: any) => {
       </View>
 
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('WatchSchedule')}
         activeOpacity={0.8}
       >
         <Text style={styles.cardIcon}>📋</Text>
         <View style={styles.cardLabelWrap}>
-          <Text style={styles.cardLabel}>Watch Schedule</Text>
-          <Text style={styles.cardHint}>View published watch timetables</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>Watch Schedule</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>View published watch timetables</Text>
         </View>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('CreateWatchTimetable')}
         activeOpacity={0.8}
       >
         <Text style={styles.cardIcon}>➕</Text>
         <View style={styles.cardLabelWrap}>
-          <Text style={styles.cardLabel}>Create</Text>
-          <Text style={styles.cardHint}>Create and publish a new watch timetable</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>Create</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>Create and publish a new watch timetable</Text>
         </View>
       </TouchableOpacity>
 
@@ -141,8 +143,8 @@ export const WatchKeepingScreen = ({ navigation }: any) => {
             keyboardVerticalOffset={60}
           >
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditModalOpen(false)} />
-            <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-              <Text style={styles.modalTitle}>Edit Watch Keeping Rules</Text>
+            <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Edit Watch Keeping Rules</Text>
               <TextInput
                 style={styles.rulesInput}
                 value={editContent}
@@ -176,7 +178,6 @@ export const WatchKeepingScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -242,7 +243,6 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.md,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
   },
   cardHint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   modalBackdrop: {
     flex: 1,
@@ -278,7 +277,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     width: '100%',
@@ -287,7 +285,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   rulesInput: {

@@ -146,6 +146,14 @@ class InventoryService {
     return this.mapRow(data);
   }
 
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
+
   private mapRow(row: Record<string, unknown>): InventoryItem {
     return {
       id: row.id as string,

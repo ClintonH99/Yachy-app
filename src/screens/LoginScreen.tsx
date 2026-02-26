@@ -18,6 +18,7 @@ import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const MARITIME = {
   bgDark: '#0f172a',       // Deep navy
@@ -30,6 +31,7 @@ const MARITIME = {
 };
 
 export const LoginScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,8 +83,8 @@ export const LoginScreen = ({ navigation }: any) => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={MARITIME.bgDark} />
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <StatusBar barStyle={themeColors.isDark ? 'light-content' : 'dark-content'} backgroundColor={themeColors.background} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -97,17 +99,17 @@ export const LoginScreen = ({ navigation }: any) => {
             <View style={styles.logoMark}>
               <Text style={styles.logoMarkText}>Y</Text>
             </View>
-            <Text style={styles.appName}>Nautical Ops</Text>
-            <Text style={styles.tagline}>
+            <Text style={[styles.appName, { color: themeColors.textPrimary }]}>Nautical Ops</Text>
+            <Text style={[styles.tagline, { color: themeColors.textSecondary }]}>
               Operations for superyacht & maritime crews
             </Text>
             <View style={styles.horizon} />
           </View>
 
           {/* Sign-in card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Sign in</Text>
-            <Text style={styles.cardSubtitle}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]}>Sign in</Text>
+            <Text style={[styles.cardSubtitle, { color: themeColors.textSecondary }]}>
               Enter your credentials to access your vessel operations
             </Text>
 
@@ -144,14 +146,14 @@ export const LoginScreen = ({ navigation }: any) => {
 
           {/* Create account */}
           <View style={styles.createSection}>
-            <Text style={styles.createSectionTitle}>Don’t have an account?</Text>
+            <Text style={[styles.createSectionTitle, { color: themeColors.textPrimary }]}>Don’t have an account?</Text>
 
-            <View style={styles.optionCard}>
+            <View style={[styles.optionCard, { backgroundColor: themeColors.surfaceAlt }]}>
               <View style={styles.optionIconWrap}>
                 <Text style={styles.optionIcon}>⚓</Text>
               </View>
-              <Text style={styles.optionTitle}>Captain</Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Captain</Text>
+              <Text style={[styles.optionDescription, { color: themeColors.textSecondary }]}>
                 Create your vessel and invite your crew
               </Text>
               <Button
@@ -163,12 +165,12 @@ export const LoginScreen = ({ navigation }: any) => {
               />
             </View>
 
-            <View style={styles.optionCard}>
+            <View style={[styles.optionCard, { backgroundColor: themeColors.surfaceAlt }]}>
               <View style={[styles.optionIconWrap, styles.optionIconWrapCrew]}>
                 <Text style={styles.optionIcon}>👥</Text>
               </View>
-              <Text style={styles.optionTitle}>Crew member</Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Crew member</Text>
+              <Text style={[styles.optionDescription, { color: themeColors.textSecondary }]}>
                 Join a vessel with an invite code
               </Text>
               <Button
@@ -182,7 +184,7 @@ export const LoginScreen = ({ navigation }: any) => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
+            <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>
               Apple & Google sign-in coming soon
             </Text>
           </View>

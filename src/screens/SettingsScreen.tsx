@@ -13,10 +13,14 @@ import {
   Image,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useAuthStore, useThemeStore, BACKGROUND_THEMES } from '../store';
+import { Button } from '../components';
+import authService from '../services/auth';
 
 export const SettingsScreen = ({ navigation }: any) => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const backgroundTheme = useThemeStore((s) => s.backgroundTheme);
+  const themeColors = BACKGROUND_THEMES[backgroundTheme];
   const isHOD = user?.role === 'HOD';
 
   const settingsSections = [
@@ -27,7 +31,7 @@ export const SettingsScreen = ({ navigation }: any) => {
           icon: '👤',
           label: 'My Profile',
           description: 'Edit your personal information',
-          onPress: () => navigation.navigate('Profile'),
+          onPress: () => navigation.navigate('Settings'),
           disabled: false,
         },
       ],
@@ -40,7 +44,7 @@ export const SettingsScreen = ({ navigation }: any) => {
               {
                 icon: '⚓',
                 label: 'Vessel Settings',
-                description: 'Manage vessel name. Invite code is here.',
+                description: 'Vessel name, invite code, change photo',
                 onPress: () => navigation.navigate('VesselSettings'),
                 disabled: false,
               },
@@ -61,7 +65,7 @@ export const SettingsScreen = ({ navigation }: any) => {
         {
           icon: '🖼️',
           label: 'Appearance',
-          description: 'Background theme: Light, Ocean, Sand, Navy',
+          description: 'Background theme: Day or Night Mode',
           onPress: () => navigation.navigate('ThemeSettings'),
           disabled: false,
         },
@@ -94,10 +98,10 @@ export const SettingsScreen = ({ navigation }: any) => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.content}>
         {/* User Header */}
-        <View style={styles.userHeader}>
+        <View style={[styles.userHeader, { backgroundColor: themeColors.surface }]}>
           <View style={styles.avatarContainer}>
             {user?.profilePhoto ? (
               <Image source={{ uri: user.profilePhoto }} style={styles.avatar} />
@@ -110,8 +114,8 @@ export const SettingsScreen = ({ navigation }: any) => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name}</Text>
-            <Text style={styles.userDetails}>
+            <Text style={[styles.userName, { color: themeColors.textPrimary }]}>{user?.name}</Text>
+            <Text style={[styles.userDetails, { color: themeColors.textSecondary }]}>
               {user?.position} • {user?.department}
             </Text>
             <View style={styles.roleBadge}>
@@ -123,13 +127,14 @@ export const SettingsScreen = ({ navigation }: any) => {
         {/* Settings Sections */}
         {settingsSections.map((section, sectionIndex) => (
           <View key={sectionIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
+            <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.sectionContent, { backgroundColor: themeColors.surface }]}>
               {section.items.map((item, itemIndex) => (
                 <TouchableOpacity
                   key={itemIndex}
                   style={[
                     styles.settingsItem,
+                    { borderBottomColor: themeColors.surfaceAlt },
                     item.disabled && styles.settingsItemDisabled,
                     itemIndex === section.items.length - 1 && styles.settingsItemLast,
                   ]}
@@ -140,13 +145,13 @@ export const SettingsScreen = ({ navigation }: any) => {
                   <View style={styles.settingsItemLeft}>
                     <Text style={styles.settingsIcon}>{item.icon}</Text>
                     <View style={styles.settingsTextContainer}>
-                      <Text style={styles.settingsLabel}>{item.label}</Text>
-                      <Text style={styles.settingsDescription}>
+                      <Text style={[styles.settingsLabel, { color: themeColors.textPrimary }]}>{item.label}</Text>
+                      <Text style={[styles.settingsDescription, { color: themeColors.textSecondary }]}>
                         {item.description}
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.chevron}>›</Text>
+                  <Text style={[styles.chevron, { color: themeColors.textSecondary }]}>›</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -155,11 +160,24 @@ export const SettingsScreen = ({ navigation }: any) => {
 
         {/* Version Info */}
         <View style={styles.versionInfo}>
-          <Text style={styles.versionText}>Nautical Ops v1.0.0</Text>
-          <Text style={styles.versionSubtext}>
+          <Text style={[styles.versionText, { color: themeColors.textSecondary }]}>Nautical Ops v1.0.0</Text>
+          <Text style={[styles.versionSubtext, { color: themeColors.textSecondary }]}>
             Professional yacht operations management
           </Text>
         </View>
+
+        {/* Sign Out */}
+        <Button
+          title="Sign Out"
+          onPress={async () => {
+            await authService.signOut();
+            logout();
+          }}
+          variant={themeColors.isDark ? 'outlineLight' : 'outline'}
+          shape="pill"
+          fullWidth
+          style={styles.signOutButton}
+        />
       </View>
     </ScrollView>
   );
@@ -168,7 +186,6 @@ export const SettingsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -177,7 +194,6 @@ const styles = StyleSheet.create({
   userHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.xl,
@@ -214,12 +230,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: FONTS.xl,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   userDetails: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   roleBadge: {
@@ -241,14 +255,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONTS.xs,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: SPACING.sm,
     marginLeft: SPACING.xs,
   },
   sectionContent: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     shadowColor: '#0D0D0D',
@@ -263,7 +275,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   settingsItemLast: {
     borderBottomWidth: 0,
@@ -286,16 +297,13 @@ const styles = StyleSheet.create({
   settingsLabel: {
     fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   settingsDescription: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   chevron: {
     fontSize: 24,
-    color: COLORS.textSecondary,
     fontWeight: '300',
   },
   versionInfo: {
@@ -304,11 +312,13 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: 4,
   },
   versionSubtext: {
     fontSize: FONTS.xs,
-    color: COLORS.textTertiary,
+  },
+  signOutButton: {
+    marginTop: SPACING.md,
+    marginBottom: SPACING.lg,
   },
 });

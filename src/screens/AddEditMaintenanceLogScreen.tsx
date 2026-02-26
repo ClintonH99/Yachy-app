@@ -21,6 +21,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import maintenanceLogsService from '../services/maintenanceLogs';
 import { Input, Button } from '../components';
 
@@ -79,6 +80,7 @@ const HIDDEN_EQUIPMENT_STORAGE_KEY = 'maintenance_equipment_hidden';
 const HIDDEN_LOCATION_STORAGE_KEY = 'maintenance_location_hidden';
 
 export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const logId = route.params?.logId as string | undefined;
 
@@ -385,15 +387,15 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to add maintenance logs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to add maintenance logs.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -401,7 +403,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -411,9 +413,9 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Equipment</Text>
+          <Text style={[styles.label, { color: themeColors.textPrimary }]}>Equipment</Text>
           <TouchableOpacity
-            style={styles.dropdownTrigger}
+            style={[styles.dropdownTrigger, { backgroundColor: themeColors.surface }]}
             onPress={() => setEquipmentDropdownVisible(true)}
           >
             <Text style={[styles.dropdownText, !equipment && styles.placeholder]}>
@@ -434,7 +436,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             activeOpacity={1}
             onPress={() => setEquipmentDropdownVisible(false)}
           >
-            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={[styles.modalContent, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
               <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
                 {equipmentOptions.map((opt) => (
                   <View key={opt} style={[styles.dropdownOptionRow, equipment === opt && styles.dropdownOptionSelected]}>
@@ -445,7 +447,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
                         setEquipmentDropdownVisible(false);
                       }}
                     >
-                      <Text style={[styles.dropdownOptionText, equipment === opt && styles.dropdownOptionTextSelected]}>
+                      <Text style={[styles.dropdownOptionText, { color: equipment === opt ? undefined : themeColors.textPrimary }, equipment === opt && styles.dropdownOptionTextSelected]}>
                         {opt}
                       </Text>
                     </TouchableOpacity>
@@ -483,10 +485,10 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             activeOpacity={1}
             onPress={() => setCreateNewVisible(false)}
           >
-            <View style={styles.createNewModal} onStartShouldSetResponder={() => true}>
-              <Text style={styles.createNewTitle}>New Equipment</Text>
+            <View style={[styles.createNewModal, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.createNewTitle, { color: themeColors.textPrimary }]}>New Equipment</Text>
               <TextInput
-                style={styles.createNewInput}
+                style={[styles.createNewInput, { backgroundColor: themeColors.background, color: themeColors.textPrimary }]}
                 value={newEquipmentName}
                 onChangeText={setNewEquipmentName}
                 placeholder="Enter equipment name"
@@ -497,16 +499,16 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
               <View style={styles.createNewActions}>
                 <Button title="Add" onPress={handleSaveNewEquipment} variant="primary" style={styles.createNewAddBtn} />
                 <TouchableOpacity onPress={() => { setCreateNewVisible(false); setNewEquipmentName(''); }}>
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
         </Modal>
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Location</Text>
+          <Text style={[styles.label, { color: themeColors.textPrimary }]}>Location</Text>
           <TouchableOpacity
-            style={styles.dropdownTrigger}
+            style={[styles.dropdownTrigger, { backgroundColor: themeColors.surface }]}
             onPress={() => setLocationDropdownVisible(true)}
           >
             <Text style={[styles.dropdownText, !location && styles.placeholder]}>
@@ -527,7 +529,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             activeOpacity={1}
             onPress={() => setLocationDropdownVisible(false)}
           >
-            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={[styles.modalContent, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
               <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
                 {locationOptions.map((opt) => (
                   <View key={opt} style={[styles.dropdownOptionRow, location === opt && styles.dropdownOptionSelected]}>
@@ -538,7 +540,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
                         setLocationDropdownVisible(false);
                       }}
                     >
-                      <Text style={[styles.dropdownOptionText, location === opt && styles.dropdownOptionTextSelected]}>
+                      <Text style={[styles.dropdownOptionText, { color: location === opt ? undefined : themeColors.textPrimary }, location === opt && styles.dropdownOptionTextSelected]}>
                         {opt}
                       </Text>
                     </TouchableOpacity>
@@ -576,10 +578,10 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             activeOpacity={1}
             onPress={() => setAddNewLocationVisible(false)}
           >
-            <View style={styles.createNewModal} onStartShouldSetResponder={() => true}>
-              <Text style={styles.createNewTitle}>New Location</Text>
+            <View style={[styles.createNewModal, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.createNewTitle, { color: themeColors.textPrimary }]}>New Location</Text>
               <TextInput
-                style={styles.createNewInput}
+                style={[styles.createNewInput, { backgroundColor: themeColors.background, color: themeColors.textPrimary }]}
                 value={newLocationName}
                 onChangeText={setNewLocationName}
                 placeholder="Enter location name"
@@ -590,17 +592,17 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
               <View style={styles.createNewActions}>
                 <Button title="Add" onPress={handleSaveNewLocation} variant="primary" style={styles.createNewAddBtn} />
                 <TouchableOpacity onPress={() => { setAddNewLocationVisible(false); setNewLocationName(''); }}>
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
         </Modal>
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Serial number</Text>
+          <Text style={[styles.label, { color: themeColors.textPrimary }]}>Serial number</Text>
           <View style={styles.serialNumberRow}>
             <TextInput
-              style={styles.serialNumberInput}
+              style={[styles.serialNumberInput, { backgroundColor: themeColors.surface, color: themeColors.textPrimary }]}
               value={serialNumber}
               onChangeText={setSerialNumber}
               placeholder="Optional - tap Recent for this equipment + location"
@@ -626,16 +628,16 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             activeOpacity={1}
             onPress={() => setSerialNumberDropdownVisible(false)}
           >
-            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-              <Text style={styles.previousTitle}>
+            <View style={[styles.modalContent, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.previousTitle, { color: themeColors.textPrimary }]}>
                 {equipment || location
                   ? `Previous serial numbers${equipment && location ? ` for ${equipment} / ${location}` : ''}`
                   : 'Select equipment and location first'}
               </Text>
               {!equipment && !location ? (
-                <Text style={styles.previousEmpty}>Choose equipment and location to see serial numbers for that combination.</Text>
+                <Text style={[styles.previousEmpty, { color: themeColors.textSecondary }]}>Choose equipment and location to see serial numbers for that combination.</Text>
               ) : previousSerialNumbers.length === 0 ? (
-                <Text style={styles.previousEmpty}>No previous entries for this combination yet. Save a log to add one.</Text>
+                <Text style={[styles.previousEmpty, { color: themeColors.textSecondary }]}>No previous entries for this combination yet. Save a log to add one.</Text>
               ) : (
                 <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
                   {previousSerialNumbers.map((sn) => (
@@ -648,7 +650,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
                       }}
                     >
                       <Text
-                        style={[styles.dropdownOptionText, serialNumber === sn && styles.dropdownOptionTextSelected]}
+                        style={[styles.dropdownOptionText, { color: serialNumber === sn ? undefined : themeColors.textPrimary }, serialNumber === sn && styles.dropdownOptionTextSelected]}
                         numberOfLines={2}
                       >
                         {sn}
@@ -710,7 +712,7 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
             onPress={() => navigation.goBack()}
             disabled={saving}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -721,7 +723,6 @@ export const AddEditMaintenanceLogScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -738,7 +739,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   actions: {
@@ -751,7 +751,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   fieldContainer: {
     marginBottom: SPACING.md,
@@ -759,7 +758,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   dropdownTrigger: {
@@ -767,7 +765,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: SIZES.inputHeight,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
@@ -775,7 +772,6 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
     flex: 1,
   },
   placeholder: {
@@ -794,13 +790,11 @@ const styles = StyleSheet.create({
   serialNumberInput: {
     flex: 1,
     height: SIZES.inputHeight,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   recentBtn: {
     paddingHorizontal: SPACING.md,
@@ -817,13 +811,11 @@ const styles = StyleSheet.create({
   previousTitle: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     padding: SPACING.md,
     paddingBottom: SPACING.xs,
   },
   previousEmpty: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     padding: SPACING.lg,
     textAlign: 'center',
   },
@@ -834,7 +826,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalContent: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     maxHeight: 400,
   },
@@ -874,7 +865,6 @@ const styles = StyleSheet.create({
   },
   dropdownOptionText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   dropdownOptionTextSelected: {
     color: COLORS.white,
@@ -892,25 +882,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   createNewModal: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
   },
   createNewTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   createNewInput: {
     height: SIZES.inputHeight,
-    backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   createNewActions: {

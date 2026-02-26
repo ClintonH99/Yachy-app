@@ -16,19 +16,23 @@ import {
   Share,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { Button } from '../components';
 import vesselService from '../services/vessel';
 import { Vessel } from '../types';
 
 export const VesselSettingsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [vessel, setVessel] = useState<Vessel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [vesselName, setVesselName] = useState('');
 
   // Check if user is HOD
@@ -136,6 +140,38 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
     );
   };
 
+  const handleChangeVesselPhoto = async () => {
+    if (!user?.vesselId) return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant permission to access your photos');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.75,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setIsUploadingBanner(true);
+        try {
+          await vesselService.uploadBannerImage(user.vesselId, result.assets[0].uri);
+          Alert.alert('Success', 'Vessel photo updated.');
+        } catch (error) {
+          console.error('Banner upload error:', error);
+          Alert.alert('Error', 'Failed to upload photo.');
+        } finally {
+          setIsUploadingBanner(false);
+        }
+      }
+    } catch (error) {
+      console.error('Pick image error:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
   const handleCopyCode = async () => {
     if (!vessel?.inviteCode) return;
 
@@ -186,17 +222,17 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading vessel settings...</Text>
+        <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>Loading vessel settings...</Text>
       </View>
     );
   }
 
   if (!vessel) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Vessel not found</Text>
+      <View style={[styles.errorContainer, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.errorText, { color: themeColors.textPrimary }]}>Vessel not found</Text>
         <Button
           title="Go Back"
           onPress={() => navigation.goBack()}
@@ -207,24 +243,41 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.content}>
+        {/* Vessel Photo Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Vessel Photo</Text>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
+            <Button
+              title={isUploadingBanner ? 'Uploading...' : '📷 Change vessel photo'}
+              onPress={handleChangeVesselPhoto}
+              variant="outline"
+              fullWidth
+              disabled={isUploadingBanner}
+            />
+            <Text style={[styles.photoHint, { color: themeColors.textSecondary }]}>
+              Updates the banner shown on the home screen
+            </Text>
+          </View>
+        </View>
+
         {/* Vessel Name Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Vessel Name</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Vessel Name</Text>
             {!isEditingName && (
               <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                <Text style={styles.editButton}>Edit</Text>
+                <Text style={[styles.editButton, { color: COLORS.primary }]}>Edit</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             {isEditingName ? (
               <>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: themeColors.background, color: themeColors.textPrimary }]}
                   value={vesselName}
                   onChangeText={setVesselName}
                   placeholder="Enter vessel name"
@@ -251,23 +304,23 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
                 </View>
               </>
             ) : (
-              <Text style={styles.vesselNameDisplay}>{vessel.name}</Text>
+              <Text style={[styles.vesselNameDisplay, { color: themeColors.textPrimary }]}>{vessel.name}</Text>
             )}
           </View>
         </View>
 
         {/* Invite Code Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Invite Code</Text>
+          <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Invite Code</Text>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             {/* Code Display */}
             <View style={styles.codeContainer}>
-              <Text style={styles.codeLabel}>Current Code</Text>
+              <Text style={[styles.codeLabel, { color: themeColors.textSecondary }]}>Current Code</Text>
               <View style={styles.codeBox}>
                 <Text style={styles.codeText}>{vessel.inviteCode}</Text>
               </View>
-              <Text style={styles.expiryText}>
+              <Text style={[styles.expiryText, { color: themeColors.textSecondary }]}>
                 {formatExpiry(vessel.inviteExpiry)}
               </Text>
             </View>
@@ -299,25 +352,25 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
                 fullWidth
                 disabled={isRegeneratingCode}
               />
-              <Text style={styles.regenerateWarning}>
+              <Text style={[styles.regenerateWarning, { color: themeColors.textSecondary }]}>
                 ⚠️ This will expire the current code
               </Text>
             </View>
           </View>
 
           {/* Info Card */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>💡 About Invite Codes</Text>
-            <Text style={styles.infoText}>
+          <View style={[styles.infoCard, { backgroundColor: themeColors.surfaceAlt }]}>
+            <Text style={[styles.infoTitle, { color: themeColors.textPrimary }]}>💡 About Invite Codes</Text>
+            <Text style={[styles.infoText, { color: themeColors.textPrimary }]}>
               • Share this code with crew members to join your vessel
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textPrimary }]}>
               • Crew will use this code during registration
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textPrimary }]}>
               • New crew members automatically get CREW role
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textPrimary }]}>
               • You can regenerate the code anytime
             </Text>
           </View>
@@ -325,15 +378,15 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
 
         {/* Vessel Info Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vessel Information</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Vessel Information</Text>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoRowLabel}>Vessel ID</Text>
-              <Text style={styles.infoRowValue}>{vessel.id.slice(0, 8)}...</Text>
+              <Text style={[styles.infoRowLabel, { color: themeColors.textSecondary }]}>Vessel ID</Text>
+              <Text style={[styles.infoRowValue, { color: themeColors.textPrimary }]}>{vessel.id.slice(0, 8)}...</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoRowLabel}>Created</Text>
-              <Text style={styles.infoRowValue}>
+              <Text style={[styles.infoRowLabel, { color: themeColors.textSecondary }]}>Created</Text>
+              <Text style={[styles.infoRowValue, { color: themeColors.textPrimary }]}>
                 {new Date(vessel.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -342,8 +395,8 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
               </Text>
             </View>
             <View style={[styles.infoRow, styles.infoRowLast]}>
-              <Text style={styles.infoRowLabel}>Last Updated</Text>
-              <Text style={styles.infoRowValue}>
+              <Text style={[styles.infoRowLabel, { color: themeColors.textSecondary }]}>Last Updated</Text>
+              <Text style={[styles.infoRowValue, { color: themeColors.textPrimary }]}>
                 {new Date(vessel.updatedAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -361,7 +414,6 @@ export const VesselSettingsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -371,18 +423,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
   },
   loadingText: {
     marginTop: SPACING.md,
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
     padding: SPACING.lg,
   },
   errorText: {
@@ -402,7 +451,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   editButton: {
     fontSize: FONTS.base,
@@ -410,7 +458,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     shadowColor: COLORS.black,
@@ -422,12 +469,9 @@ const styles = StyleSheet.create({
   vesselNameDisplay: {
     fontSize: FONTS.xl,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   input: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
@@ -448,7 +492,6 @@ const styles = StyleSheet.create({
   codeLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
   codeBox: {
@@ -466,7 +509,6 @@ const styles = StyleSheet.create({
   },
   expiryText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   codeActions: {
     flexDirection: 'row',
@@ -501,7 +543,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONTS.sm,
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     lineHeight: 20,
   },
@@ -516,13 +557,16 @@ const styles = StyleSheet.create({
   infoRowLast: {
     borderBottomWidth: 0,
   },
+  photoHint: {
+    fontSize: FONTS.sm,
+    marginTop: SPACING.sm,
+    textAlign: 'center',
+  },
   infoRowLabel: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   infoRowValue: {
     fontSize: FONTS.sm,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
 });

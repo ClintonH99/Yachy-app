@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import {
   registerForPushNotificationsAsync,
@@ -46,6 +47,7 @@ const PREFERENCE_ORDER: NotificationPreferenceKey[] = [
 ];
 
 export const NotificationSettingsScreen = () => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [enabled, setEnabled] = useState(false);
   const [preferences, setPreferences] = useState<Record<string, boolean>>({});
@@ -145,7 +147,7 @@ export const NotificationSettingsScreen = () => {
 
   if (checking) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -153,18 +155,18 @@ export const NotificationSettingsScreen = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Notifications</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: themeColors.textPrimary }]}>Notifications</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
         Receive push notifications for tasks, trips, and important updates.
       </Text>
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>Push notifications</Text>
+          <Text style={[styles.rowLabel, { color: themeColors.textPrimary }]}>Push notifications</Text>
           {loading ? (
             <ActivityIndicator size="small" color={COLORS.primary} />
           ) : (
@@ -177,17 +179,17 @@ export const NotificationSettingsScreen = () => {
           )}
         </View>
         {enabled && (
-          <Text style={styles.statusText}>You will receive push notifications.</Text>
+          <Text style={[styles.statusText, { color: themeColors.textSecondary }]}>You will receive push notifications.</Text>
         )}
       </View>
 
       {enabled && (
         <View style={styles.preferencesSection}>
-          <Text style={styles.preferencesTitle}>What to receive</Text>
-          <Text style={styles.preferencesSubtitle}>
+          <Text style={[styles.preferencesTitle, { color: themeColors.textPrimary }]}>What to receive</Text>
+          <Text style={[styles.preferencesSubtitle, { color: themeColors.textSecondary }]}>
             Choose which updates you want to be notified about.
           </Text>
-          <View style={styles.preferencesCard}>
+          <View style={[styles.preferencesCard, { backgroundColor: themeColors.surface }]}>
             {PREFERENCE_ORDER.map((key, index) => (
               <View
                 key={key}
@@ -196,7 +198,7 @@ export const NotificationSettingsScreen = () => {
                   index < PREFERENCE_ORDER.length - 1 && styles.preferenceRowBorder,
                 ]}
               >
-                <Text style={styles.preferenceLabel}>{PREFERENCE_LABELS[key]}</Text>
+                <Text style={[styles.preferenceLabel, { color: themeColors.textPrimary }]}>{PREFERENCE_LABELS[key]}</Text>
                 <Switch
                   value={preferences[key] ?? true}
                   onValueChange={(v) => handlePreferenceToggle(key, v)}
@@ -210,8 +212,8 @@ export const NotificationSettingsScreen = () => {
       )}
 
       {!Device.isDevice && (
-        <View style={styles.warning}>
-          <Text style={styles.warningText}>
+        <View style={[styles.warning, { backgroundColor: themeColors.surfaceAlt }]}>
+          <Text style={[styles.warningText, { color: themeColors.textSecondary }]}>
             Use a physical device to test push notifications. They do not work on simulators.
           </Text>
         </View>
@@ -221,10 +223,7 @@ export const NotificationSettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1 },
   content: {
     padding: SPACING.lg,
     paddingBottom: SIZES.bottomScrollPadding,
@@ -237,16 +236,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONTS['2xl'],
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xl,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     shadowColor: COLORS.black,
@@ -263,11 +259,9 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   statusText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginTop: SPACING.sm,
   },
   preferencesSection: {
@@ -276,16 +270,13 @@ const styles = StyleSheet.create({
   preferencesTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   preferencesSubtitle: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.md,
   },
   preferencesCard: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     shadowColor: COLORS.black,
@@ -304,18 +295,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  preferenceLabel: {
-    fontSize: FONTS.base,
-    color: COLORS.textPrimary,
-  },
+  preferenceLabel: { fontSize: FONTS.base },
   warning: {
     marginTop: SPACING.xl,
     padding: SPACING.md,
-    backgroundColor: COLORS.gray100,
     borderRadius: BORDER_RADIUS.md,
   },
-  warningText: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
+  warningText: { fontSize: FONTS.sm },
 });

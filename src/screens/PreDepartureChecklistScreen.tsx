@@ -3,7 +3,7 @@
  * List of pre-departure checklists; Create button to add new
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,15 @@ import {
   Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import preDepartureChecklistsService from '../services/preDepartureChecklists';
+import vesselService from '../services/vessel';
 import { PreDepartureChecklist, Department } from '../types';
 import { Button } from '../components';
+import { generatePreDepartureChecklistPdf } from '../utils/preDepartureChecklistPdf';
 
 const CAPTAIN_CHECKLIST_MAX_ITEMS = 15;
 
@@ -35,15 +39,22 @@ const DEPARTMENT_OPTIONS: { value: Department | ''; label: string }[] = [
 ];
 
 export const PreDepartureChecklistScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [checklists, setChecklists] = useState<PreDepartureChecklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [departmentFilter, setDepartmentFilter] = useState<Department | ''>('');
   const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
 
   const vesselId = user?.vesselId ?? null;
   const isHOD = user?.role === 'HOD';
+  const isCaptain = user?.position?.toLowerCase() === 'captain';
+
+  const canEditChecklist = (checklist: PreDepartureChecklist) =>
+    checklist.department === null ? isCaptain : isHOD;
 
   const filteredChecklists = useMemo(() => {
     if (!departmentFilter) return checklists;
@@ -61,6 +72,37 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
     if (!captainBoard) return filteredChecklists;
     return filteredChecklists.filter((c) => c.id !== captainBoard.id);
   }, [filteredChecklists, captainBoard]);
+
+  const selectedChecklists = useMemo(() => {
+    return filteredChecklists.filter((c) => selectedIds.has(c.id));
+  }, [filteredChecklists, selectedIds]);
+
+  useEffect(() => {
+    const validIds = new Set(filteredChecklists.map((c) => c.id));
+    setSelectedIds((prev) => {
+      const kept = new Set([...prev].filter((id) => validIds.has(id)));
+      return kept;
+    });
+  }, [filteredChecklists]);
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const allSelected = filteredChecklists.length > 0 && selectedIds.size === filteredChecklists.length;
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredChecklists.map((c) => c.id)));
+    }
+  }, [filteredChecklists, allSelected]);
 
   const loadChecklists = useCallback(async () => {
     if (!vesselId) return;
@@ -91,11 +133,15 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
   };
 
   const onEdit = (checklist: PreDepartureChecklist) => {
+    if (!canEditChecklist(checklist)) {
+      onView(checklist);
+      return;
+    }
     navigation.navigate('AddEditPreDepartureChecklist', { checklistId: checklist.id });
   };
 
   const onDelete = (checklist: PreDepartureChecklist) => {
-    if (!isHOD) return;
+    if (!canEditChecklist(checklist)) return;
     Alert.alert(
       'Delete checklist',
       `Delete "${checklist.title}"?`,
@@ -117,6 +163,30 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
     );
   };
 
+  const onView = (checklist: PreDepartureChecklist) => {
+    navigation.navigate('ViewPreDepartureChecklist', { checklistId: checklist.id });
+  };
+
+  const onExportPdf = async () => {
+    if (!vesselId || selectedChecklists.length === 0) {
+      Alert.alert('No selection', 'Select at least one checklist to export.');
+      return;
+    }
+    setExportingPdf(true);
+    try {
+      const vessel = await vesselService.getVessel(vesselId);
+      const vesselName = vessel?.name || 'Vessel';
+      const safeName = vesselName.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Vessel';
+      const filename = `${safeName}_Pre_Departure_Checklist.pdf`;
+      await generatePreDepartureChecklistPdf(selectedChecklists, vesselName, filename);
+    } catch (e) {
+      console.error('Export PDF error:', e);
+      Alert.alert('Error', 'Could not export PDF.');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   const itemCount = (c: PreDepartureChecklist) => c.items.length;
@@ -126,45 +196,64 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
     const deptLabel = item.department
       ? DEPARTMENT_OPTIONS.find((o) => o.value === item.department)?.label ?? item.department
       : 'All';
+    const isSelected = selectedIds.has(item.id);
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => onEdit(item)}
-        activeOpacity={0.8}
-      >
+      <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
+        <TouchableOpacity
+          style={[styles.cardCheckbox, isSelected && styles.cardCheckboxSelected]}
+          onPress={() => toggleSelection(item.id)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.checkboxIcon, styles.cardCheckboxIcon]}>{isSelected ? '✓' : ''}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.cardContent}
+          onPress={() => onEdit(item)}
+          activeOpacity={0.8}
+        >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
+          <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>
             {item.title}
           </Text>
-          {isHOD && (
+          <Text style={[styles.cardDateHeader, { color: themeColors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
+          {canEditChecklist(item) && (
             <TouchableOpacity
               onPress={() => onDelete(item)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.deleteBtn}>Delete</Text>
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             </TouchableOpacity>
           )}
         </View>
         <View style={styles.cardMeta}>
-          <Text style={styles.deptBadge}>{deptLabel}</Text>
-          <Text style={styles.cardProgress}>{count} items</Text>
-          <Text style={styles.cardDate}>{formatDate(item.createdAt)}</Text>
+          <Text style={[styles.deptBadge, { color: themeColors.textSecondary }]}>{deptLabel}</Text>
+          <Text style={[styles.cardProgress, { color: themeColors.textSecondary }]}>{count} items</Text>
         </View>
-      </TouchableOpacity>
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={[styles.cardActionBtn, styles.cardActionBtnView]}
+            onPress={() => onView(item)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cardActionBtnText}>View</Text>
+          </TouchableOpacity>
+        </View>
+        </TouchableOpacity>
+      </View>
     );
   };
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to manage pre-departure checklists.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to manage pre-departure checklists.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -173,73 +262,110 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
   const ListHeader = (
     <>
       <View style={styles.boardHeader}>
-        <Text style={styles.boardTitle}>Pre-Departure Checklist</Text>
-        <Text style={styles.boardHint}>
+        <Text style={[styles.boardTitle, { color: COLORS.primary }]}>Pre-Departure Checklist</Text>
+        <Text style={[styles.boardHint, { color: themeColors.textSecondary }]}>
           {isHOD
             ? 'Add tasks for crew to complete before each departure. Read and do.'
             : 'Tasks to complete before departure. Read and do.'}
         </Text>
       </View>
-      {isHOD && (
-        <View style={styles.actionBar}>
+      <View style={styles.actionBar}>
+        {(isHOD || isCaptain) && (
           <Button title="Create" onPress={onCreate} variant="primary" fullWidth />
+        )}
+        <Button
+          title={
+            exportingPdf
+              ? 'Exporting…'
+              : selectedChecklists.length > 0
+                ? `Export to PDF (${selectedChecklists.length})`
+                : 'Export to PDF'
+          }
+          onPress={onExportPdf}
+          variant="outline"
+          fullWidth
+          disabled={exportingPdf || selectedChecklists.length === 0}
+          style={styles.exportBtn}
+        />
+      </View>
+      {filteredChecklists.length > 0 && (
+        <View style={[styles.selectionBar, { backgroundColor: themeColors.surface }]}>
+          <View style={styles.selectionBarActions}>
+            <TouchableOpacity onPress={toggleSelectAll} style={styles.selectionBarBtn} activeOpacity={0.7}>
+              <Text style={styles.selectionBarBtnText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      {captainBoard && (
+        <View style={styles.captainBoard}>
+          <TouchableOpacity
+            style={[styles.checkbox, selectedIds.has(captainBoard.id) && styles.checkboxSelected]}
+            onPress={() => toggleSelection(captainBoard.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.checkboxIcon}>{selectedIds.has(captainBoard.id) ? '✓' : ''}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.captainBoardContent}
+            onPress={() => onEdit(captainBoard)}
+            activeOpacity={0.9}
+          >
+          <Text style={styles.captainBoardBadge}>Captain's Checklist</Text>
+            <Text style={styles.captainBoardTitle} numberOfLines={1}>
+              {captainBoard.title}
+            </Text>
+            <View style={styles.captainBoardItems}>
+              {captainBoard.items
+                .slice(0, CAPTAIN_CHECKLIST_MAX_ITEMS)
+                .map((item, idx) => (
+                  <View key={item.id} style={styles.captainBoardItemRow}>
+                    <Text style={styles.captainBoardItemNum}>{idx + 1}.</Text>
+                    <Text style={styles.captainBoardItemLabel}>{item.label}</Text>
+                  </View>
+                ))}
+              {captainBoard.items.length === 0 && (
+                <Text style={styles.captainBoardEmpty}>No items yet</Text>
+              )}
+              {captainBoard.items.length > CAPTAIN_CHECKLIST_MAX_ITEMS && (
+                <Text style={styles.readMore}>Read More...</Text>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
       )}
       <View style={styles.filterBar}>
-        <TouchableOpacity
-          style={[styles.filterChip, departmentFilter ? styles.filterChipActive : null]}
-          onPress={() => setDepartmentModalVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.filterChipLabel}>Department</Text>
-          <Text style={[styles.filterChipValue, departmentFilter ? styles.filterChipValueActive : null]}>
-            {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.filterBarContent}>
+          <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
+            onPress={() => setDepartmentModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>
+              {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All departments'}
+            </Text>
+            <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>
+              {departmentModalVisible ? '▲' : '▼'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         {departmentFilter ? (
           <TouchableOpacity onPress={() => setDepartmentFilter('')} style={styles.clearFilters}>
-            <Text style={styles.clearFiltersText}>Clear filter</Text>
+            <Text style={[styles.clearFiltersText, { color: themeColors.textPrimary }]}>Clear filter</Text>
           </TouchableOpacity>
         ) : null}
       </View>
-      {captainBoard && (
-        <TouchableOpacity
-          style={styles.captainBoard}
-          onPress={() => onEdit(captainBoard)}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.captainBoardBadge}>Captain's Checklist</Text>
-          <Text style={styles.captainBoardTitle} numberOfLines={1}>
-            {captainBoard.title}
-          </Text>
-          <View style={styles.captainBoardItems}>
-            {captainBoard.items
-              .slice(0, CAPTAIN_CHECKLIST_MAX_ITEMS)
-              .map((item, idx) => (
-                <View key={item.id} style={styles.captainBoardItemRow}>
-                  <Text style={styles.captainBoardItemNum}>{idx + 1}.</Text>
-                  <Text style={styles.captainBoardItemLabel}>{item.label}</Text>
-                </View>
-              ))}
-            {captainBoard.items.length === 0 && (
-              <Text style={styles.captainBoardEmpty}>No items yet</Text>
-            )}
-            {captainBoard.items.length > CAPTAIN_CHECKLIST_MAX_ITEMS && (
-              <Text style={styles.readMore}>Read More...</Text>
-            )}
-          </View>
-        </TouchableOpacity>
-      )}
     </>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {departmentModalVisible && (
         <Modal visible transparent animationType="fade">
           <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
-            <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-              <Text style={styles.modalTitle}>Filter by department</Text>
+            <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Filter by department</Text>
               {DEPARTMENT_OPTIONS.map((opt) => (
                 <TouchableOpacity
                   key={opt.value || 'all'}
@@ -249,7 +375,7 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
                     setDepartmentModalVisible(false);
                   }}
                 >
-                  <Text style={styles.modalItemText}>{opt.label}</Text>
+                  <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -270,13 +396,13 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
           otherChecklists.length === 0 && !captainBoard ? (
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>📋</Text>
-              <Text style={styles.emptyTitle}>
+              <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>
                 {filteredChecklists.length === 0 && checklists.length > 0 ? 'No matching checklists' : 'No checklists yet'}
               </Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
                 {filteredChecklists.length === 0 && checklists.length > 0
                   ? 'Try a different department filter.'
-                  : isHOD
+                  : (isHOD || isCaptain)
                     ? 'Tap "Create" to add a checklist. Use "All Departments" for the Captain\'s board.'
                     : 'No pre-departure tasks have been added yet.'}
               </Text>
@@ -292,7 +418,7 @@ export const PreDepartureChecklistScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -309,59 +435,45 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.md,
     paddingBottom: SPACING.sm,
   },
-  boardTitle: {
-    fontSize: FONTS.xl,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: SPACING.xs,
-  },
-  boardHint: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
+  boardTitle: { fontSize: FONTS.xl, fontWeight: '700', marginBottom: SPACING.xs },
+  boardHint: { fontSize: FONTS.sm },
   actionBar: {
-    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
     paddingBottom: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
+  exportBtn: { marginTop: SPACING.sm },
   filterBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
+    alignItems: 'flex-start',
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.xs,
+    marginBottom: SPACING.lg,
     gap: SPACING.md,
   },
-  filterChip: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.gray100,
-    borderRadius: BORDER_RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primaryLight,
-  },
-  filterChipLabel: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
-  filterChipValue: {
+  filterBarContent: { flex: 1 },
+  filterLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
-  filterChipValueActive: {
-    color: COLORS.primary,
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   clearFilters: {
     paddingVertical: SPACING.xs,
   },
   clearFiltersText: {
     fontSize: FONTS.sm,
-    color: COLORS.primary,
   },
   modalBackdrop: {
     flex: 1,
@@ -371,33 +483,75 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     minWidth: 260,
     maxHeight: 400,
   },
-  modalTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
+  modalTitle: { fontSize: FONTS.lg, fontWeight: '600', marginBottom: SPACING.md },
   modalItem: {
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     borderRadius: BORDER_RADIUS.sm,
   },
   modalItemSelected: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.gray200,
   },
-  modalItemText: {
-    fontSize: FONTS.base,
-    color: COLORS.textPrimary,
+  modalItemText: { fontSize: FONTS.base },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  selectionBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  selectionBarBtn: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+  },
+  selectionBarBtnText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    marginTop: 2,
+  },
+  checkboxIcon: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  checkboxSelected: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderColor: COLORS.white,
   },
   captainBoard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
     backgroundColor: COLORS.primary,
-    marginHorizontal: SPACING.lg,
     marginTop: SPACING.sm,
     marginBottom: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
@@ -408,6 +562,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  captainBoardContent: { flex: 1 },
   captainBoardBadge: {
     fontSize: FONTS.xs,
     fontWeight: '700',
@@ -461,7 +616,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   card: {
-    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -475,17 +631,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: SPACING.sm,
   },
-  cardTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    flex: 1,
+  cardCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: COLORS.gray300,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    marginTop: 2,
   },
-  deleteBtn: {
-    fontSize: FONTS.sm,
-    color: COLORS.danger,
+  cardCheckboxSelected: {
+    backgroundColor: COLORS.gray100,
+    borderColor: COLORS.primary,
   },
+  cardCheckboxIcon: {
+    color: COLORS.primary,
+    fontSize: 12,
+  },
+  cardContent: { flex: 1 },
+  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', flex: 1, minWidth: 0 },
+  cardDateHeader: { fontSize: FONTS.sm, flexShrink: 0 },
   cardMeta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -495,20 +665,33 @@ const styles = StyleSheet.create({
   },
   deptBadge: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     backgroundColor: COLORS.gray100,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
   },
-  cardProgress: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
+  cardActions: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray200,
   },
-  cardDate: {
-    fontSize: FONTS.sm,
-    color: COLORS.textTertiary,
+  cardActionBtn: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
   },
+  cardActionBtnView: {
+    backgroundColor: COLORS.gray100,
+  },
+  cardActionBtnText: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  cardProgress: { fontSize: FONTS.sm },
   empty: {
     flex: 1,
     justifyContent: 'center',
@@ -516,17 +699,6 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
   emptyEmoji: { fontSize: 48, marginBottom: SPACING.md },
-  emptyTitle: {
-    fontSize: FONTS.xl,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: FONTS.base,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  emptyTitle: { fontSize: FONTS.xl, fontWeight: '600', marginBottom: SPACING.sm, textAlign: 'center' },
+  emptyText: { fontSize: FONTS.base, textAlign: 'center', lineHeight: 22 },
 });

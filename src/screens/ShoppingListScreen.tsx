@@ -18,7 +18,9 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import shoppingListsService, { ShoppingList, ShoppingListItem } from '../services/shoppingLists';
 import { Department } from '../types';
@@ -35,6 +37,7 @@ const allDeptsVisible: Record<Department, boolean> = {
 };
 
 export const ShoppingListScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const overrides = useDepartmentColorStore((s) => s.overrides);
   const listType = (route?.params?.listType as 'general' | 'trip') ?? 'general';
@@ -158,8 +161,8 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to use Shopping List.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to use Shopping List.</Text>
       </View>
     );
   }
@@ -169,8 +172,8 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
     return (
       <View style={styles.masterBoard}>
         <View style={styles.masterBoardHeader}>
-          <Text style={styles.masterBoardTitle}>Every Trip</Text>
-          <Text style={styles.masterBoardSubtitle}>Items you need before every trip</Text>
+          <Text style={[styles.masterBoardTitle, { color: themeColors.textPrimary }]}>Every Trip</Text>
+          <Text style={[styles.masterBoardSubtitle, { color: themeColors.textSecondary }]}>Items you need before every trip</Text>
           <TouchableOpacity
             onPress={() => resetMasterChecks(masterList)}
             style={styles.resetBtn}
@@ -186,10 +189,10 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.masterCard}>
+        <View style={[styles.masterCard, { backgroundColor: themeColors.surface }]}>
           <View style={styles.bulletList}>
             {masterList.items.length === 0 ? (
-              <Text style={styles.bulletPlaceholder}>No items yet. Tap "Edit items" below to add items.</Text>
+              <Text style={[styles.bulletPlaceholder, { color: COLORS.textTertiary }]}>No items yet. Tap "Edit items" below to add items.</Text>
             ) : (
               masterList.items.map((item, idx) => (
                 <View key={idx} style={styles.bulletRow}>
@@ -203,7 +206,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                     ) : null}
                   </TouchableOpacity>
                   <Text
-                    style={[styles.bulletText, item.checked && styles.bulletTextChecked]}
+                    style={[styles.bulletText, { color: themeColors.textPrimary }, item.checked && styles.bulletTextChecked]}
                     numberOfLines={2}
                   >
                     {item.text}
@@ -212,12 +215,13 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
               ))
             )}
           </View>
-          <TouchableOpacity
+          <Button
+            title="Edit items"
             onPress={() => navigation.navigate('AddEditShoppingList', { listId: masterList.id })}
-            style={styles.editLink}
-          >
-            <Text style={styles.editHint}>Edit items</Text>
-          </TouchableOpacity>
+            variant="text"
+            size="small"
+            style={styles.editBtnMaster}
+          />
         </View>
       </View>
     );
@@ -225,7 +229,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
@@ -239,22 +243,23 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
           variant="primary"
           fullWidth
         />
-        <Text style={styles.filterLabel}>Department</Text>
+        <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
           <TouchableOpacity
-            style={styles.dropdown}
+            style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
             onPress={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
             activeOpacity={0.7}
           >
-            <Text style={styles.dropdownText}>{getDepartmentDisplayText()}</Text>
-            <Text style={styles.dropdownChevron}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
+            <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>{getDepartmentDisplayText()}</Text>
+            <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {departmentDropdownOpen && (
             <Modal visible transparent animationType="fade">
               <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentDropdownOpen(false)}>
-                <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
+                <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
                   <TouchableOpacity
                     style={[
                       styles.modalItem,
+                      { backgroundColor: themeColors.surface },
                       DEPARTMENTS.every((d) => visibleDepartments[d]) && styles.modalItemSelected,
                     ]}
                     onPress={() => {
@@ -265,6 +270,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                     <Text
                       style={[
                         styles.modalItemText,
+                        { color: themeColors.textPrimary },
                         DEPARTMENTS.every((d) => visibleDepartments[d]) && styles.modalItemTextSelected,
                       ]}
                     >
@@ -274,7 +280,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                   {DEPARTMENTS.map((dept) => (
                     <TouchableOpacity
                       key={dept}
-                      style={[styles.modalItem, visibleDepartments[dept] && styles.modalItemSelected]}
+                      style={[styles.modalItem, { backgroundColor: themeColors.surface }, visibleDepartments[dept] && styles.modalItemSelected]}
                       onPress={() => {
                         selectDepartment(dept);
                         setDepartmentDropdownOpen(false);
@@ -283,6 +289,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.modalItemText,
+                          { color: themeColors.textPrimary },
                           visibleDepartments[dept] && styles.modalItemTextSelected,
                         ]}
                       >
@@ -298,23 +305,24 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
         {loading ? (
             <ActivityIndicator size="small" color={COLORS.primary} style={styles.loader} />
           ) : filteredLists.length === 0 ? (
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: themeColors.textSecondary }]}>
               {listsForType.length === 0
                 ? `No ${sectionTitle.toLowerCase()} lists yet. Tap Create to add one.`
                 : 'No lists for the selected department(s).'}
             </Text>
           ) : (
             filteredLists.map((list) => (
-          <View key={list.id} style={styles.card}>
+          <View key={list.id} style={[styles.card, { backgroundColor: themeColors.surface }]}>
             <View style={styles.cardHeader}>
-              <TouchableOpacity
-                style={styles.cardTitleTouch}
-                onPress={() => navigation.navigate('AddEditShoppingList', { listId: list.id })}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {list.title}
-                </Text>
+              <View style={styles.cardTitleBlock}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('AddEditShoppingList', { listId: list.id })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>
+                    {list.title}
+                  </Text>
+                </TouchableOpacity>
                 <View
                   style={[
                     styles.deptBadge,
@@ -325,19 +333,22 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                     {list.department.charAt(0) + list.department.slice(1).toLowerCase()}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </View>
               <View style={styles.cardActions}>
-                <TouchableOpacity onPress={() => navigation.navigate('AddEditShoppingList', { listId: list.id })} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.editBtn}>Edit</Text>
-                </TouchableOpacity>
                 <TouchableOpacity onPress={() => onDelete(list)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.deleteBtn}>Delete</Text>
+                  <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
                 </TouchableOpacity>
+                <Button
+                  title="Edit"
+                  onPress={() => navigation.navigate('AddEditShoppingList', { listId: list.id })}
+                  variant="text"
+                  size="small"
+                />
               </View>
             </View>
             <View style={styles.bulletList}>
               {list.items.length === 0 ? (
-                <Text style={styles.bulletPlaceholder}>No items</Text>
+                <Text style={[styles.bulletPlaceholder, { color: COLORS.textTertiary }]}>No items</Text>
               ) : (
                 list.items.map((item, idx) => (
                   <View key={idx} style={styles.bulletRow}>
@@ -353,6 +364,7 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
                     <Text
                       style={[
                         styles.bulletText,
+                        { color: themeColors.textPrimary },
                         item.checked && styles.bulletTextChecked,
                       ]}
                       numberOfLines={2}
@@ -372,15 +384,14 @@ export const ShoppingListScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
   section: { marginBottom: SPACING.lg },
   filterLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
@@ -390,40 +401,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
-  dropdownText: { fontSize: FONTS.base, color: COLORS.textPrimary, fontWeight: '500' },
-  dropdownChevron: { fontSize: 10, color: COLORS.textSecondary },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  modalBox: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
-  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, backgroundColor: COLORS.white },
-  modalItemSelected: { backgroundColor: COLORS.white },
-  modalItemText: { fontSize: FONTS.base, color: COLORS.textPrimary },
+  modalBox: { borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
+  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
+  modalItemSelected: {},
+  modalItemText: { fontSize: FONTS.base },
   modalItemTextSelected: { color: COLORS.primary, fontWeight: '600' },
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: FONTS.base, color: COLORS.textSecondary, paddingVertical: SPACING.xl },
+  empty: { fontSize: FONTS.base, paddingVertical: SPACING.xl },
   masterBoard: { marginBottom: SPACING.xl },
   masterBoardHeader: { marginBottom: SPACING.sm },
-  masterBoardTitle: { fontSize: FONTS.xl, fontWeight: '700', color: COLORS.textPrimary },
-  masterBoardSubtitle: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: 2 },
+  masterBoardTitle: { fontSize: FONTS.xl, fontWeight: '700' },
+  masterBoardSubtitle: { fontSize: FONTS.sm, marginTop: 2 },
   resetBtn: { marginTop: SPACING.sm },
   resetBtnText: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.primary },
   resetBtnDisabled: { color: COLORS.textTertiary },
+  editBtnMaster: { marginTop: SPACING.sm, alignSelf: 'flex-start' },
   masterCard: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 2,
     borderColor: COLORS.primaryLight,
   },
-  editLink: { marginTop: SPACING.sm },
-  editHint: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.primary },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -433,13 +440,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm },
-  cardTitleTouch: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', color: COLORS.textPrimary, flex: 1 },
-  cardActions: { flexDirection: 'row', gap: SPACING.md },
-  editBtn: { fontSize: FONTS.sm, color: COLORS.primary, fontWeight: '600' },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SPACING.sm },
+  cardTitleBlock: { flex: 1 },
+  cardTitle: { fontSize: FONTS.lg, fontWeight: '600' },
+  cardActions: { flexDirection: 'row', gap: SPACING.md, alignItems: 'center' },
   deleteBtn: { fontSize: FONTS.sm, color: COLORS.danger, fontWeight: '600' },
-  deptBadge: { paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: BORDER_RADIUS.sm },
+  deptBadge: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
+    marginTop: SPACING.xs,
+    alignSelf: 'flex-start',
+  },
   deptBadgeText: { fontSize: FONTS.xs, fontWeight: '600', color: COLORS.white },
   bulletList: { marginTop: SPACING.xs },
   bulletRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs },
@@ -458,7 +470,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.success,
   },
   checkboxTick: { color: COLORS.white, fontSize: 12, fontWeight: '700' },
-  bulletText: { fontSize: FONTS.base, color: COLORS.textPrimary, flex: 1 },
+  bulletText: { fontSize: FONTS.base, flex: 1 },
   bulletTextChecked: { textDecorationLine: 'line-through', color: COLORS.textTertiary },
-  bulletPlaceholder: { fontSize: FONTS.sm, color: COLORS.textTertiary, fontStyle: 'italic' },
+  bulletPlaceholder: { fontSize: FONTS.sm, fontStyle: 'italic' },
 });

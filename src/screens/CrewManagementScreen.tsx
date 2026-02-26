@@ -18,10 +18,12 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor as getDeptColor } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import userService from '../services/user';
 import { User, Department } from '../types';
 
 export const CrewManagementScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user: currentUser } = useAuthStore();
   const [crew, setCrew] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,7 +145,7 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 
     return (
       <TouchableOpacity
-        style={styles.crewCard}
+        style={[styles.crewCard, { backgroundColor: themeColors.surface }]}
         onPress={() => {
           Alert.alert(
             item.name,
@@ -181,10 +183,10 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 
           <View style={styles.crewInfo}>
             <View style={styles.crewNameRow}>
-              <Text style={styles.crewName}>{item.name}</Text>
+              <Text style={[styles.crewName, { color: themeColors.textPrimary }]}>{item.name}</Text>
               {isCurrentUser && <Text style={styles.youBadge}>YOU</Text>}
             </View>
-            <Text style={styles.crewPosition}>{item.position}</Text>
+            <Text style={[styles.crewPosition, { color: themeColors.textSecondary }]}>{item.position}</Text>
             <View style={styles.crewBadges}>
               <View
                 style={[
@@ -228,7 +230,7 @@ export const CrewManagementScreen = ({ navigation }: any) => {
               );
             }}
           >
-            <Text style={styles.optionsIcon}>⋮</Text>
+            <Text style={[styles.optionsIcon, { color: themeColors.textSecondary }]}>⋮</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -238,39 +240,39 @@ export const CrewManagementScreen = ({ navigation }: any) => {
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{crew.length}</Text>
-          <Text style={styles.statLabel}>Total Crew</Text>
+        <View style={[styles.statBox, { backgroundColor: themeColors.surface }]}>
+          <Text style={[styles.statNumber, { color: themeColors.textPrimary }]}>{crew.length}</Text>
+          <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Total Crew</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>
+        <View style={[styles.statBox, { backgroundColor: themeColors.surface }]}>
+          <Text style={[styles.statNumber, { color: themeColors.textPrimary }]}>
             {crew.filter((c) => c.role === 'HOD').length}
           </Text>
-          <Text style={styles.statLabel}>HODs</Text>
+          <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>HODs</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>
+        <View style={[styles.statBox, { backgroundColor: themeColors.surface }]}>
+          <Text style={[styles.statNumber, { color: themeColors.textPrimary }]}>
             {crew.filter((c) => c.role === 'CREW').length}
           </Text>
-          <Text style={styles.statLabel}>Crew</Text>
+          <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Crew</Text>
         </View>
       </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoText}>
+      <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
+        <Text style={[styles.infoText, { color: themeColors.textPrimary }]}>
           💡 Tap any crew member to view details and manage their role
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Crew Members</Text>
+      <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Crew Members</Text>
     </View>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>👥</Text>
-      <Text style={styles.emptyTitle}>No Crew Members</Text>
-      <Text style={styles.emptyText}>
+      <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>No Crew Members</Text>
+      <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
         Crew members will appear here once they join. Manage invite code in Vessel Settings.
       </Text>
     </View>
@@ -282,15 +284,15 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading crew...</Text>
+        <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>Loading crew...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <FlatList
         data={crew}
         renderItem={renderCrewMember}
@@ -313,18 +315,15 @@ export const CrewManagementScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
   },
   loadingText: {
     marginTop: SPACING.md,
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   listContent: {
     padding: SPACING.lg,
@@ -340,7 +339,6 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: COLORS.white,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
@@ -358,7 +356,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   infoCard: {
@@ -369,20 +366,17 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONTS.sm,
-    color: COLORS.textPrimary,
     lineHeight: 20,
   },
   sectionTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   crewCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.white,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.md,
@@ -428,7 +422,6 @@ const styles = StyleSheet.create({
   crewName: {
     fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginRight: SPACING.xs,
   },
   youBadge: {
@@ -442,7 +435,6 @@ const styles = StyleSheet.create({
   },
   crewPosition: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   crewBadges: {
@@ -480,7 +472,6 @@ const styles = StyleSheet.create({
   },
   optionsIcon: {
     fontSize: 20,
-    color: COLORS.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -493,12 +484,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: FONTS.xl,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
   emptyText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
 });

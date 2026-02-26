@@ -200,7 +200,7 @@ export const ProfileScreen = ({ navigation }: any) => {
         {
           icon: '🖼️',
           label: 'Appearance',
-          description: 'Background theme: Light, Ocean, Sand, Navy',
+          description: 'Background theme: Day or Night Mode',
           onPress: () => navigation.navigate('ThemeSettings'),
           disabled: false,
         },
@@ -230,7 +230,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.content}>
         {/* Profile Photo Section */}
         <View style={styles.photoSection}>

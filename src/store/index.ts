@@ -8,6 +8,7 @@ import { COLORS } from '../constants/theme';
 import { User } from '../types';
 
 const DEPARTMENT_COLOR_STORAGE_KEY = 'nautical_ops_department_color_overrides';
+const BACKGROUND_THEME_STORAGE_KEY = 'nautical_ops_background_theme';
 
 // ===== AUTH STORE =====
 
@@ -97,7 +98,7 @@ export function getDepartmentColor(
 
 // ===== BACKGROUND THEME (home/explore/profile background and surfaces) =====
 
-export type BackgroundThemeId = 'light' | 'ocean' | 'sand' | 'navy';
+export type BackgroundThemeId = 'day' | 'night';
 
 interface BackgroundThemeColors {
   background: string;
@@ -109,7 +110,7 @@ interface BackgroundThemeColors {
 }
 
 export const BACKGROUND_THEMES: Record<BackgroundThemeId, BackgroundThemeColors> = {
-  light: {
+  day: {
     background: '#F8F9FA',
     surface: '#FFFFFF',
     surfaceAlt: '#F1F3F5',
@@ -117,23 +118,7 @@ export const BACKGROUND_THEMES: Record<BackgroundThemeId, BackgroundThemeColors>
     textSecondary: '#64748B',
     isDark: false,
   },
-  ocean: {
-    background: '#EFF6FF',
-    surface: '#FFFFFF',
-    surfaceAlt: '#DBEAFE',
-    textPrimary: '#0D0D0D',
-    textSecondary: '#475569',
-    isDark: false,
-  },
-  sand: {
-    background: '#FFFBEB',
-    surface: '#FFFFFF',
-    surfaceAlt: '#FEF3C7',
-    textPrimary: '#78350F',
-    textSecondary: '#92400E',
-    isDark: false,
-  },
-  navy: {
+  night: {
     background: '#0F172A',
     surface: '#1E293B',
     surfaceAlt: '#334155',
@@ -151,14 +136,14 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  backgroundTheme: 'light',
+  backgroundTheme: 'day',
   loaded: false,
   loadTheme: async () => {
     try {
       const raw = await AsyncStorage.getItem(BACKGROUND_THEME_STORAGE_KEY);
-      const id = (raw as BackgroundThemeId) || 'light';
-      const valid = ['light', 'ocean', 'sand', 'navy'].includes(id);
-      set({ backgroundTheme: valid ? id : 'light', loaded: true });
+      const id = (raw as BackgroundThemeId) || 'day';
+      const valid = ['day', 'night'].includes(id);
+      set({ backgroundTheme: valid ? id : 'day', loaded: true });
     } catch {
       set({ loaded: true });
     }

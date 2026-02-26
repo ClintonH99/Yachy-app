@@ -17,8 +17,10 @@ import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export const JoinVesselScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +70,7 @@ export const JoinVesselScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -80,21 +82,21 @@ export const JoinVesselScreen = ({ navigation }: any) => {
           <View style={styles.header}>
             <Text style={styles.icon}>⚓</Text>
             <Text style={styles.title}>Join a Vessel</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
               Enter the invite code provided by your vessel captain
             </Text>
           </View>
 
           {/* Info Card */}
-          <View style={styles.infoCard}>
+          <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.infoTitle}>How to get an invite code:</Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>
               • Ask your vessel captain for an 8-character invite code
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>
               • The code is case-sensitive and expires after 1 year
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>
               • Once joined, you'll have access to all vessel features
             </Text>
           </View>
@@ -125,7 +127,7 @@ export const JoinVesselScreen = ({ navigation }: any) => {
 
           {/* Alternative Option */}
           <View style={styles.alternative}>
-            <Text style={styles.alternativeText}>
+            <Text style={[styles.alternativeText, { color: themeColors.textSecondary }]}>
               Don't have a vessel yet?
             </Text>
             <Button
@@ -153,7 +155,6 @@ export const JoinVesselScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -180,12 +181,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: SPACING.lg,
   },
   infoCard: {
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.xl,
@@ -203,7 +202,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
     lineHeight: 20,
   },
@@ -221,7 +219,6 @@ const styles = StyleSheet.create({
   },
   alternativeText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },

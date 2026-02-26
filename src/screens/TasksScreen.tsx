@@ -13,6 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { TaskCategory } from '../types';
 import { Button } from '../components';
 import vesselTasksService from '../services/vesselTasks';
@@ -26,6 +27,7 @@ const CATEGORIES: { key: TaskCategory; label: string; icon: string }[] = [
 ];
 
 export const TasksScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const vesselId = user?.vesselId ?? null;
   const isHOD = user?.role === 'HOD';
@@ -50,15 +52,15 @@ export const TasksScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see tasks.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see tasks.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.subtitle}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
         Choose a category to view and manage tasks
       </Text>
       {isHOD && (
@@ -72,48 +74,48 @@ export const TasksScreen = ({ navigation }: any) => {
       )}
 
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('UpcomingTasks')}
         activeOpacity={0.8}
       >
         <Text style={styles.cardIcon}>📋</Text>
         <View style={styles.cardLabelWrap}>
-          <Text style={styles.cardLabel}>Upcoming Tasks</Text>
-          <Text style={styles.cardHint}>Tasks due in the next 3 days</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>Upcoming Tasks</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>Tasks due in the next 3 days</Text>
         </View>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.card, styles.overdueCard]}
+        style={[styles.card, styles.overdueCard, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('OverdueTasks')}
         activeOpacity={0.8}
       >
         <Text style={styles.cardIcon}>⚠️</Text>
         <View style={styles.cardLabelWrap}>
-          <Text style={styles.cardLabel}>Overdue Tasks</Text>
-          <Text style={styles.cardHint}>Tasks past their deadline</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>Overdue Tasks</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>Tasks past their deadline</Text>
         </View>
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('CompletedTasks')}
         activeOpacity={0.8}
       >
         <Text style={styles.cardIcon}>✓</Text>
         <View style={styles.cardLabelWrap}>
-          <Text style={styles.cardLabel}>Completed Tasks</Text>
-          <Text style={styles.cardHint}>Tasks you've finished</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>Completed Tasks</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>Tasks you've finished</Text>
         </View>
       </TouchableOpacity>
       {CATEGORIES.map((cat) => (
         <TouchableOpacity
           key={cat.key}
-          style={styles.card}
+          style={[styles.card, { backgroundColor: themeColors.surface }]}
           onPress={() => navigation.navigate('TasksList', { category: cat.key })}
           activeOpacity={0.8}
         >
           <Text style={styles.cardIcon}>{cat.icon}</Text>
-          <Text style={styles.cardLabel}>{cat.label}</Text>
-          <Text style={styles.cardHint}>View & create tasks</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>{cat.label}</Text>
+          <Text style={[styles.cardHint, { color: themeColors.textSecondary }]}>View & create tasks</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -123,7 +125,6 @@ export const TasksScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,
@@ -137,19 +138,16 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
   createButton: {
     marginBottom: SPACING.xl,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -169,14 +167,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.xl,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   cardLabelWrap: {
     flex: 1,
   },
   cardHint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   overdueCard: {
     borderLeftWidth: 4,

@@ -15,20 +15,19 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Modal,
-  Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
-import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
+import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
 import shoppingListsService, { ShoppingList, ShoppingListItem, ShoppingListType } from '../services/shoppingLists';
 import { Department } from '../types';
 import { Input, Button } from '../components';
 
-const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
-
 export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
+  const overrides = useDepartmentColorStore((s) => s.overrides);
   const listId = route?.params?.listId as string | undefined;
   const presetTitle = route?.params?.presetTitle as string | undefined;
   const listType = (route?.params?.listType as ShoppingListType) ?? 'general';
@@ -39,7 +38,6 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
   const [items, setItems] = useState<ShoppingListItem[]>([{ text: '', checked: false }]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false);
   const [isMaster, setIsMaster] = useState(false);
 
   const vesselId = user?.vesselId ?? null;
@@ -156,15 +154,15 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to create shopping lists.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to create shopping lists.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -172,7 +170,7 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -189,52 +187,22 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
           autoCapitalize="words"
         />
         {!isEdit && (
-          <>
-            <Text style={styles.label}>Department</Text>
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() => setDepartmentDropdownOpen(true)}
-              activeOpacity={0.7}
+          <View style={styles.deptDisplay}>
+            <Text style={[styles.deptLabel, { color: themeColors.textSecondary }]}>Department</Text>
+            <View
+              style={[
+                styles.deptBadge,
+                { backgroundColor: getDepartmentColor(department, overrides) },
+              ]}
             >
-              <Text style={styles.dropdownText}>
+              <Text style={styles.deptBadgeText}>
                 {department.charAt(0) + department.slice(1).toLowerCase()}
               </Text>
-              <Text style={styles.dropdownChevron}>▼</Text>
-            </TouchableOpacity>
-            {departmentDropdownOpen && (
-              <Modal visible transparent animationType="fade">
-                <Pressable
-                  style={styles.modalBackdrop}
-                  onPress={() => setDepartmentDropdownOpen(false)}
-                >
-                  <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-                    {DEPARTMENTS.map((dept) => (
-                      <TouchableOpacity
-                        key={dept}
-                        style={[styles.modalItem, department === dept && styles.modalItemSelected]}
-                        onPress={() => {
-                          setDepartment(dept);
-                          setDepartmentDropdownOpen(false);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.modalItemText,
-                            department === dept && styles.modalItemTextSelected,
-                          ]}
-                        >
-                          {dept.charAt(0) + dept.slice(1).toLowerCase()}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </Pressable>
-              </Modal>
-            )}
-          </>
+            </View>
+          </View>
         )}
 
-        <Text style={styles.label}>Items</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Items</Text>
         {items.map((item, index) => (
           <View key={index} style={styles.itemRow}>
             <TouchableOpacity
@@ -247,7 +215,7 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
               ) : null}
             </TouchableOpacity>
             <TextInput
-              style={[styles.itemInput, item.checked && styles.itemInputChecked]}
+              style={[styles.itemInput, { backgroundColor: themeColors.surface, color: themeColors.textPrimary }, item.checked && styles.itemInputChecked]}
               value={item.text}
               onChangeText={(v) => setItemAt(index, v)}
               placeholder="Item"
@@ -279,7 +247,7 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
           />
           {isEdit && !isMaster && (
             <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
-              <Text style={styles.deleteBtnText}>Delete list</Text>
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             </TouchableOpacity>
           )}
         </View>
@@ -289,32 +257,40 @@ export const AddEditShoppingListScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
-  label: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.textPrimary, marginBottom: SPACING.xs, marginTop: SPACING.md },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
+  label: { fontSize: FONTS.sm, fontWeight: '600', marginBottom: SPACING.xs, marginTop: SPACING.md },
   dropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
-  dropdownText: { fontSize: FONTS.base, color: COLORS.textPrimary, fontWeight: '500' },
-  dropdownChevron: { fontSize: 10, color: COLORS.textSecondary },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  modalBox: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
-  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, backgroundColor: COLORS.white },
-  modalItemSelected: { backgroundColor: COLORS.white },
-  modalItemText: { fontSize: FONTS.base, color: COLORS.textPrimary },
+  modalBox: { borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
+  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
+  modalItemSelected: {},
+  modalItemText: { fontSize: FONTS.base },
   modalItemTextSelected: { color: COLORS.primary, fontWeight: '600' },
+  deptDisplay: { marginBottom: SPACING.lg },
+  deptLabel: { fontSize: FONTS.sm, fontWeight: '600', marginBottom: SPACING.xs },
+  deptBadge: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
+    alignSelf: 'flex-start',
+  },
+  deptBadgeText: { fontSize: FONTS.xs, fontWeight: '600', color: COLORS.white },
   itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
   checkbox: {
     width: 24,
@@ -339,7 +315,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   itemInputChecked: { textDecorationLine: 'line-through', color: COLORS.textTertiary },
   addItemBtn: { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.sm, marginTop: SPACING.xs },

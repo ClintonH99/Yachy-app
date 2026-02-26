@@ -15,17 +15,20 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
 import tripsService from '../services/trips';
 import { Trip } from '../types';
 import { Button } from '../components';
 import { useVesselTripColors } from '../hooks/useVesselTripColors';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { DEFAULT_COLORS } from '../services/tripColors';
 
 const TRIP_TYPE = 'DELIVERY' as const;
 
 export const DeliveryTripsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,23 +118,23 @@ export const DeliveryTripsScreen = ({ navigation }: any) => {
 
   const renderItem = ({ item }: { item: Trip }) => (
     <TouchableOpacity
-      style={[styles.card, { borderLeftColor: cardColor }]}
+      style={[styles.card, { backgroundColor: themeColors.surface, borderLeftColor: cardColor }]}
       onPress={() => onEdit(item)}
       activeOpacity={0.8}
       disabled={!isHOD}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>{item.title}</Text>
         {isHOD && (
           <TouchableOpacity
             onPress={() => onDelete(item)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.deleteBtn}>Delete</Text>
+            <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
           </TouchableOpacity>
         )}
       </View>
-      <Text style={styles.cardDates}>
+      <Text style={[styles.cardDates, { color: themeColors.textSecondary }]}>
         {formatDate(item.startDate)} – {formatDate(item.endDate)}
       </Text>
       {item.notes ? (
@@ -142,14 +145,14 @@ export const DeliveryTripsScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see delivery trips.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see delivery trips.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {isHOD && (
         <View style={styles.addRow}>
           <Button
@@ -165,7 +168,7 @@ export const DeliveryTripsScreen = ({ navigation }: any) => {
       ) : trips.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🚢</Text>
-          <Text style={styles.emptyText}>No delivery periods yet</Text>
+          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No delivery periods yet</Text>
           {isHOD && (
             <Button title="Add first" onPress={onAdd} variant="primary" style={styles.emptyBtn} />
           )}
@@ -188,7 +191,6 @@ export const DeliveryTripsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -198,7 +200,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   addRow: {
@@ -215,7 +216,6 @@ const styles = StyleSheet.create({
     paddingBottom: SIZES.bottomScrollPadding,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -235,7 +235,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     flex: 1,
   },
   deleteBtn: {
@@ -244,7 +243,6 @@ const styles = StyleSheet.create({
   },
   cardDates: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   cardNotes: {
@@ -263,7 +261,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONTS.lg,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
   emptyBtn: {},

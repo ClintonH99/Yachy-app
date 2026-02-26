@@ -16,6 +16,7 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import tripsService from '../services/trips';
 import { Trip, TripType } from '../types';
@@ -56,6 +57,7 @@ function getMarkedDatesFromTrips(
 }
 
 export const UpcomingTripsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,11 +111,11 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
           onPress={() => navigation.navigate('TripColorSettings')}
           style={{ marginRight: SPACING.md }}
         >
-          <Text style={styles.headerButtonText}>Edit colors</Text>
+          <Text style={[styles.headerButtonText, { color: themeColors.textPrimary }]}>Edit colors</Text>
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isHOD]);
+  }, [navigation, isHOD, themeColors.textPrimary]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -129,13 +131,13 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
   const tripsStartingTomorrow = trips.filter((t) => t.startDate === tomorrowStr);
 
   const calendarTheme = {
-    backgroundColor: COLORS.white,
-    calendarBackground: COLORS.white,
-    textSectionTitleColor: COLORS.textSecondary,
+    backgroundColor: themeColors.surface,
+    calendarBackground: themeColors.surface,
+    textSectionTitleColor: themeColors.textSecondary,
     selectedDayBackgroundColor: COLORS.primary,
     selectedDayTextColor: COLORS.white,
     todayTextColor: COLORS.primary,
-    dayTextColor: COLORS.textPrimary,
+    dayTextColor: themeColors.textPrimary,
     textDisabledColor: COLORS.gray400,
     arrowColor: COLORS.primary,
     monthTextColor: COLORS.primary,
@@ -146,22 +148,22 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see upcoming trips.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see upcoming trips.</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
       }
     >
-      <Text style={styles.sectionTitle}>Calendar</Text>
-      <View style={styles.calendarCard}>
+      <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>Calendar</Text>
+      <View style={[styles.calendarCard, { backgroundColor: themeColors.surface }]}>
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
         ) : (
@@ -178,25 +180,25 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
           {visibleTypes.GUEST && (
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: c.guest }]} />
-              <Text style={styles.legendText}>Guest</Text>
+              <Text style={[styles.legendText, { color: themeColors.textSecondary }]}>Guest</Text>
             </View>
           )}
           {visibleTypes.BOSS && (
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: c.boss }]} />
-              <Text style={styles.legendText}>Boss</Text>
+              <Text style={[styles.legendText, { color: themeColors.textSecondary }]}>Boss</Text>
             </View>
           )}
           {visibleTypes.DELIVERY && (
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: c.delivery }]} />
-              <Text style={styles.legendText}>Delivery</Text>
+              <Text style={[styles.legendText, { color: themeColors.textSecondary }]}>Delivery</Text>
             </View>
           )}
           {visibleTypes.YARD_PERIOD && (
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: c.yardPeriod }]} />
-              <Text style={styles.legendText}>Yard</Text>
+              <Text style={[styles.legendText, { color: themeColors.textSecondary }]}>Yard</Text>
             </View>
           )}
         </View>
@@ -209,16 +211,16 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
           </Text>
         </View>
       )}
-      <View style={[styles.preDepartureRow, tripsStartingTomorrow.length > 0 && styles.preDepartureRowHighlight]}>
+      <View style={styles.preDepartureRow}>
         <TouchableOpacity
-          style={[styles.preDepartureBtn, tripsStartingTomorrow.length > 0 && styles.preDepartureBtnHighlight]}
+          style={[styles.preDepartureBtn, { backgroundColor: themeColors.surface }]}
           onPress={() => navigation.navigate('PreDepartureChecklist')}
           activeOpacity={0.8}
         >
           <Text style={styles.preDepartureEmoji}>📋</Text>
           <View style={styles.preDepartureTextWrap}>
-            <Text style={styles.preDepartureLabel}>Pre-Departure Checklist</Text>
-            <Text style={styles.preDepartureHint}>
+            <Text style={[styles.preDepartureLabel, { color: themeColors.textPrimary }]}>Pre-Departure Checklist</Text>
+            <Text style={[styles.preDepartureHint, { color: themeColors.textSecondary }]}>
               {tripsStartingTomorrow.length > 0
                 ? `Trip${tripsStartingTomorrow.length > 1 ? 's' : ''} tomorrow: ${tripsStartingTomorrow.map((t) => t.title).join(', ')}`
                 : 'HODs: Add tasks for crew before departure'}
@@ -227,14 +229,14 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Trip types</Text>
-      <Text style={styles.filterHint}>Tap card to open • Tap Show/Hide to filter calendar</Text>
+      <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>Trip types</Text>
+      <Text style={[styles.filterHint, { color: COLORS.textTertiary }]}>Tap card to open • Tap Show/Hide to filter calendar</Text>
       <View style={styles.optionsRow}>
-        <View style={[styles.optionCard, { borderLeftColor: c.guest }]}>
+        <View style={[styles.optionCard, { backgroundColor: themeColors.surface, borderLeftColor: c.guest }]}>
           <TouchableOpacity style={styles.optionCardMain} onPress={() => navigation.navigate('GuestTrips')} activeOpacity={0.8}>
             <Text style={styles.optionEmoji}>👥</Text>
-            <Text style={styles.optionTitle}>Guest Trips</Text>
-            <Text style={styles.optionSubtitle}>Charter guests</Text>
+            <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Guest Trips</Text>
+            <Text style={[styles.optionSubtitle, { color: themeColors.textSecondary }]}>Charter guests</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.visibilityBtn} onPress={() => toggleVisible('GUEST')}>
             <Text style={[styles.visibilityBtnText, !visibleTypes.GUEST && styles.visibilityBtnTextDim]}>
@@ -242,11 +244,11 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={[styles.optionCard, { borderLeftColor: c.boss }]}>
+        <View style={[styles.optionCard, { backgroundColor: themeColors.surface, borderLeftColor: c.boss }]}>
           <TouchableOpacity style={styles.optionCardMain} onPress={() => navigation.navigate('BossTrips')} activeOpacity={0.8}>
             <Text style={styles.optionEmoji}>⚓</Text>
-            <Text style={styles.optionTitle}>Boss Trips</Text>
-            <Text style={styles.optionSubtitle}>Owner / family</Text>
+            <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Boss Trips</Text>
+            <Text style={[styles.optionSubtitle, { color: themeColors.textSecondary }]}>Owner / family</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.visibilityBtn} onPress={() => toggleVisible('BOSS')}>
             <Text style={[styles.visibilityBtnText, !visibleTypes.BOSS && styles.visibilityBtnTextDim]}>
@@ -256,11 +258,11 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
         </View>
       </View>
       <View style={[styles.optionsRow, styles.optionsRowSecond]}>
-        <View style={[styles.optionCard, { borderLeftColor: c.delivery }]}>
+        <View style={[styles.optionCard, { backgroundColor: themeColors.surface, borderLeftColor: c.delivery }]}>
           <TouchableOpacity style={styles.optionCardMain} onPress={() => navigation.navigate('DeliveryTrips')} activeOpacity={0.8}>
             <Text style={styles.optionEmoji}>🚢</Text>
-            <Text style={styles.optionTitle}>Delivery</Text>
-            <Text style={styles.optionSubtitle}>Delivery periods</Text>
+            <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Delivery</Text>
+            <Text style={[styles.optionSubtitle, { color: themeColors.textSecondary }]}>Delivery periods</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.visibilityBtn} onPress={() => toggleVisible('DELIVERY')}>
             <Text style={[styles.visibilityBtnText, !visibleTypes.DELIVERY && styles.visibilityBtnTextDim]}>
@@ -268,11 +270,11 @@ export const UpcomingTripsScreen = ({ navigation }: any) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={[styles.optionCard, { borderLeftColor: c.yardPeriod }]}>
+        <View style={[styles.optionCard, { backgroundColor: themeColors.surface, borderLeftColor: c.yardPeriod }]}>
           <TouchableOpacity style={styles.optionCardMain} onPress={() => navigation.navigate('YardPeriodTrips')} activeOpacity={0.8}>
             <Text style={styles.optionEmoji}>🔧</Text>
-            <Text style={styles.optionTitle}>Yard Period</Text>
-            <Text style={styles.optionSubtitle}>Yard / maintenance</Text>
+            <Text style={[styles.optionTitle, { color: themeColors.textPrimary }]}>Yard Period</Text>
+            <Text style={[styles.optionSubtitle, { color: themeColors.textSecondary }]}>Yard / maintenance</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.visibilityBtn} onPress={() => toggleVisible('YARD_PERIOD')}>
             <Text style={[styles.visibilityBtnText, !visibleTypes.YARD_PERIOD && styles.visibilityBtnTextDim]}>
@@ -308,11 +310,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.primary,
     marginBottom: SPACING.sm,
   },
   calendarCard: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     marginBottom: SPACING.xl,
@@ -345,10 +345,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  legendText: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
+  legendText: { fontSize: FONTS.sm },
   optionsRow: {
     flexDirection: 'row',
     gap: SPACING.md,
@@ -376,11 +373,7 @@ const styles = StyleSheet.create({
   preDepartureRow: {
     marginBottom: SPACING.lg,
   },
-  preDepartureRowHighlight: {
-    // Extra emphasis when trip is tomorrow
-  },
   preDepartureBtn: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     flexDirection: 'row',
@@ -393,10 +386,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  preDepartureBtnHighlight: {
-    borderLeftWidth: 6,
-    borderLeftColor: COLORS.primary,
-  },
   preDepartureEmoji: {
     fontSize: 32,
     marginRight: SPACING.md,
@@ -404,21 +393,12 @@ const styles = StyleSheet.create({
   preDepartureTextWrap: {
     flex: 1,
   },
-  preDepartureLabel: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  preDepartureHint: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
+  preDepartureLabel: { fontSize: FONTS.lg, fontWeight: '600' },
+  preDepartureHint: { fontSize: FONTS.sm, marginTop: 2 },
   optionCard: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     borderLeftWidth: 4,
@@ -448,19 +428,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginBottom: SPACING.xs,
   },
-  optionTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  optionSubtitle: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  headerButtonText: {
-    fontSize: FONTS.sm,
-    color: COLORS.white,
-    fontWeight: '600',
-  },
+  optionTitle: { fontSize: FONTS.lg, fontWeight: '600' },
+  optionSubtitle: { fontSize: FONTS.sm, marginTop: 2 },
+  headerButtonText: { fontSize: FONTS.sm, fontWeight: '600' },
 });

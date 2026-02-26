@@ -4,15 +4,10 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const CATEGORIES = [
   { icon: '📋', label: 'Maintenance Log', nav: 'MaintenanceLog' as const },
@@ -21,32 +16,36 @@ const CATEGORIES = [
   { icon: '👷', label: 'Contractor Database', nav: 'ContractorDatabase' as const },
 ];
 
+
 export const MaintenanceHomeScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const vesselId = user?.vesselId ?? null;
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to use Maintenance.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to use Maintenance.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+      <View style={styles.cardsContainer}>
       {CATEGORIES.map((category) => (
         <TouchableOpacity
           key={category.nav}
-          style={styles.card}
+          style={[styles.card, { backgroundColor: themeColors.surface }]}
           onPress={() => navigation.navigate(category.nav)}
           activeOpacity={0.8}
         >
           <Text style={styles.cardIcon}>{category.icon}</Text>
-          <Text style={styles.cardLabel}>{category.label}</Text>
-          <Text style={styles.cardChevron}>›</Text>
+          <Text style={[styles.cardLabel, { color: themeColors.textPrimary }]}>{category.label}</Text>
+          <Text style={[styles.cardChevron, { color: themeColors.textSecondary }]}>›</Text>
         </TouchableOpacity>
       ))}
+      </View>
     </ScrollView>
   );
 };
@@ -54,11 +53,13 @@ export const MaintenanceHomeScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
-    padding: SPACING.lg,
     paddingBottom: SIZES.bottomScrollPadding,
+  },
+  cardsContainer: {
+    padding: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   center: {
     flex: 1,
@@ -68,13 +69,11 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     padding: SPACING.lg,
     borderRadius: 12,
     marginBottom: SPACING.md,
@@ -92,11 +91,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   cardChevron: {
     fontSize: 24,
-    color: COLORS.textSecondary,
     fontWeight: '300',
   },
 });

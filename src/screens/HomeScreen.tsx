@@ -3,7 +3,7 @@
  * Fresh, minimalist design — image-centric, maritime-focused
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,16 +13,17 @@ import {
   TouchableOpacity,
   ImageBackground,
   Dimensions,
-  Modal,
-  Pressable,
-  Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { Calendar } from 'react-native-calendars';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES, SHADOWS } from '../constants/theme';
-import { useAuthStore, useThemeStore, BACKGROUND_THEMES } from '../store';
-import authService from '../services/auth';
+import { useAuthStore, useThemeStore, BACKGROUND_THEMES, useDepartmentColorStore, getDepartmentColor } from '../store';
 import vesselService from '../services/vessel';
+import tripsService from '../services/trips';
+import { useVesselTripColors, getTripTypeColorMap } from '../hooks/useVesselTripColors';
+import { DEFAULT_COLORS } from '../services/tripColors';
+import type { Trip, TripType, Department } from '../types';
 
 const { width } = Dimensions.get('window');
 const CATEGORY_SIZE = (width - SPACING.xl * 2 - SPACING.md * 2) / 3;
@@ -32,53 +33,119 @@ const BANNER_HEIGHT = 220;
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200';
 
-// Maritime imagery
-const FEATURED_IMAGE =
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800';
 const CATEGORY_IMAGES: Record<string, string> = {
   trips: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400',
   tasks: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400',
   maintenance: 'https://images.unsplash.com/photo-1564415315949-7a0c4c73aade?w=400',
 };
 
-const CATEGORIES = [
-  { key: 'trips', label: 'Trips', icon: '📅', nav: 'UpcomingTrips', image: CATEGORY_IMAGES.trips },
-  { key: 'tasks', label: 'Tasks', icon: '📋', nav: 'Tasks', image: CATEGORY_IMAGES.tasks },
-  { key: 'maintenance', label: 'Maintenance', icon: '🔧', nav: 'MaintenanceHome', image: CATEGORY_IMAGES.maintenance },
-  { key: 'watch', label: 'Watch', icon: '⏱️', nav: 'WatchKeeping' },
-  { key: 'shopping', label: 'Shopping', icon: '🛒', nav: 'ShoppingListCategory' },
-  { key: 'logs', label: 'Vessel Logs', icon: '🗒️', nav: 'VesselLogs' },
+type MarkedDates = { [date: string]: { startingDay?: boolean; endingDay?: boolean; color: string; textColor?: string } };
+
+function getMarkedDatesFromTrips(trips: Trip[], typeColorMap: Record<string, string>): MarkedDates {
+  const byDate: Record<string, Set<TripType>> = {};
+  trips.forEach((trip) => {
+    const start = new Date(trip.startDate);
+    const end = new Date(trip.endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      if (!byDate[key]) byDate[key] = new Set();
+      byDate[key].add(trip.type);
+    }
+  });
+  const marked: MarkedDates = {};
+  Object.entries(byDate).forEach(([date, types]) => {
+    const arr = Array.from(types);
+    marked[date] = {
+      startingDay: true,
+      endingDay: true,
+      color: typeColorMap[arr[0]] ?? COLORS.primary,
+      textColor: COLORS.white,
+    };
+  });
+  return marked;
+}
+
+function getMarkedDatesFromYardPeriodTrips(
+  trips: Trip[],
+  defaultColor: string,
+  getDeptColor: (dept: string) => string
+): MarkedDates {
+  const yardTrips = trips.filter((t) => t.type === 'YARD_PERIOD');
+  const marked: MarkedDates = {};
+  yardTrips.forEach((trip) => {
+    const color = trip.department ? getDeptColor(trip.department) : defaultColor;
+    const start = new Date(trip.startDate);
+    const end = new Date(trip.endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      marked[key] = {
+        startingDay: key === trip.startDate,
+        endingDay: key === trip.endDate,
+        color,
+        textColor: COLORS.white,
+      };
+    }
+  });
+  return marked;
+}
+
+const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
+
+/** Home categories: Tasks, Shopping, Inventory in a row; Vessel & Crew Safety as log button below */
+const HOME_CATEGORIES = [
+  { key: 'tasks', label: 'Tasks', icon: '📝', nav: 'Tasks' as const },
+  { key: 'shopping', label: 'Shopping', icon: '🛒', nav: 'ShoppingListCategory' as const },
+  { key: 'inventory', label: 'Inventory', icon: '📦', nav: 'Inventory' as const },
 ];
 
+/** Trips calendar accent – ocean teal */
+const CALENDAR_ACCENT = '#0d9488';
+
+const TRIP_TYPE_LABELS: Record<string, string> = {
+  GUEST: 'Guest',
+  BOSS: 'Boss',
+  DELIVERY: 'Delivery',
+  YARD_PERIOD: 'Yard Period',
+};
+
 export const HomeScreen = ({ navigation }: any) => {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const backgroundTheme = useThemeStore((s) => s.backgroundTheme);
   const themeColors = BACKGROUND_THEMES[backgroundTheme];
   const [vesselName, setVesselName] = useState<string | null>(null);
   const [bannerImageUrl, setBannerImageUrl] = useState<string | null>(null);
   const [loadingVessel, setLoadingVessel] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [tripsLoading, setTripsLoading] = useState(true);
+  const [calendarMode, setCalendarMode] = useState<'trips' | 'yardPeriod'>('trips');
 
-  const hasVessel = !!user?.vesselId;
+  const vesselId = user?.vesselId ?? null;
+  const hasVessel = !!vesselId;
   const isCaptain = user?.role === 'HOD';
+  const { colors: tripColors, load: loadColors } = useVesselTripColors(vesselId);
+  const overrides = useDepartmentColorStore((s) => s.overrides);
+  const typeColorMap = tripColors ? getTripTypeColorMap(tripColors) : getTripTypeColorMap(DEFAULT_COLORS);
+  const yardPeriodColor = tripColors?.yardPeriod ?? DEFAULT_COLORS.yardPeriod;
+  const getDeptColor = (dept: string) => getDepartmentColor(dept, overrides);
 
-  const menuItems: { label: string; icon: string; action: () => void }[] = [
-    { label: 'Tasks', icon: '📋', action: () => navigation.navigate('Tasks') },
-    { label: 'Trips', icon: '📅', action: () => navigation.getParent()?.navigate('MainTabs', { screen: 'ExploreTab' }) },
-    { label: 'Maintenance', icon: '🔧', action: () => navigation.navigate('MaintenanceHome') },
-    { label: 'Shopping', icon: '🛒', action: () => navigation.navigate('ShoppingListCategory') },
-    { label: 'Import / Export', icon: '📥', action: () => navigation.navigate('ImportExport') },
-    { label: 'Profile', icon: '👤', action: () => navigation.getParent()?.navigate('MainTabs', { screen: 'ProfileTab' }) },
-  ];
+  const markedDatesTrips = getMarkedDatesFromTrips(trips, typeColorMap);
+  const markedDatesYardPeriod = getMarkedDatesFromYardPeriodTrips(trips, yardPeriodColor, getDeptColor);
+  const markedDates = calendarMode === 'trips' ? markedDatesTrips : markedDatesYardPeriod;
 
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
-  const handleMenuAction = (action: () => void) => {
-    closeMenu();
-    action();
-  };
+  const loadTrips = useCallback(async () => {
+    if (!vesselId) return;
+    try {
+      const [data] = await Promise.all([tripsService.getTripsByVessel(vesselId), loadColors()]);
+      setTrips(data);
+    } catch (e) {
+      console.error('Load trips error:', e);
+    } finally {
+      setTripsLoading(false);
+    }
+  }, [vesselId, loadColors]);
+
+  useFocusEffect(useCallback(() => { if (hasVessel) loadTrips(); }, [hasVessel, loadTrips]));
 
   useEffect(() => {
     const fetchVessel = async () => {
@@ -100,74 +167,13 @@ export const HomeScreen = ({ navigation }: any) => {
     fetchVessel();
   }, [user?.vesselId]);
 
-  const handleUploadBanner = async () => {
-    if (!user?.vesselId || !isCaptain) return;
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant permission to access your photos');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.75,
-      });
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        setBannerLoadFailed(false);
-        setBannerImageUrl(asset.uri);
-        setUploadingBanner(true);
-        try {
-          await vesselService.uploadBannerImage(user.vesselId, asset.uri);
-          const publicUrl = vesselService.getBannerPublicUrl(user.vesselId);
-          setBannerImageUrl(publicUrl);
-        } catch (error) {
-          console.error('Banner upload error:', error);
-        } finally {
-          setUploadingBanner(false);
-        }
-      }
-    } catch (error) {
-      console.error('Pick image error:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
-
   return (
     <>
     <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.headerCenter}>
-            {loadingVessel ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <Text style={[styles.vesselName, { color: themeColors.textPrimary }]} numberOfLines={1}>
-                {vesselName || 'Yachy'}
-              </Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={styles.menuIconWrap}
-            onPress={openMenu}
-            activeOpacity={0.7}
-            accessibilityLabel="Menu"
-            accessibilityRole="button"
-          >
-            <Text style={[styles.menuIcon, { color: themeColors.textPrimary }]}>☰</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Vessel banner — Captain can tap to upload */}
+        {/* Vessel banner */}
         {hasVessel && (
-          <TouchableOpacity
-            style={styles.bannerWrap}
-            onPress={isCaptain ? handleUploadBanner : undefined}
-            activeOpacity={isCaptain ? 0.9 : 1}
-            disabled={uploadingBanner}
-          >
+          <View style={styles.bannerWrap}>
             <ImageBackground
               source={{ uri: !bannerLoadFailed && bannerImageUrl ? bannerImageUrl : DEFAULT_BANNER_IMAGE }}
               style={styles.bannerImage}
@@ -177,29 +183,20 @@ export const HomeScreen = ({ navigation }: any) => {
               }}
             >
               <View style={styles.bannerOverlay} />
-              {isCaptain && (
-                <View style={styles.bannerEditBadge}>
-                  {uploadingBanner ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.bannerEditText}>📷 Change vessel photo</Text>
-                  )}
-                </View>
-              )}
               {vesselName && (
                 <Text style={styles.bannerVesselName} numberOfLines={1}>
                   {vesselName}
                 </Text>
               )}
             </ImageBackground>
-          </TouchableOpacity>
+          </View>
         )}
 
         {!hasVessel && (
           <View style={[styles.noVesselCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.noVesselIcon}>⚓</Text>
-            <Text style={styles.noVesselTitle}>You're not part of a vessel yet</Text>
-            <Text style={styles.noVesselText}>
+            <Text style={[styles.noVesselTitle, { color: themeColors.textPrimary }]}>You're not part of a vessel yet</Text>
+            <Text style={[styles.noVesselText, { color: themeColors.textSecondary }]}>
               Join with an invite code to get started.
             </Text>
             <Button
@@ -214,182 +211,148 @@ export const HomeScreen = ({ navigation }: any) => {
 
         {hasVessel && (
           <>
-            <TouchableOpacity
-              style={styles.featuredCard}
-              onPress={() => navigation.navigate('UpcomingTrips')}
-              activeOpacity={0.95}
-            >
-              <ImageBackground
-                source={{ uri: FEATURED_IMAGE }}
-                style={styles.featuredImage}
-                imageStyle={styles.featuredImageStyle}
-              >
-                <View style={styles.featuredOverlay} />
-                <View style={styles.featuredContent}>
-                  <Text style={styles.featuredLabel}>FEATURED</Text>
-                  <Text style={styles.featuredTitle}>Upcoming Trips</Text>
-                  <Text style={styles.featuredSubtitle}>Plan your next voyage</Text>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Categories</Text>
-                <TouchableOpacity onPress={() => navigation.getParent()?.navigate('MainTabs', { screen: 'ProfileTab' })}>
-                  <Text style={styles.seeAll}>See all</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.categoryGrid}>
-                {CATEGORIES.map((cat) => (
+            <View style={[styles.tripsCalendarCard, { backgroundColor: themeColors.surface, borderColor: themeColors.surfaceAlt }]}>
+              <View style={styles.tripsCalendarHeader}>
+                <View style={styles.calendarModeRow}>
                   <TouchableOpacity
-                    key={cat.key}
-                    style={styles.categoryTile}
-                    onPress={() => navigation.navigate(cat.nav)}
-                    activeOpacity={0.8}
+                    style={[
+                      styles.calendarModeBtn,
+                      {
+                        backgroundColor: calendarMode === 'trips' ? themeColors.surfaceAlt : 'transparent',
+                        borderColor: calendarMode === 'trips' ? CALENDAR_ACCENT : themeColors.surfaceAlt,
+                      },
+                    ]}
+                    onPress={() => setCalendarMode('trips')}
+                    activeOpacity={0.7}
                   >
-                    {cat.image ? (
-                      <ImageBackground
-                        source={{ uri: cat.image }}
-                        style={styles.categoryImage}
-                        imageStyle={styles.categoryImageStyle}
-                      >
-                        <View style={styles.categoryOverlay} />
-                        <Text style={styles.categoryLabel}>{cat.label}</Text>
-                      </ImageBackground>
-                    ) : (
-                      <View style={[styles.categoryImage, styles.categoryFallback, { backgroundColor: themeColors.surfaceAlt }]}>
-                        <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                        <Text style={[styles.categoryLabel, { color: themeColors.textPrimary }]}>{cat.label}</Text>
-                      </View>
-                    )}
+                    <Text style={[styles.calendarModeBtnText, { color: calendarMode === 'trips' ? themeColors.textPrimary : themeColors.textSecondary }]}>
+                      Trips
+                    </Text>
                   </TouchableOpacity>
-                ))}
+                  <TouchableOpacity
+                    style={[
+                      styles.calendarModeBtn,
+                      {
+                        backgroundColor: calendarMode === 'yardPeriod' ? themeColors.surfaceAlt : 'transparent',
+                        borderColor: calendarMode === 'yardPeriod' ? CALENDAR_ACCENT : themeColors.surfaceAlt,
+                      },
+                    ]}
+                    onPress={() => setCalendarMode('yardPeriod')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.calendarModeBtnText, { color: calendarMode === 'yardPeriod' ? themeColors.textPrimary : themeColors.textSecondary }]}>
+                      Yard Period
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.tripsCalendarAccent, { backgroundColor: CALENDAR_ACCENT }]} />
               </View>
+              <View style={styles.tripsCalendarBody}>
+                {tripsLoading ? (
+                  <ActivityIndicator size="small" color={CALENDAR_ACCENT} style={styles.tripsLoader} />
+                ) : (
+                  <Calendar
+                    current={new Date().toISOString().slice(0, 10)}
+                    markedDates={markedDates}
+                    markingType="period"
+                    theme={{
+                      backgroundColor: 'transparent',
+                      calendarBackground: 'transparent',
+                      textSectionTitleColor: themeColors.textSecondary,
+                      selectedDayBackgroundColor: CALENDAR_ACCENT,
+                      selectedDayTextColor: COLORS.white,
+                      todayTextColor: CALENDAR_ACCENT,
+                      dayTextColor: themeColors.textPrimary,
+                      textDisabledColor: themeColors.textSecondary,
+                      arrowColor: CALENDAR_ACCENT,
+                      monthTextColor: themeColors.textPrimary,
+                      textDayHeaderFontSize: 11,
+                      textMonthFontSize: 16,
+                      textDayFontSize: 14,
+                    }}
+                    hideExtraDays
+                    style={styles.tripsCalendarInner}
+                  />
+                )}
+              </View>
+              <View style={[styles.tripsLegend, { borderTopColor: themeColors.surfaceAlt }]}>
+                {calendarMode === 'trips' ? (
+                  (Object.entries(TRIP_TYPE_LABELS) as [string, string][]).map(([type, label]) => (
+                    <View key={type} style={styles.tripsLegendItem}>
+                      <View style={[styles.tripsLegendDot, { backgroundColor: typeColorMap[type] ?? COLORS.primary }]} />
+                      <Text style={[styles.tripsLegendLabel, { color: themeColors.textSecondary }]}>{label}</Text>
+                    </View>
+                  ))
+                ) : (
+                  DEPARTMENTS.map((dept) => (
+                    <View key={dept} style={styles.tripsLegendItem}>
+                      <View style={[styles.tripsLegendDot, { backgroundColor: getDepartmentColor(dept, overrides) }]} />
+                      <Text style={[styles.tripsLegendLabel, { color: themeColors.textSecondary }]}>
+                        {dept.charAt(0) + dept.slice(1).toLowerCase()}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </View>
+              <TouchableOpacity
+                style={[styles.seeTripsButton, { backgroundColor: themeColors.surfaceAlt, borderTopColor: themeColors.surfaceAlt }]}
+                onPress={() => navigation.navigate(calendarMode === 'trips' ? 'UpcomingTrips' : 'YardPeriodTrips')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.seeTripsButtonText, { color: CALENDAR_ACCENT }]}>
+                  {calendarMode === 'trips' ? 'See trips' : 'See yard periods'}
+                </Text>
+                <Text style={[styles.seeTripsArrow, { color: CALENDAR_ACCENT }]}>›</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Quick access</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Quick Access</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Categories')}>
+                  <Text style={[styles.seeAll, { color: themeColors.textSecondary }]}>See all</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.categoryRow}>
+                {HOME_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[styles.quickAccessButton, { backgroundColor: themeColors.surface }]}
+                    onPress={() => navigation.navigate(cat.nav)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.quickAccessIcon}>{cat.icon}</Text>
+                    <Text style={[styles.quickAccessLabel, { color: themeColors.textPrimary }]} numberOfLines={1}>{cat.label}</Text>
+                    <Text style={[styles.quickAccessChevron, { color: themeColors.textSecondary }]}>›</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TouchableOpacity
-                style={[styles.shortcutCard, { backgroundColor: themeColors.surface }]}
+                style={[styles.logButton, { backgroundColor: themeColors.surface }]}
                 onPress={() => navigation.navigate('VesselCrewSafety')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.shortcutIcon}>🦺</Text>
-                <Text style={[styles.shortcutLabel, { color: themeColors.textPrimary }]}>Vessel & Crew Safety</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shortcutCard, { backgroundColor: themeColors.surface }]}
-                onPress={() => navigation.navigate('YardPeriodJobs')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.shortcutIcon}>🔧</Text>
-                <Text style={[styles.shortcutLabel, { color: themeColors.textPrimary }]}>Yard Period</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shortcutCard, { backgroundColor: themeColors.surface }]}
-                onPress={() => navigation.navigate('Inventory')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.shortcutIcon}>📦</Text>
-                <Text style={[styles.shortcutLabel, { color: themeColors.textPrimary }]}>Inventory</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shortcutCard, { backgroundColor: themeColors.surface }]}
-                onPress={() => navigation.navigate('ContractorDatabase')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.shortcutIcon}>👷</Text>
-                <Text style={[styles.shortcutLabel, { color: themeColors.textPrimary }]}>Contractors</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shortcutCard, { backgroundColor: themeColors.surface }]}
-                onPress={() => navigation.navigate('ImportExport')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.shortcutIcon}>📥</Text>
-                <Text style={[styles.shortcutLabel, { color: themeColors.textPrimary }]}>Import / Export</Text>
+                <Text style={styles.logButtonIcon}>🦺</Text>
+                <Text style={[styles.logButtonLabel, { color: themeColors.textPrimary }]}>Vessel & Crew Safety</Text>
+                <Text style={[styles.logButtonChevron, { color: themeColors.textSecondary }]}>›</Text>
               </TouchableOpacity>
             </View>
           </>
         )}
 
-        <Button
-          title="Sign Out"
-          onPress={async () => {
-            await authService.signOut();
-            logout();
-          }}
-          variant="outline"
-          shape="pill"
-          fullWidth
-          style={styles.logoutButton}
-        />
       </View>
     </ScrollView>
-
-    <Modal
-      visible={menuVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={closeMenu}
-    >
-      <Pressable style={styles.menuOverlay} onPress={closeMenu}>
-        <View style={[styles.menuDropdown, { backgroundColor: themeColors.surface }]}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.menuItem, { borderBottomColor: themeColors.surfaceAlt }]}
-              onPress={() => handleMenuAction(item.action)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.menuItemIcon}>{item.icon}</Text>
-              <Text style={[styles.menuItemLabel, { color: themeColors.textPrimary }]}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Pressable>
-    </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: {
     padding: SPACING.xl,
     paddingTop: SPACING.xl + SPACING.xl,
     paddingBottom: SIZES.bottomScrollPadding,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  headerCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  menuIconWrap: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  menuIcon: { fontSize: 24, fontWeight: '600' },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'flex-end',
-    paddingTop: 120,
-    paddingRight: SPACING.lg,
-  },
-  menuDropdown: {
-    minWidth: 200,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.xs,
-    ...SHADOWS.lg,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderBottomWidth: 1,
-  },
-  menuItemIcon: { fontSize: 20, marginRight: SPACING.md },
-  menuItemLabel: { fontSize: FONTS.base, fontWeight: '500' },
   vesselName: {
     fontSize: FONTS.lg,
     fontWeight: '700',
@@ -411,16 +374,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  bannerEditBadge: {
-    position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  bannerEditText: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.white },
   bannerVesselName: {
     fontSize: FONTS['2xl'],
     fontWeight: '700',
@@ -441,53 +394,104 @@ const styles = StyleSheet.create({
   noVesselTitle: {
     fontSize: FONTS.xl,
     fontWeight: '700',
-    color: COLORS.primary,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   noVesselText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.lg,
     lineHeight: 22,
   },
-  featuredCard: {
-    borderRadius: BORDER_RADIUS.lg,
+  tripsCalendarCard: {
+    borderRadius: 16,
     overflow: 'hidden',
     marginBottom: SPACING.xl,
+    borderWidth: 1,
     ...SHADOWS.lg,
   },
-  featuredImage: {
-    height: 180,
-    justifyContent: 'flex-end',
-    padding: SPACING.lg,
+  tripsCalendarHeader: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
-  featuredImageStyle: { borderRadius: BORDER_RADIUS.lg },
-  featuredOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: BORDER_RADIUS.lg,
+  calendarModeRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
-  featuredContent: { zIndex: 1 },
-  featuredLabel: {
-    fontSize: FONTS.xs,
+  calendarModeBtn: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+  },
+  calendarModeBtnText: {
+    fontSize: FONTS.sm,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.8)',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginBottom: 4,
   },
-  featuredTitle: {
-    fontSize: FONTS['2xl'],
+  tripsCalendarTitle: {
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.white,
     letterSpacing: -0.3,
   },
-  featuredSubtitle: {
-    fontSize: FONTS.sm,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
+  tripsCalendarAccent: {
+    width: 40,
+    height: 3,
+    marginTop: 6,
+    borderRadius: 2,
+  },
+  tripsCalendarBody: {
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.sm,
+  },
+  tripsLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderTopWidth: 1,
+  },
+  tripsLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  tripsLegendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  tripsLegendLabel: {
+    fontSize: FONTS.xs,
+    fontWeight: '500',
+  },
+  tripsLoader: {
+    paddingVertical: SPACING.xl * 2,
+  },
+  tripsCalendarInner: {
+    backgroundColor: 'transparent',
+  },
+  seeTripsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderTopWidth: 1,
+    gap: SPACING.sm,
+  },
+  seeTripsButtonText: {
+    fontSize: FONTS.base,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  seeTripsArrow: {
+    fontSize: 20,
+    fontWeight: '300',
   },
   section: { marginBottom: SPACING.xl },
   sectionHeader: {
@@ -504,7 +508,24 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   seeAll: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.primary },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md },
+  categoryRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  quickAccessButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER_RADIUS.lg,
+    minHeight: CATEGORY_SIZE,
+    ...SHADOWS.lg,
+  },
+  quickAccessIcon: { fontSize: FONTS.xl, marginRight: SPACING.xs },
+  quickAccessLabel: { flex: 1, fontSize: FONTS.sm, fontWeight: '600' },
+  quickAccessChevron: { fontSize: 18, fontWeight: '300' },
   categoryTile: {
     width: CATEGORY_SIZE,
     height: CATEGORY_SIZE,
@@ -524,6 +545,16 @@ const styles = StyleSheet.create({
   },
   categoryFallback: { alignItems: 'center', justifyContent: 'center' },
   categoryIcon: { fontSize: 32, marginBottom: 4 },
+  logButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.lg,
+  },
+  logButtonIcon: { fontSize: FONTS['2xl'], marginRight: SPACING.md },
+  logButtonLabel: { flex: 1, fontSize: FONTS.lg, fontWeight: '600' },
+  logButtonChevron: { fontSize: 24, fontWeight: '300' },
   categoryLabel: {
     fontSize: FONTS.xs,
     fontWeight: '700',
@@ -540,5 +571,4 @@ const styles = StyleSheet.create({
   },
   shortcutIcon: { fontSize: FONTS['2xl'], marginRight: SPACING.lg },
   shortcutLabel: { fontSize: FONTS.lg, fontWeight: '600', flex: 1 },
-  logoutButton: { marginTop: SPACING.md },
 });

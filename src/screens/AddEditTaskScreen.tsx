@@ -18,6 +18,7 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import vesselTasksService from '../services/vesselTasks';
 import { TaskCategory, TaskRecurring, Department } from '../types';
 import { Input, Button } from '../components';
@@ -35,6 +36,7 @@ const RECURRING_OPTIONS: { value: TaskRecurring; label: string }[] = [
 ];
 
 export const AddEditTaskScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const categoryFromRoute = route.params?.category as TaskCategory | undefined;
   const taskId = route.params?.taskId as string | undefined;
@@ -91,13 +93,13 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
     doneByDate ? { [doneByDate]: { selected: true, selectedColor: COLORS.primary } } : {};
 
   const calendarTheme = {
-    backgroundColor: COLORS.white,
-    calendarBackground: COLORS.white,
-    textSectionTitleColor: COLORS.textSecondary,
+    backgroundColor: themeColors.surface,
+    calendarBackground: themeColors.surface,
+    textSectionTitleColor: themeColors.textSecondary,
     selectedDayBackgroundColor: COLORS.primary,
     selectedDayTextColor: COLORS.white,
     todayTextColor: COLORS.primary,
-    dayTextColor: COLORS.textPrimary,
+    dayTextColor: themeColors.textPrimary,
     textDisabledColor: COLORS.gray400,
     arrowColor: COLORS.primary,
     monthTextColor: COLORS.primary,
@@ -155,23 +157,23 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
 
   if (!isHOD) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Only HODs can add or edit tasks.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Only HODs can add or edit tasks.</Text>
       </View>
     );
   }
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to add tasks.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to add tasks.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -179,7 +181,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -188,8 +190,8 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.label}>Department</Text>
-        <Text style={styles.hint}>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
           Tasks are scoped by department. Crew will filter by their department to see only relevant tasks.
         </Text>
         <View style={styles.categoryRow}>
@@ -198,6 +200,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
               key={dept}
               style={[
                 styles.deptChip,
+                { backgroundColor: department === dept ? undefined : themeColors.surface },
                 department === dept && styles.deptChipSelected,
               ]}
               onPress={() => setDepartment(dept)}
@@ -216,13 +219,14 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
         </View>
         {showCategoryPicker && (
           <>
-            <Text style={styles.label}>Task category</Text>
+            <Text style={[styles.label, { color: themeColors.textPrimary }]}>Task category</Text>
             <View style={styles.categoryRow}>
               {(Object.keys(CATEGORY_LABELS) as TaskCategory[]).map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   style={[
                     styles.categoryChip,
+                    { backgroundColor: category === cat ? undefined : themeColors.surface },
                     category === cat && styles.categoryChipSelected,
                   ]}
                   onPress={() => setCategory(cat)}
@@ -255,15 +259,15 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
           multiline
           numberOfLines={3}
         />
-        <Text style={styles.label}>Recurring (optional)</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Recurring (optional)</Text>
         <TouchableOpacity
-          style={styles.recurringToggle}
+          style={[styles.recurringToggle, { backgroundColor: themeColors.surfaceAlt }]}
           onPress={() => setRecurringExpanded(!recurringExpanded)}
         >
-          <Text style={styles.recurringToggleText}>
+          <Text style={[styles.recurringToggleText, { color: themeColors.textPrimary }]}>
             {recurring ? RECURRING_OPTIONS.find((o) => o.value === recurring)?.label ?? 'Selected' : 'Off'}
           </Text>
-          <Text style={styles.recurringChevron}>{recurringExpanded ? '▲' : '▼'}</Text>
+          <Text style={[styles.recurringChevron, { color: themeColors.textSecondary }]}>{recurringExpanded ? '▲' : '▼'}</Text>
         </TouchableOpacity>
         {recurringExpanded && (
           <View style={styles.recurringOptions}>
@@ -274,7 +278,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
                 setRecurringExpanded(false);
               }}
             >
-              <Text style={styles.recurringOptionText}>Off</Text>
+              <Text style={[styles.recurringOptionText, { color: themeColors.textPrimary }]}>Off</Text>
             </TouchableOpacity>
             {RECURRING_OPTIONS.map((opt, i) => (
               <TouchableOpacity
@@ -289,16 +293,16 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
                   setRecurringExpanded(false);
                 }}
               >
-                <Text style={styles.recurringOptionText}>{opt.label}</Text>
+                <Text style={[styles.recurringOptionText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
-        <Text style={styles.label}>Done by date (optional)</Text>
-        <Text style={styles.hint}>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Done by date (optional)</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
           Tasks with a deadline change color as time passes (green → yellow → red).
         </Text>
-        <View style={styles.calendarWrap}>
+        <View style={[styles.calendarWrap, { backgroundColor: themeColors.surface }]}>
           <Calendar
             current={doneByDate || new Date().toISOString().slice(0, 10)}
             minDate={new Date().toISOString().slice(0, 10)}
@@ -332,7 +336,7 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
             onPress={() => navigation.goBack()}
             disabled={saving}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -343,7 +347,6 @@ export const AddEditTaskScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -360,23 +363,19 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     marginTop: SPACING.md,
   },
   hint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
   calendarWrap: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.sm,
     marginBottom: SPACING.sm,
@@ -402,7 +401,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   categoryRow: {
     flexDirection: 'row',

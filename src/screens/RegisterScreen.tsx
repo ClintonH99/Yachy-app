@@ -17,6 +17,7 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import { Department } from '../types';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const DEPARTMENTS = [
   { label: 'Bridge', value: 'BRIDGE' },
@@ -27,6 +28,7 @@ const DEPARTMENTS = [
 ];
 
 export const RegisterScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -131,7 +133,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -142,7 +144,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
               {isVesselCreator ? 'Set up your captain account' : 'Join the crew'}
             </Text>
           </View>
@@ -198,7 +200,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
             {/* Department Selection - simplified for now */}
             <View style={styles.departmentSection}>
-              <Text style={styles.label}>Department</Text>
+              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
               <View style={styles.departmentButtons}>
                 {DEPARTMENTS.map((dept) => (
                   <Button
@@ -234,7 +236,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
             {/* Info message for regular users */}
             {!isVesselCreator && (
               <View style={styles.inviteCodeInfo}>
-                <Text style={styles.inviteCodeInfoText}>
+                <Text style={[styles.inviteCodeInfoText, { color: themeColors.textSecondary }]}>
                   💡 You can join a vessel after creating your account
                 </Text>
               </View>
@@ -242,7 +244,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
             {/* Show vessel creator badge */}
             {isVesselCreator && (
-              <View style={styles.creatorBadge}>
+              <View style={[styles.creatorBadge, { backgroundColor: themeColors.surface }]}>
                 <Text style={styles.creatorBadgeText}>⚓ Vessel Creator - You'll be assigned as Head of Department</Text>
               </View>
             )}
@@ -258,7 +260,7 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>Already have an account? </Text>
             <Button
               title="Sign In"
               onPress={() => navigation.navigate('Login')}
@@ -275,7 +277,6 @@ export const RegisterScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -305,7 +306,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
   departmentSection: {
@@ -345,7 +345,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   creatorBadge: {
-    backgroundColor: COLORS.primaryLight,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     marginTop: SPACING.sm,
@@ -369,7 +368,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
   },
   error: {
     fontSize: FONTS.xs,

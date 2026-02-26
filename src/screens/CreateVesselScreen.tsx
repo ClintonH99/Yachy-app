@@ -21,9 +21,11 @@ import vesselService from '../services/vessel';
 import { supabase } from '../services/supabase';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useFocusEffect } from '@react-navigation/native';
 
 export const CreateVesselScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const [vesselName, setVesselName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -119,7 +121,7 @@ export const CreateVesselScreen = ({ navigation }: any) => {
   if (createdVessel) {
     // Success view - show invite code
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
             {/* Success Header */}
@@ -190,7 +192,7 @@ export const CreateVesselScreen = ({ navigation }: any) => {
   // Create vessel form
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -202,18 +204,18 @@ export const CreateVesselScreen = ({ navigation }: any) => {
           <View style={styles.header}>
             <Text style={styles.icon}>🚢</Text>
             <Text style={styles.title}>Create Your Vessel</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
               Set up your yacht and get an invite code for your crew
             </Text>
           </View>
 
           {/* Info Card */}
-          <View style={styles.infoCard}>
+          <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.infoTitle}>What you'll get:</Text>
-            <Text style={styles.infoText}>✓ Unique 8-character invite code</Text>
-            <Text style={styles.infoText}>✓ Valid for 1 year</Text>
-            <Text style={styles.infoText}>✓ Share with unlimited crew members</Text>
-            <Text style={styles.infoText}>✓ Manage all vessel operations</Text>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>✓ Unique 8-character invite code</Text>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>✓ Valid for 1 year</Text>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>✓ Share with unlimited crew members</Text>
+            <Text style={[styles.infoText, { color: themeColors.textSecondary }]}>✓ Manage all vessel operations</Text>
           </View>
 
           {/* Form */}
@@ -266,7 +268,6 @@ export const CreateVesselScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -293,7 +294,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: SPACING.md,
   },

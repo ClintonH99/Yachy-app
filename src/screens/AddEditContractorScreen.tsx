@@ -17,7 +17,9 @@ import {
   Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import contractorsService, { ContractorContact } from '../services/contractors';
 import { Department } from '../types';
@@ -28,6 +30,7 @@ const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIO
 const emptyContact: ContractorContact = { name: '', mobile: '', email: '' };
 
 export const AddEditContractorScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const contractorId = route?.params?.contractorId as string | undefined;
   const isEdit = !!contractorId;
@@ -161,15 +164,15 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to manage contractors.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to manage contractors.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -177,7 +180,7 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -186,16 +189,16 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.label}>Department</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
         <TouchableOpacity
-          style={styles.dropdown}
+          style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
           onPress={() => setDepartmentDropdownOpen(true)}
           activeOpacity={0.7}
         >
-          <Text style={styles.dropdownText}>
+          <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>
             {department.charAt(0) + department.slice(1).toLowerCase()}
           </Text>
-          <Text style={styles.dropdownChevron}>▼</Text>
+          <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>▼</Text>
         </TouchableOpacity>
         {departmentDropdownOpen && (
           <Modal visible transparent animationType="fade">
@@ -203,11 +206,11 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
               style={styles.modalBackdrop}
               onPress={() => setDepartmentDropdownOpen(false)}
             >
-              <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
+              <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
                 {DEPARTMENTS.map((dept) => (
                   <TouchableOpacity
                     key={dept}
-                    style={[styles.modalItem, department === dept && styles.modalItemSelected]}
+                    style={[styles.modalItem, { backgroundColor: themeColors.surface }, department === dept && styles.modalItemSelected]}
                     onPress={() => {
                       setDepartment(dept);
                       setDepartmentDropdownOpen(false);
@@ -216,6 +219,7 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
                     <Text
                       style={[
                         styles.modalItemText,
+                        { color: themeColors.textPrimary },
                         department === dept && styles.modalItemTextSelected,
                       ]}
                     >
@@ -256,10 +260,10 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
           multiline
         />
 
-        <Text style={styles.sectionLabel}>Contact Person(s)</Text>
+        <Text style={[styles.sectionLabel, { color: themeColors.textPrimary }]}>Contact Person(s)</Text>
         {contacts.map((contact, index) => (
-          <View key={index} style={styles.contactBlock}>
-            <Text style={styles.contactBlockLabel}>Contact {index + 1}</Text>
+          <View key={index} style={[styles.contactBlock, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.contactBlockLabel, { color: themeColors.textSecondary }]}>Contact {index + 1}</Text>
             <Input
               label="Name"
               value={contact.name}
@@ -289,7 +293,7 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
               <Text
                 style={[
                   styles.removeContactText,
-                  contacts.length <= 1 && styles.removeContactDisabled,
+                  { color: contacts.length <= 1 ? themeColors.textSecondary : COLORS.danger },
                 ]}
               >
                 Remove contact
@@ -298,7 +302,7 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
           </View>
         ))}
         <TouchableOpacity onPress={addContact} style={styles.addContactBtn}>
-          <Text style={styles.addContactText}>+ Add contact person</Text>
+          <Text style={[styles.addContactText, { color: themeColors.textPrimary }]}>+ Add contact person</Text>
         </TouchableOpacity>
 
         <View style={styles.actions}>
@@ -312,7 +316,7 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
           />
           {isEdit && (
             <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
-              <Text style={styles.deleteBtnText}>Delete contractor</Text>
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             </TouchableOpacity>
           )}
         </View>
@@ -322,41 +326,38 @@ export const AddEditContractorScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
-  label: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.textPrimary, marginBottom: SPACING.xs },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
+  label: { fontSize: FONTS.sm, fontWeight: '600', marginBottom: SPACING.xs },
   dropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: SPACING.md,
   },
-  dropdownText: { fontSize: FONTS.base, color: COLORS.textPrimary, fontWeight: '500' },
-  dropdownChevron: { fontSize: 10, color: COLORS.textSecondary },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  modalBox: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
-  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, backgroundColor: COLORS.white },
-  modalItemSelected: { backgroundColor: COLORS.white },
-  modalItemText: { fontSize: FONTS.base, color: COLORS.textPrimary },
+  modalBox: { borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
+  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
+  modalItemSelected: {},
+  modalItemText: { fontSize: FONTS.base },
   modalItemTextSelected: { color: COLORS.primary, fontWeight: '600' },
   sectionLabel: {
     fontSize: FONTS.sm,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
   contactBlock: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.md,
@@ -366,7 +367,6 @@ const styles = StyleSheet.create({
   contactBlockLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
   removeContactBtn: { marginTop: SPACING.xs },

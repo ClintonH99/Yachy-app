@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import fuelLogsService from '../services/fuelLogs';
 import { Input, Button } from '../components';
@@ -35,6 +36,7 @@ function formatTime(d: Date): string {
 }
 
 export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const logId = route.params?.logId as string | undefined;
   const isEdit = !!logId;
@@ -144,15 +146,15 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to add fuel log entries.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to add fuel log entries.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -160,7 +162,7 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -179,10 +181,10 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
 
         {/* Date */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Date</Text>
+          <Text style={[styles.label, { color: themeColors.textPrimary }]}>Date</Text>
           {Platform.OS === 'ios' ? (
-            <View style={styles.pickerTrigger}>
-              <Text style={styles.pickerValue}>{formatDate(date)}</Text>
+            <View style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]}>
+              <Text style={[styles.pickerValue, { color: themeColors.textPrimary }]}>{formatDate(date)}</Text>
               <DateTimePicker
                 value={date}
                 mode="date"
@@ -194,8 +196,8 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
             </View>
           ) : (
             <>
-              <TouchableOpacity style={styles.pickerTrigger} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
-                <Text style={styles.pickerValue}>{formatDate(date)}</Text>
+              <TouchableOpacity style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
+                <Text style={[styles.pickerValue, { color: themeColors.textPrimary }]}>{formatDate(date)}</Text>
                 <Text style={styles.pickerIcon}>📅</Text>
               </TouchableOpacity>
               {showDatePicker && (
@@ -215,10 +217,10 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
 
         {/* Time */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Time</Text>
+          <Text style={[styles.label, { color: themeColors.textPrimary }]}>Time</Text>
           {Platform.OS === 'ios' ? (
-            <View style={styles.pickerTrigger}>
-              <Text style={styles.pickerValue}>{formatTime(time)}</Text>
+            <View style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]}>
+              <Text style={[styles.pickerValue, { color: themeColors.textPrimary }]}>{formatTime(time)}</Text>
               <DateTimePicker
                 value={time}
                 mode="time"
@@ -230,8 +232,8 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
             </View>
           ) : (
             <>
-              <TouchableOpacity style={styles.pickerTrigger} onPress={() => setShowTimePicker(true)} activeOpacity={0.7}>
-                <Text style={styles.pickerValue}>{formatTime(time)}</Text>
+              <TouchableOpacity style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]} onPress={() => setShowTimePicker(true)} activeOpacity={0.7}>
+                <Text style={[styles.pickerValue, { color: themeColors.textPrimary }]}>{formatTime(time)}</Text>
                 <Text style={styles.pickerIcon}>🕐</Text>
               </TouchableOpacity>
               {showTimePicker && (
@@ -305,7 +307,7 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
             onPress={() => navigation.goBack()}
             disabled={saving}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -316,7 +318,6 @@ export const AddEditFuelLogScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -333,7 +334,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   fieldContainer: {
@@ -342,7 +342,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   pickerTrigger: {
@@ -350,7 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: SIZES.inputHeight,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
@@ -358,7 +356,6 @@ const styles = StyleSheet.create({
   },
   pickerValue: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   pickerIcon: {
     fontSize: 18,
@@ -373,6 +370,5 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
 });

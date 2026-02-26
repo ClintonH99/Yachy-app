@@ -14,15 +14,15 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useThemeStore, BACKGROUND_THEMES, BackgroundThemeId } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const THEMES: { id: BackgroundThemeId; label: string; description: string }[] = [
-  { id: 'light', label: 'Light', description: 'Clean white background' },
-  { id: 'ocean', label: 'Ocean', description: 'Soft blue tones' },
-  { id: 'sand', label: 'Sand', description: 'Warm amber tones' },
-  { id: 'navy', label: 'Navy', description: 'Dark navy background' },
+  { id: 'day', label: 'Day', description: 'Light mode — clean and bright' },
+  { id: 'night', label: 'Night', description: 'Dark mode — easy on the eyes' },
 ];
 
 export const ThemeSettingsScreen = () => {
+  const themeColors = useThemeColors();
   const { backgroundTheme, loaded, loadTheme, setBackgroundTheme } = useThemeStore();
 
   useFocusEffect(
@@ -35,16 +35,16 @@ export const ThemeSettingsScreen = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>App theme</Text>
-      <Text style={styles.subtitle}>
-        Choose a colour scheme for the app background.
+      <Text style={[styles.title, { color: themeColors.textPrimary }]}>Appearance</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
+        Background theme: Day or Night Mode
       </Text>
 
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: themeColors.surface }]}>
         {THEMES.map((theme, index) => {
           const isSelected = backgroundTheme === theme.id;
           const colors = BACKGROUND_THEMES[theme.id];
@@ -53,7 +53,7 @@ export const ThemeSettingsScreen = () => {
           return (
             <TouchableOpacity
               key={theme.id}
-              style={[styles.row, isLast && styles.rowLast]}
+              style={[styles.row, isLast && styles.rowLast, { borderBottomColor: themeColors.surfaceAlt }]}
               onPress={() => setBackgroundTheme(theme.id)}
               activeOpacity={0.7}
             >
@@ -61,8 +61,8 @@ export const ThemeSettingsScreen = () => {
                 <View style={[styles.previewDot, { backgroundColor: colors.surface }]} />
               </View>
               <View style={styles.rowText}>
-                <Text style={styles.rowLabel}>{theme.label}</Text>
-                <Text style={styles.rowDesc}>{theme.description}</Text>
+                <Text style={[styles.rowLabel, { color: themeColors.textPrimary }]}>{theme.label}</Text>
+                <Text style={[styles.rowDesc, { color: themeColors.textSecondary }]}>{theme.description}</Text>
               </View>
               <View style={[styles.radio, isSelected && styles.radioSelected]}>
                 {isSelected && <View style={styles.radioDot} />}
@@ -76,21 +76,18 @@ export const ThemeSettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   title: {
     fontSize: FONTS.xl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xl,
   },
   section: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     shadowColor: COLORS.black,
@@ -104,7 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
     gap: SPACING.md,
   },
   rowLast: { borderBottomWidth: 0 },
@@ -128,11 +124,9 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: FONTS.base,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   rowDesc: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   radio: {

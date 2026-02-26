@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import preDepartureChecklistsService from '../services/preDepartureChecklists';
 import tripsService from '../services/trips';
@@ -46,10 +47,16 @@ const DEFAULT_ITEMS = [
 ];
 
 export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const checklistId = route?.params?.checklistId as string | undefined;
   const isEdit = !!checklistId;
   const isHOD = user?.role === 'HOD';
+  const isCaptain = user?.position?.toLowerCase() === 'captain';
+
+  // Captain's checklist (All Departments): only captain can edit. Department checklists: only HOD.
+  const canEdit = (dept: Department | null) =>
+    dept === null ? isCaptain : isHOD;
 
   const [title, setTitle] = useState('');
   const [tripId, setTripId] = useState<string | null>(null);
@@ -100,15 +107,19 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
     }, [checklistId, loadChecklist, loadTrips])
   );
 
+  const isEditable = canEdit(department);
+  // When creating, both HOD and Captain need to see the form to pick department. When editing, only authorized editor.
+  const showEditableFields = isEdit ? isEditable : (isHOD || isCaptain);
+
   useEffect(() => {
     navigation.setOptions({
-      title: isEdit ? (isHOD ? 'Edit Checklist' : 'Pre-Departure Checklist') : 'Create Pre-Departure Checklist',
+      title: isEdit ? (isEditable ? 'Edit Checklist' : 'Pre-Departure Checklist') : 'Create Pre-Departure Checklist',
     });
-  }, [navigation, isEdit, isHOD]);
+  }, [navigation, isEdit, isEditable]);
 
   const addItem = async () => {
     const label = newItemLabel.trim();
-    if (!label || !checklistId) return;
+    if (!label || !checklistId || !isEditable) return;
     try {
       const added = await preDepartureChecklistsService.addItem(checklistId, label);
       setItems((prev) => [...prev, added].sort((a, b) => a.sortOrder - b.sortOrder));
@@ -128,7 +139,7 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
   };
 
   const handleSave = async () => {
-    if (!isHOD) return;
+    if (!isEditable) return;
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       Alert.alert('Missing title', 'Please enter a title for the checklist.');
@@ -166,31 +177,43 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to create checklists.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to create checklists.</Text>
       </View>
     );
   }
 
-  if (!isHOD && !isEdit) {
+  if (!(isHOD || isCaptain) && !isEdit) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Only HODs can create pre-departure checklists.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Only HODs and Captains can create pre-departure checklists.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (isEdit && !isEditable) {
+    return (
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>
+          {department === null
+            ? 'Only the Captain can edit the Captain\'s checklist.'
+            : 'Only HODs can edit department checklists.'}
+        </Text>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -199,7 +222,7 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {isHOD ? (
+        {showEditableFields ? (
           <Input
             label="Title"
             value={title}
@@ -209,13 +232,13 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
         ) : (
           <>
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Title</Text>
-              <Text style={styles.readOnlyTitle}>{title || '—'}</Text>
+              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Title</Text>
+              <Text style={[styles.readOnlyTitle, { color: themeColors.textPrimary }]}>{title || '—'}</Text>
             </View>
             {department != null && (
               <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Department</Text>
-                <Text style={styles.readOnlyTitle}>
+                <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+                <Text style={[styles.readOnlyTitle, { color: themeColors.textPrimary }]}>
                   {DEPARTMENT_OPTIONS.find((o) => o.value === department)?.label ?? department}
                 </Text>
               </View>
@@ -223,38 +246,38 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
           </>
         )}
 
-        {isHOD && (
+        {showEditableFields && (
           <>
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Department</Text>
+              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
               <TouchableOpacity
-                style={styles.pickerTrigger}
+                style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]}
                 onPress={() => setDepartmentModalVisible(true)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pickerValue}>{selectedDeptLabel}</Text>
-                <Text style={styles.pickerIcon}>▾</Text>
+                <Text style={[styles.pickerValue, { color: themeColors.textPrimary }]}>{selectedDeptLabel}</Text>
+                <Text style={[styles.pickerIcon, { color: themeColors.textSecondary }]}>▾</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Linked Trip (optional)</Text>
+              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Linked Trip (optional)</Text>
               <TouchableOpacity
-                style={styles.pickerTrigger}
+                style={[styles.pickerTrigger, { backgroundColor: themeColors.surface }]}
                 onPress={() => setTripModalVisible(true)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.pickerValue, !selectedTrip && styles.pickerPlaceholder]}>
+                <Text style={[styles.pickerValue, { color: themeColors.textPrimary }, !selectedTrip && styles.pickerPlaceholder]}>
                   {selectedTrip ? selectedTrip.title : 'No trip selected'}
                 </Text>
-                <Text style={styles.pickerIcon}>▾</Text>
+                <Text style={[styles.pickerIcon, { color: themeColors.textSecondary }]}>▾</Text>
               </TouchableOpacity>
             </View>
 
             {departmentModalVisible && (
               <Modal visible transparent animationType="fade">
                 <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
-                  <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-                    <Text style={styles.modalTitle}>Select department</Text>
+                  <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+                    <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Select department</Text>
                     {DEPARTMENT_OPTIONS.map((opt) => (
                       <TouchableOpacity
                         key={opt.value ?? 'all'}
@@ -264,7 +287,7 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
                           setDepartmentModalVisible(false);
                         }}
                       >
-                        <Text style={styles.modalItemText}>{opt.label}</Text>
+                        <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -275,8 +298,8 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
             {tripModalVisible && (
               <Modal visible transparent animationType="fade">
                 <Pressable style={styles.modalBackdrop} onPress={() => setTripModalVisible(false)}>
-                  <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-                    <Text style={styles.modalTitle}>Select trip</Text>
+                  <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+                    <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Select trip</Text>
                     <TouchableOpacity
                       style={styles.modalItem}
                       onPress={() => {
@@ -284,7 +307,7 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
                         setTripModalVisible(false);
                       }}
                     >
-                      <Text style={styles.modalItemText}>No trip</Text>
+                      <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>No trip</Text>
                     </TouchableOpacity>
                     {trips.map((t) => (
                       <TouchableOpacity
@@ -295,8 +318,8 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
                           setTripModalVisible(false);
                         }}
                       >
-                        <Text style={styles.modalItemText}>{t.title}</Text>
-                        <Text style={styles.modalItemSub}>{t.startDate} – {t.endDate}</Text>
+                        <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{t.title}</Text>
+                        <Text style={[styles.modalItemSub, { color: themeColors.textSecondary }]}>{t.startDate} – {t.endDate}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -306,15 +329,15 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
           </>
         )}
 
-        <Text style={styles.sectionLabel}>Checklist items</Text>
+        <Text style={[styles.sectionLabel, { color: themeColors.textPrimary }]}>Checklist items</Text>
 
         {isEdit ? (
           <>
             {items.map((item, idx) => (
               <View key={item.id} style={styles.itemRow}>
                 <Text style={styles.itemBullet}>{idx + 1}.</Text>
-                <Text style={styles.itemLabel}>{item.label}</Text>
-                {isHOD && (
+                <Text style={[styles.itemLabel, { color: themeColors.textPrimary }]}>{item.label}</Text>
+                {isEditable && (
                   <TouchableOpacity
                     onPress={() => removeItem(item)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -324,7 +347,7 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
                 )}
               </View>
             ))}
-            {isHOD && (
+            {isEditable && (
             <View style={styles.addRow}>
               <Input
                 value={newItemLabel}
@@ -340,23 +363,23 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
             )}
           </>
         ) : (
-          <Text style={styles.hint}>
+          <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
             Save the checklist to add and manage items. Default items will be added on creation.
           </Text>
         )}
 
-        {isHOD && (
+        {showEditableFields && (
         <View style={styles.actions}>
           <Button
             title={isEdit ? 'Save' : 'Create Checklist'}
             onPress={handleSave}
             variant="primary"
             loading={saving}
-            disabled={saving}
+            disabled={saving || !isEditable}
             fullWidth
           />
           <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()} disabled={saving}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
         )}
@@ -366,38 +389,27 @@ export const AddEditPreDepartureChecklistScreen = ({ navigation, route }: any) =
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: 88 },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.lg,
-  },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
-  readOnlyTitle: { fontSize: FONTS.base, color: COLORS.textPrimary, fontWeight: '600' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
+  readOnlyTitle: { fontSize: FONTS.base, fontWeight: '600' },
   fieldContainer: { marginBottom: SPACING.md },
-  label: {
-    fontSize: FONTS.sm,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-  },
+  label: { fontSize: FONTS.sm, fontWeight: '600', marginBottom: SPACING.xs },
   pickerTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     height: SIZES.inputHeight,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
   },
-  pickerValue: { fontSize: FONTS.base, color: COLORS.textPrimary },
+  pickerValue: { fontSize: FONTS.base },
   pickerPlaceholder: { color: COLORS.gray400 },
-  pickerIcon: { fontSize: 14, color: COLORS.textSecondary },
+  pickerIcon: { fontSize: 14 },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -406,26 +418,19 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     minWidth: 280,
     maxHeight: 400,
   },
-  modalTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
+  modalTitle: { fontSize: FONTS.lg, fontWeight: '600', marginBottom: SPACING.md },
   modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.sm },
   modalItemSelected: { backgroundColor: COLORS.primaryLight },
-  modalItemText: { fontSize: FONTS.base, color: COLORS.textPrimary },
-  modalItemSub: { fontSize: FONTS.xs, color: COLORS.textSecondary, marginTop: 2 },
+  modalItemText: { fontSize: FONTS.base },
+  modalItemSub: { fontSize: FONTS.xs, marginTop: 2 },
   sectionLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
@@ -441,7 +446,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     minWidth: 24,
   },
-  itemLabel: { flex: 1, fontSize: FONTS.base, color: COLORS.textPrimary },
+  itemLabel: { flex: 1, fontSize: FONTS.base },
   removeBtn: { fontSize: FONTS.sm, color: COLORS.danger },
   addRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm, marginTop: SPACING.sm },
   addInput: { flex: 1, marginBottom: 0 },
@@ -453,8 +458,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnText: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.white },
-  hint: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
+  hint: { fontSize: FONTS.sm, marginTop: SPACING.xs },
   actions: { marginTop: SPACING.xl, gap: SPACING.sm },
   cancelBtn: { alignSelf: 'center', padding: SPACING.sm },
-  cancelText: { fontSize: FONTS.base, color: COLORS.textSecondary },
+  cancelText: { fontSize: FONTS.base },
 });

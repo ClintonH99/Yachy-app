@@ -17,8 +17,10 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import inventoryService, { InventoryItem } from '../services/inventory';
 import { Department } from '../types';
 import { exportInventoryToPdf } from '../utils/inventoryPdf';
@@ -27,6 +29,7 @@ import { Button, Input } from '../components';
 const DEPARTMENTS: Department[] = ['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'];
 
 export const InventoryScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const overrides = useDepartmentColorStore((s) => s.overrides);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -113,6 +116,29 @@ export const InventoryScreen = ({ navigation }: any) => {
     });
   };
 
+  const handleDelete = (item: InventoryItem) => {
+    Alert.alert(
+      'Remove item',
+      `Remove "${item.title}" from inventory?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await inventoryService.delete(item.id);
+              setItems((prev) => prev.filter((i) => i.id !== item.id));
+            } catch (e) {
+              console.error('Delete inventory item error:', e);
+              Alert.alert('Error', 'Could not remove item.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const loadItems = useCallback(async () => {
     if (!vesselId) return;
     setLoading(true);
@@ -146,15 +172,15 @@ export const InventoryScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to use Inventory.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to use Inventory.</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -170,7 +196,7 @@ export const InventoryScreen = ({ navigation }: any) => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search by item, title, location…"
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: themeColors.surface }]}
           returnKeyType="search"
         />
       </View>
@@ -198,7 +224,7 @@ export const InventoryScreen = ({ navigation }: any) => {
       </View>
       {exportMode && (
         <View style={styles.exportBar}>
-          <Text style={styles.exportHint}>
+          <Text style={[styles.exportHint, { color: themeColors.textSecondary }]}>
             Tap items to select, then export.
           </Text>
           <Button
@@ -211,22 +237,23 @@ export const InventoryScreen = ({ navigation }: any) => {
         </View>
       )}
 
-      <Text style={styles.filterLabel}>Department</Text>
+      <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
       <TouchableOpacity
-        style={styles.dropdown}
+        style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
         onPress={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
         activeOpacity={0.7}
       >
-        <Text style={styles.dropdownText}>{departmentDisplayText}</Text>
-        <Text style={styles.dropdownChevron}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
+        <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>{departmentDisplayText}</Text>
+        <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
       </TouchableOpacity>
       {departmentDropdownOpen && (
         <Modal visible transparent animationType="fade">
           <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentDropdownOpen(false)}>
-            <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
+            <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
               <TouchableOpacity
                 style={[
                   styles.modalItem,
+                  { backgroundColor: themeColors.surface },
                   DEPARTMENTS.every((d) => visibleDepartments[d]) && styles.modalItemSelected,
                 ]}
                 onPress={() => {
@@ -237,6 +264,7 @@ export const InventoryScreen = ({ navigation }: any) => {
                 <Text
                   style={[
                     styles.modalItemText,
+                    { color: themeColors.textPrimary },
                     DEPARTMENTS.every((d) => visibleDepartments[d]) && styles.modalItemTextSelected,
                   ]}
                 >
@@ -246,7 +274,7 @@ export const InventoryScreen = ({ navigation }: any) => {
               {DEPARTMENTS.map((dept) => (
                 <TouchableOpacity
                   key={dept}
-                  style={[styles.modalItem, visibleDepartments[dept] && styles.modalItemSelected]}
+                  style={[styles.modalItem, { backgroundColor: themeColors.surface }, visibleDepartments[dept] && styles.modalItemSelected]}
                   onPress={() => {
                     selectDepartment(dept);
                     setDepartmentDropdownOpen(false);
@@ -255,6 +283,7 @@ export const InventoryScreen = ({ navigation }: any) => {
                   <Text
                     style={[
                       styles.modalItemText,
+                      { color: themeColors.textPrimary },
                       visibleDepartments[dept] && styles.modalItemTextSelected,
                     ]}
                   >
@@ -270,7 +299,7 @@ export const InventoryScreen = ({ navigation }: any) => {
       {loading ? (
         <ActivityIndicator size="small" color={COLORS.primary} style={styles.loader} />
       ) : filteredItems.length === 0 ? (
-        <Text style={styles.empty}>
+        <Text style={[styles.empty, { color: themeColors.textSecondary }]}>
           {items.length === 0
             ? 'No inventory items yet. Tap Create to add one.'
             : 'No items match your search or department filter.'}
@@ -281,21 +310,16 @@ export const InventoryScreen = ({ navigation }: any) => {
           return (
           <TouchableOpacity
             key={item.id}
-            style={[styles.card, exportMode && selected && styles.cardSelected]}
+            style={[styles.card, { backgroundColor: themeColors.surface }, exportMode && selected && styles.cardSelected]}
             onPress={() => {
               if (exportMode) toggleSelect(item.id);
               else navigation.navigate('AddEditInventoryItem', { itemId: item.id });
             }}
             activeOpacity={0.8}
           >
-            {exportMode && (
-              <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                {selected ? <Text style={styles.checkboxTick}>✓</Text> : null}
-              </View>
-            )}
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
+                <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>
                   {item.title}
                 </Text>
                 <View
@@ -310,17 +334,33 @@ export const InventoryScreen = ({ navigation }: any) => {
                 </View>
               </View>
               {item.location ? (
-                <Text style={styles.cardMeta}>📍 {item.location}</Text>
+                <Text style={[styles.cardMeta, { color: themeColors.textSecondary }]}>📍 {item.location}</Text>
               ) : null}
               {item.description ? (
-                <Text style={styles.cardDesc} numberOfLines={2}>
+                <Text style={[styles.cardDesc, { color: themeColors.textSecondary }]} numberOfLines={2}>
                   {item.description}
                 </Text>
               ) : null}
-              <Text style={styles.cardRows}>
+              <Text style={[styles.cardRows, { color: themeColors.textSecondary }]}>
                 {(item.items?.length ?? 0)} {(item.items?.length ?? 0) === 1 ? 'row' : 'rows'} (Amount · Item)
               </Text>
             </View>
+            {exportMode ? (
+              <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                {selected ? <Text style={styles.checkboxTick}>✓</Text> : null}
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  handleDelete(item);
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="trash-outline" size={22} color={COLORS.danger} />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
           );
         })
@@ -330,43 +370,41 @@ export const InventoryScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SIZES.bottomScrollPadding },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  message: { fontSize: FONTS.base, color: COLORS.textSecondary, textAlign: 'center' },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
   searchRow: { marginBottom: SPACING.sm },
-  searchInput: { backgroundColor: COLORS.white },
+  searchInput: {},
   createRow: { marginBottom: SPACING.lg },
   exportBtn: { marginTop: SPACING.sm },
   exportBar: { marginBottom: SPACING.lg, paddingVertical: SPACING.sm },
-  exportHint: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginBottom: SPACING.sm },
-  filterLabel: { fontSize: FONTS.sm, fontWeight: '600', color: COLORS.textPrimary, marginBottom: SPACING.xs },
+  exportHint: { fontSize: FONTS.sm, marginBottom: SPACING.sm },
+  filterLabel: { fontSize: FONTS.sm, fontWeight: '600', marginBottom: SPACING.xs },
   dropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
-  dropdownText: { fontSize: FONTS.base, color: COLORS.textPrimary, fontWeight: '500' },
-  dropdownChevron: { fontSize: 10, color: COLORS.textSecondary },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  modalBox: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
-  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, backgroundColor: COLORS.white },
-  modalItemSelected: { backgroundColor: COLORS.white },
-  modalItemText: { fontSize: FONTS.base, color: COLORS.textPrimary },
+  modalBox: { borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, minWidth: 200 },
+  modalItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
+  modalItemSelected: {},
+  modalItemText: { fontSize: FONTS.base },
   modalItemTextSelected: { color: COLORS.primary, fontWeight: '600' },
   loader: { marginVertical: SPACING.xl },
-  empty: { fontSize: FONTS.base, color: COLORS.textSecondary, paddingVertical: SPACING.xl },
+  empty: { fontSize: FONTS.base, paddingVertical: SPACING.xl },
   card: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -390,12 +428,19 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   checkboxTick: { color: COLORS.white, fontSize: 12, fontWeight: '700' },
+  deleteBtn: { padding: SPACING.sm, marginLeft: SPACING.xs },
   cardContent: { flex: 1, minWidth: 0 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm },
-  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', color: COLORS.textPrimary, flex: 1 },
-  deptBadge: { paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: BORDER_RADIUS.sm },
+  cardHeader: { marginBottom: SPACING.sm },
+  cardTitle: { fontSize: FONTS.lg, fontWeight: '600' },
+  deptBadge: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
+    marginTop: SPACING.xs,
+    alignSelf: 'flex-start',
+  },
   deptBadgeText: { fontSize: FONTS.xs, fontWeight: '600', color: COLORS.white },
-  cardMeta: { fontSize: FONTS.sm, color: COLORS.textSecondary, marginTop: 2 },
-  cardDesc: { fontSize: FONTS.sm, color: COLORS.textTertiary, marginTop: 2 },
-  cardRows: { fontSize: FONTS.xs, color: COLORS.textTertiary, marginTop: 4 },
+  cardMeta: { fontSize: FONTS.sm, marginTop: 2 },
+  cardDesc: { fontSize: FONTS.sm, marginTop: 2 },
+  cardRows: { fontSize: FONTS.xs, marginTop: 4 },
 });

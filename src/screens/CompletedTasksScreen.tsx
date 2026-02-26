@@ -18,7 +18,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuthStore } from '../store';
 import vesselTasksService from '../services/vesselTasks';
 import { VesselTask, TaskCategory, Department } from '../types';
@@ -32,6 +34,7 @@ const CATEGORY_LABELS: Record<TaskCategory, string> = {
 };
 
 export const CompletedTasksScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [tasks, setTasks] = useState<VesselTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,30 +132,30 @@ export const CompletedTasksScreen = ({ navigation }: any) => {
 
   const renderItem = ({ item }: { item: VesselTask }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: themeColors.surface }]}
       onPress={() => onEdit(item)}
       activeOpacity={0.8}
       disabled={!isHOD}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle} numberOfLines={1}>
+        <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={1}>
           {item.title}
         </Text>
         {isHOD && (
           <TouchableOpacity
             onPress={() => onDelete(item)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={styles.deleteBtn}>Delete</Text>
-          </TouchableOpacity>
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+            </TouchableOpacity>
         )}
       </View>
       <View style={styles.cardMeta}>
-        <Text style={styles.deptBadge}>{item.department.charAt(0) + item.department.slice(1).toLowerCase()}</Text>
-        <Text style={styles.categoryBadge}>{CATEGORY_LABELS[item.category]}</Text>
+        <Text style={[styles.deptBadge, { color: themeColors.textSecondary }]}>{item.department.charAt(0) + item.department.slice(1).toLowerCase()}</Text>
+        <Text style={[styles.categoryBadge, { color: themeColors.textSecondary }]}>{CATEGORY_LABELS[item.category]}</Text>
       </View>
       {item.completedByName && item.completedAt && (
-        <Text style={styles.completedBy}>
+        <Text style={[styles.completedBy, { color: themeColors.textSecondary }]}>
           Completed by {item.completedByName} on {formatDateTime(item.completedAt)}
         </Text>
       )}
@@ -166,49 +169,54 @@ export const CompletedTasksScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see tasks.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see tasks.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
       ) : tasks.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>✓</Text>
-          <Text style={styles.emptyText}>No completed tasks yet</Text>
-          <Text style={styles.hintTextEmpty}>Completed tasks will refresh at the beginning of each month.</Text>
+          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No completed tasks yet</Text>
+          <Text style={[styles.hintTextEmpty, { color: themeColors.textSecondary }]}>Completed tasks will refresh at the beginning of each month.</Text>
         </View>
       ) : (
         <>
           <View style={styles.hintBar}>
-            <Text style={styles.hintText}>Completed tasks will refresh at the beginning of each month.</Text>
+            <Text style={[styles.hintText, { color: themeColors.textSecondary }]}>Completed tasks will refresh at the beginning of each month.</Text>
           </View>
           <View style={styles.filterBar}>
-            <TouchableOpacity
-              style={[styles.filterChip, departmentFilter ? styles.filterChipActive : null]}
-              onPress={() => setDepartmentModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.filterChipLabel}>Department</Text>
-              <Text style={[styles.filterChipValue, departmentFilter ? styles.filterChipValueActive : null]}>
-                {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.filterBarContent}>
+              <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
+              <TouchableOpacity
+                style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
+                onPress={() => setDepartmentModalVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>
+                  {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All departments'}
+                </Text>
+                <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>
+                  {departmentModalVisible ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {departmentFilter ? (
               <TouchableOpacity onPress={() => setDepartmentFilter('')} style={styles.clearFilters}>
-                <Text style={styles.clearFiltersText}>Clear filter</Text>
+                <Text style={[styles.clearFiltersText, { color: themeColors.textPrimary }]}>Clear filter</Text>
               </TouchableOpacity>
             ) : null}
           </View>
           {departmentModalVisible && (
             <Modal visible transparent animationType="fade">
               <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
-                <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-                  <Text style={styles.modalTitle}>Filter by department</Text>
+                <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+                  <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Filter by department</Text>
                   {DEPARTMENT_OPTIONS.map((opt) => (
                     <TouchableOpacity
                       key={opt.value || 'all'}
@@ -218,7 +226,7 @@ export const CompletedTasksScreen = ({ navigation }: any) => {
                         setDepartmentModalVisible(false);
                       }}
                     >
-                      <Text style={styles.modalItemText}>{opt.label}</Text>
+                      <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -236,7 +244,7 @@ export const CompletedTasksScreen = ({ navigation }: any) => {
             ListEmptyComponent={
               filteredTasks.length === 0 && tasks.length > 0 ? (
                 <View style={styles.emptyFilter}>
-                  <Text style={styles.emptyFilterText}>No tasks match the current filter</Text>
+                  <Text style={[styles.emptyFilterText, { color: themeColors.textSecondary }]}>No tasks match the current filter</Text>
                 </View>
               ) : null
             }
@@ -255,21 +263,14 @@ export const CompletedTasksScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1 },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.lg,
   },
-  message: {
-    fontSize: FONTS.base,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
+  message: { fontSize: FONTS.base, textAlign: 'center' },
   loader: {
     marginTop: SPACING.xl,
   },
@@ -278,14 +279,9 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.xs,
   },
-  hintText: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    fontStyle: 'italic',
-  },
+  hintText: { fontSize: FONTS.sm, fontStyle: 'italic' },
   hintTextEmpty: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     fontStyle: 'italic',
     marginTop: SPACING.md,
     textAlign: 'center',
@@ -301,42 +297,36 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.xs,
+    marginBottom: SPACING.lg,
     gap: SPACING.md,
   },
-  filterChip: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.gray100,
-    borderRadius: BORDER_RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primaryLight,
-  },
-  filterChipLabel: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
-  filterChipValue: {
+  filterBarContent: { flex: 1 },
+  filterLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
-  filterChipValueActive: {
-    color: COLORS.primary,
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   clearFilters: {
     paddingVertical: SPACING.xs,
   },
   clearFiltersText: {
     fontSize: FONTS.sm,
-    color: COLORS.primary,
   },
   modalBackdrop: {
     flex: 1,
@@ -346,18 +336,12 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     minWidth: 260,
     maxHeight: 400,
   },
-  modalTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
+  modalTitle: { fontSize: FONTS.lg, fontWeight: '600', marginBottom: SPACING.md },
   modalItem: {
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
@@ -366,20 +350,13 @@ const styles = StyleSheet.create({
   modalItemSelected: {
     backgroundColor: COLORS.primaryLight,
   },
-  modalItemText: {
-    fontSize: FONTS.base,
-    color: COLORS.textPrimary,
-  },
+  modalItemText: { fontSize: FONTS.base },
   emptyFilter: {
     padding: SPACING.xl,
     alignItems: 'center',
   },
-  emptyFilterText: {
-    fontSize: FONTS.base,
-    color: COLORS.textSecondary,
-  },
+  emptyFilterText: { fontSize: FONTS.base },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -395,12 +372,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xs,
   },
-  cardTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
+  cardTitle: { fontSize: FONTS.lg, fontWeight: '600', flex: 1 },
   deleteBtn: {
     fontSize: FONTS.sm,
     color: COLORS.danger,
@@ -414,7 +386,6 @@ const styles = StyleSheet.create({
   },
   deptBadge: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     backgroundColor: COLORS.gray100,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
@@ -422,17 +393,12 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     backgroundColor: COLORS.gray100,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
   },
-  completedBy: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.xs,
-  },
+  completedBy: { fontSize: FONTS.sm, marginBottom: SPACING.xs },
   cardNotes: {
     fontSize: FONTS.sm,
     color: COLORS.textTertiary,
@@ -447,8 +413,5 @@ const styles = StyleSheet.create({
     fontSize: 48,
     marginBottom: SPACING.md,
   },
-  emptyText: {
-    fontSize: FONTS.lg,
-    color: COLORS.textSecondary,
-  },
+  emptyText: { fontSize: FONTS.lg },
 });

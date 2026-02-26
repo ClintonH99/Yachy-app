@@ -22,6 +22,7 @@ import {
   AddEditTripScreen,
   PreDepartureChecklistScreen,
   AddEditPreDepartureChecklistScreen,
+  ViewPreDepartureChecklistScreen,
   DeliveryTripsScreen,
   YardPeriodTripsScreen,
   TripColorSettingsScreen,
@@ -58,10 +59,17 @@ import {
   AddEditPumpOutLogScreen,
   ContractorDatabaseScreen,
   AddEditContractorScreen,
+  VesselCrewSafetyScreen,
+  MusterStationScreen,
+  CreateMusterStationScreen,
+  SafetyEquipmentScreen,
+  CreateSafetyEquipmentScreen,
+  RulesScreen,
+  CreateRulesScreen,
 } from '../screens';
 import { CreateVesselScreen } from '../screens/CreateVesselScreen';
 import { MainTabsNavigator } from './MainTabsNavigator';
-import { useAuthStore, useDepartmentColorStore, useThemeStore } from '../store';
+import { useAuthStore, useDepartmentColorStore, useThemeStore, BACKGROUND_THEMES } from '../store';
 import authService from '../services/auth';
 import { COLORS } from '../constants/theme';
 
@@ -69,6 +77,8 @@ const Stack = createNativeStackNavigator();
 
 export const RootNavigator = () => {
   const { isAuthenticated, isLoading, setUser, setLoading } = useAuthStore();
+  const backgroundTheme = useThemeStore((s) => s.backgroundTheme);
+  const themeColors = BACKGROUND_THEMES[backgroundTheme];
 
   useEffect(() => {
     // Check for existing session on mount
@@ -103,15 +113,13 @@ export const RootNavigator = () => {
   const loadDepartmentColorOverrides = useDepartmentColorStore((s) => s.loadOverrides);
   const loadTheme = useThemeStore((s) => s.loadTheme);
   useEffect(() => {
-    if (isAuthenticated) {
-      loadDepartmentColorOverrides();
-      loadTheme();
-    }
+    loadTheme();
+    if (isAuthenticated) loadDepartmentColorOverrides();
   }, [isAuthenticated, loadDepartmentColorOverrides, loadTheme]);
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -122,13 +130,14 @@ export const RootNavigator = () => {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: COLORS.background,
+            backgroundColor: themeColors.background,
           },
           headerShadowVisible: false,
-          headerTintColor: COLORS.textPrimary,
+          headerTintColor: themeColors.textPrimary,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          contentStyle: { backgroundColor: themeColors.background },
         }}
       >
         {!isAuthenticated ? (
@@ -241,6 +250,20 @@ export const RootNavigator = () => {
               }}
             />
             <Stack.Screen 
+              name="VesselCrewSafety" 
+              component={VesselCrewSafetyScreen}
+              options={{ 
+                title: 'Vessel & Crew Safety',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen name="MusterStation" component={MusterStationScreen} options={{ title: 'Muster Station & Duties', headerShown: true }} />
+            <Stack.Screen name="CreateMusterStation" component={CreateMusterStationScreen} options={{ title: 'Create Muster Station', headerShown: true }} />
+            <Stack.Screen name="SafetyEquipment" component={SafetyEquipmentScreen} options={{ title: 'Safety Equipment', headerShown: true }} />
+            <Stack.Screen name="CreateSafetyEquipment" component={CreateSafetyEquipmentScreen} options={{ title: 'Create Safety Equipment', headerShown: true }} />
+            <Stack.Screen name="Rules" component={RulesScreen} options={{ title: 'Rules On-Board', headerShown: true }} />
+            <Stack.Screen name="CreateRules" component={CreateRulesScreen} options={{ title: 'Create Rules', headerShown: true }} />
+            <Stack.Screen 
               name="PreDepartureChecklist" 
               component={PreDepartureChecklistScreen}
               options={{ 
@@ -253,6 +276,14 @@ export const RootNavigator = () => {
               component={AddEditPreDepartureChecklistScreen}
               options={{ 
                 title: 'Pre-Departure Checklist',
+                headerShown: true,
+              }}
+            />
+            <Stack.Screen 
+              name="ViewPreDepartureChecklist" 
+              component={ViewPreDepartureChecklistScreen}
+              options={{ 
+                title: 'View Checklist',
                 headerShown: true,
               }}
             />

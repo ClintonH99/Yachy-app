@@ -18,8 +18,10 @@ import {
   Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import yardJobsService from '../services/yardJobs';
 import { YardPeriodJob, Department } from '../types';
 
@@ -28,6 +30,7 @@ import { Button } from '../components';
 import { getTaskUrgencyColor } from '../utils/taskUrgency';
 
 export const YardPeriodJobsScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const overrides = useDepartmentColorStore((s) => s.overrides);
   const [jobs, setJobs] = useState<YardPeriodJob[]>([]);
@@ -152,14 +155,14 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
 
     return (
       <TouchableOpacity
-        style={[styles.card, { borderLeftColor: borderColor }]}
+        style={[styles.card, { backgroundColor: themeColors.surface, borderLeftColor: borderColor }]}
         onPress={() => onEdit(item)}
         activeOpacity={0.8}
         disabled={!isHOD}
       >
         <View style={styles.cardHeader}>
           <Text
-            style={[styles.cardTitle, isComplete && styles.cardTitleComplete]}
+            style={[styles.cardTitle, isComplete && styles.cardTitleComplete, { color: isComplete ? themeColors.textSecondary : themeColors.textPrimary }]}
             numberOfLines={1}
           >
             {item.jobTitle}
@@ -181,27 +184,27 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
               onPress={() => onDelete(item)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.deleteBtn}>Delete</Text>
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             </TouchableOpacity>
           )}
         </View>
         {item.yardLocation ? (
-          <Text style={styles.cardSubtext}>📍 {item.yardLocation}</Text>
+          <Text style={[styles.cardSubtext, { color: themeColors.textSecondary }]}>📍 {item.yardLocation}</Text>
         ) : null}
         {item.contractorCompanyName ? (
-          <Text style={styles.cardSubtext}>🏢 {item.contractorCompanyName}</Text>
+          <Text style={[styles.cardSubtext, { color: themeColors.textSecondary }]}>🏢 {item.contractorCompanyName}</Text>
         ) : null}
         {item.doneByDate && (
-          <Text style={styles.cardDate}>
+          <Text style={[styles.cardDate, { color: themeColors.textSecondary }]}>
             Done by: {formatDate(item.doneByDate)}
             {isComplete && ' ✓'}
           </Text>
         )}
         {isComplete && item.completedByName && (
-          <Text style={styles.completedBy}>Completed by: {item.completedByName}</Text>
+          <Text style={[styles.completedBy, { color: themeColors.textSecondary }]}>Completed by: {item.completedByName}</Text>
         )}
         {item.jobDescription ? (
-          <Text style={styles.cardNotes} numberOfLines={2}>
+          <Text style={[styles.cardNotes, { color: themeColors.textSecondary }]} numberOfLines={2}>
             {item.jobDescription}
           </Text>
         ) : null}
@@ -219,8 +222,8 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see yard period jobs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see yard period jobs.</Text>
       </View>
     );
   }
@@ -234,29 +237,33 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
   const CalendarHeader = () => (
     <>
       <TouchableOpacity
-        style={styles.calendarCard}
+        style={[styles.calendarCard, { backgroundColor: themeColors.surface }]}
         onPress={() => navigation.navigate('TasksCalendar')}
         activeOpacity={0.8}
       >
         <Text style={styles.calendarCardIcon}>📅</Text>
         <View style={styles.calendarCardContent}>
-          <Text style={styles.calendarCardTitle}>Yard Period Calendar</Text>
-          <Text style={styles.calendarCardHint}>Calendar view with department & urgency filters</Text>
+        <Text style={[styles.calendarCardTitle, { color: themeColors.textPrimary }]}>Yard Period Calendar</Text>
+        <Text style={[styles.calendarCardHint, { color: themeColors.textSecondary }]}>Calendar view with department & urgency filters</Text>
         </View>
       </TouchableOpacity>
-      <Text style={styles.filterLabel}>Select Department</Text>
-      <TouchableOpacity
-        style={styles.dropdown}
-        onPress={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.dropdownText}>{departmentDisplayText}</Text>
-        <Text style={styles.dropdownChevron}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
-      </TouchableOpacity>
+      <View style={styles.filterBar}>
+        <View style={styles.filterBarContent}>
+          <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
+            onPress={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>{departmentDisplayText}</Text>
+            <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>{departmentDropdownOpen ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       {departmentDropdownOpen && (
         <Modal visible transparent animationType="fade">
           <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentDropdownOpen(false)}>
-            <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
+            <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
               <TouchableOpacity
                 style={[
                   styles.modalItem,
@@ -270,6 +277,7 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
                 <Text
                   style={[
                     styles.modalItemText,
+                    { color: themeColors.textPrimary },
                     DEPARTMENTS.every((d) => visibleDepartments[d]) && styles.modalItemTextAll,
                   ]}
                 >
@@ -288,12 +296,13 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
                     setDepartmentDropdownOpen(false);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.modalItemText,
-                      visibleDepartments[dept] && styles.modalItemTextAll,
-                    ]}
-                  >
+                <Text
+                  style={[
+                    styles.modalItemText,
+                    { color: themeColors.textPrimary },
+                    visibleDepartments[dept] && styles.modalItemTextAll,
+                  ]}
+                >
                     {dept.charAt(0) + dept.slice(1).toLowerCase()}
                   </Text>
                 </TouchableOpacity>
@@ -316,12 +325,12 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
       ) : jobs.length === 0 ? (
         <ScrollView
-          style={styles.container}
+          style={[styles.container, { backgroundColor: themeColors.background }]}
           contentContainerStyle={styles.emptyWrapper}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
@@ -330,7 +339,7 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
           <CalendarHeader />
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🔧</Text>
-            <Text style={styles.emptyText}>No yard period jobs yet</Text>
+            <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No yard period jobs yet</Text>
             {isHOD && (
               <Button
                 title="Create first job"
@@ -350,8 +359,8 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
           ListEmptyComponent={
             jobs.length > 0 ? (
               <View style={styles.emptyFilter}>
-                <Text style={styles.emptyFilterText}>No jobs in selected departments</Text>
-                <Text style={styles.emptyFilterHint}>Tap Select Department to choose</Text>
+                <Text style={[styles.emptyFilterText, { color: themeColors.textSecondary }]}>No jobs in selected departments</Text>
+                <Text style={[styles.emptyFilterHint, { color: themeColors.textSecondary }]}>Tap the Department dropdown to choose</Text>
               </View>
             ) : null
           }
@@ -372,7 +381,6 @@ export const YardPeriodJobsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -382,13 +390,11 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   calendarCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginHorizontal: SPACING.lg,
@@ -410,20 +416,22 @@ const styles = StyleSheet.create({
   calendarCardTitle: {
     fontSize: FONTS.xl,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   calendarCardHint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
+  filterBar: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
+    marginBottom: SPACING.lg,
+  },
+  filterBarContent: { flex: 1 },
   filterLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.xs,
+    marginBottom: SPACING.sm,
   },
   dropdown: {
     flexDirection: 'row',
@@ -431,21 +439,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
   },
   dropdownText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
   dropdownChevron: {
     fontSize: 10,
-    color: COLORS.textSecondary,
   },
   modalBackdrop: {
     flex: 1,
@@ -455,7 +458,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     paddingVertical: SPACING.sm,
     minWidth: 200,
@@ -465,14 +467,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   modalItemSelected: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.primaryLight + '20',
   },
   modalItemText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   modalItemTextAll: {
-    color: COLORS.textPrimary,
     fontWeight: '600',
   },
   addRow: {
@@ -501,15 +501,12 @@ const styles = StyleSheet.create({
   },
   emptyFilterText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   emptyFilterHint: {
     fontSize: FONTS.sm,
-    color: COLORS.textTertiary,
     marginTop: SPACING.xs,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -541,12 +538,10 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     flex: 1,
   },
   cardTitleComplete: {
     textDecorationLine: 'line-through',
-    color: COLORS.textSecondary,
   },
   deleteBtn: {
     fontSize: FONTS.sm,
@@ -554,12 +549,10 @@ const styles = StyleSheet.create({
   },
   cardSubtext: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   cardDate: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   completedBy: {
@@ -596,7 +589,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONTS.lg,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
   emptyBtn: {},

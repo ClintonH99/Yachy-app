@@ -18,11 +18,13 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore, useDepartmentColorStore, getDepartmentColor } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import yardJobsService from '../services/yardJobs';
 import { Input, Button } from '../components';
 import { Department, YardJobPriority } from '../types';
 
 export const AddEditYardJobScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const overrides = useDepartmentColorStore((s) => s.overrides);
   const jobId = route.params?.jobId as string | undefined;
@@ -85,13 +87,13 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
       : {};
 
   const calendarTheme = {
-    backgroundColor: COLORS.white,
-    calendarBackground: COLORS.white,
-    textSectionTitleColor: COLORS.textSecondary,
+    backgroundColor: themeColors.surface,
+    calendarBackground: themeColors.surface,
+    textSectionTitleColor: themeColors.textSecondary,
     selectedDayBackgroundColor: COLORS.primary,
     selectedDayTextColor: COLORS.white,
     todayTextColor: COLORS.primary,
-    dayTextColor: COLORS.textPrimary,
+    dayTextColor: themeColors.textPrimary,
     textDisabledColor: COLORS.gray400,
     arrowColor: COLORS.primary,
     monthTextColor: COLORS.primary,
@@ -154,23 +156,23 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
 
   if (!isHOD) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Only HODs can add or edit jobs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Only HODs can add or edit jobs.</Text>
       </View>
     );
   }
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to add jobs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to add jobs.</Text>
       </View>
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -178,7 +180,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={100}
     >
@@ -202,14 +204,15 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
           multiline
           numberOfLines={3}
         />
-        <Text style={styles.label}>Department</Text>
-        <Text style={styles.hint}>Which department is this job for?</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>Which department is this job for?</Text>
         <View style={styles.chipRow}>
           {(['BRIDGE', 'ENGINEERING', 'EXTERIOR', 'INTERIOR', 'GALLEY'] as Department[]).map((dept) => (
             <TouchableOpacity
               key={dept}
               style={[
                 styles.chip,
+                { backgroundColor: themeColors.surface },
                 department === dept && styles.chipSelected,
                 { borderColor: getDepartmentColor(dept, overrides) },
               ]}
@@ -218,6 +221,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
               <Text
                 style={[
                   styles.chipText,
+                  { color: department === dept ? COLORS.white : themeColors.textPrimary },
                   department === dept && styles.chipTextSelected,
                 ]}
                 numberOfLines={1}
@@ -227,8 +231,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
             </TouchableOpacity>
           ))}
         </View>
-        <Text style={styles.label}>Urgency / Priority</Text>
-        <Text style={styles.hint}>How urgent is this job?</Text>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Urgency / Priority</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>How urgent is this job?</Text>
         <View style={styles.priorityRow}>
           {(['GREEN', 'YELLOW', 'RED'] as YardJobPriority[]).map((p) => {
             const isSelected = priority === p;
@@ -238,8 +242,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
               key={p}
               style={[
                 styles.priorityChip,
-                { borderColor: chipColor, borderWidth: isSelected ? 3 : 2 },
-                isSelected && { backgroundColor: chipColor },
+                { borderColor: chipColor, borderWidth: isSelected ? 3 : 2, backgroundColor: isSelected ? chipColor : themeColors.surface },
               ]}
               onPress={() => setPriority(p)}
               activeOpacity={0.7}
@@ -249,7 +252,8 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
               <Text
                 style={[
                   styles.priorityChipText,
-                  isSelected && { color: COLORS.white, fontWeight: '700' },
+                  { color: isSelected ? COLORS.white : themeColors.textPrimary },
+                  isSelected && { fontWeight: '700' },
                 ]}
               >
                 {p === 'GREEN' ? 'Low' : p === 'YELLOW' ? 'Medium' : 'High'}
@@ -276,11 +280,11 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
           onChangeText={setContactDetails}
           placeholder="Phone, email, or other contact info"
         />
-        <Text style={styles.label}>Done by date (optional)</Text>
-        <Text style={styles.hint}>
+        <Text style={[styles.label, { color: themeColors.textPrimary }]}>Done by date (optional)</Text>
+        <Text style={[styles.hint, { color: themeColors.textSecondary }]}>
           Jobs with a deadline change color as time passes (green → yellow → red).
         </Text>
-        <View style={styles.calendarWrap}>
+        <View style={[styles.calendarWrap, { backgroundColor: themeColors.surface }]}>
           <Calendar
             current={doneByDate || new Date().toISOString().slice(0, 10)}
             minDate={new Date().toISOString().slice(0, 10)}
@@ -297,7 +301,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
             style={styles.clearDate}
             onPress={() => setDoneByDate(null)}
           >
-            <Text style={styles.clearDateText}>Clear deadline</Text>
+            <Text style={[styles.clearDateText, { color: themeColors.textSecondary }]}>Clear deadline</Text>
           </TouchableOpacity>
         )}
         <View style={styles.actions}>
@@ -314,7 +318,7 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
             onPress={() => navigation.goBack()}
             disabled={saving}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: themeColors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -325,7 +329,6 @@ export const AddEditYardJobScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scroll: {
     flex: 1,
@@ -342,23 +345,19 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   label: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
     marginTop: SPACING.md,
   },
   hint: {
     fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
   calendarWrap: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.sm,
     marginBottom: SPACING.sm,
@@ -384,7 +383,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   chipRow: {
     flexDirection: 'row',
@@ -397,7 +395,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
-    backgroundColor: COLORS.white,
   },
   chipSelected: {
     backgroundColor: COLORS.primaryLight,
@@ -405,7 +402,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   chipTextSelected: {
     color: COLORS.white,
@@ -426,7 +422,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
-    backgroundColor: COLORS.white,
   },
   priorityDot: {
     width: 10,
@@ -436,6 +431,5 @@ const styles = StyleSheet.create({
   priorityChipText: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
 });

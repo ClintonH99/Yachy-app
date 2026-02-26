@@ -17,8 +17,10 @@ import {
   Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import vesselTasksService from '../services/vesselTasks';
 import { VesselTask, TaskCategory, Department } from '../types';
 import { getTaskUrgencyColor } from '../utils/taskUrgency';
@@ -30,6 +32,7 @@ const CATEGORY_LABELS: Record<TaskCategory, string> = {
 };
 
 export const TasksListScreen = ({ navigation, route }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const category = (route.params?.category ?? 'DAILY') as TaskCategory;
   const categoryLabel = CATEGORY_LABELS[category];
@@ -138,7 +141,7 @@ export const TasksListScreen = ({ navigation, route }: any) => {
 
     return (
       <TouchableOpacity
-        style={[styles.card, { borderLeftColor: borderColor }]}
+        style={[styles.card, { backgroundColor: themeColors.surface, borderLeftColor: borderColor }]}
         onPress={() => onEdit(item)}
         activeOpacity={0.8}
         disabled={!isHOD}
@@ -155,12 +158,12 @@ export const TasksListScreen = ({ navigation, route }: any) => {
               onPress={() => onDelete(item)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.deleteBtn}>Delete</Text>
+              <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             </TouchableOpacity>
           )}
         </View>
         <View style={styles.cardMeta}>
-          <Text style={styles.deptBadge}>{item.department.charAt(0) + item.department.slice(1).toLowerCase()}</Text>
+          <Text style={[styles.deptBadge, { color: themeColors.textSecondary }]}>{item.department.charAt(0) + item.department.slice(1).toLowerCase()}</Text>
           {item.doneByDate && (
             <Text style={styles.cardDate}>
               Done by: {formatDate(item.doneByDate)}
@@ -195,45 +198,50 @@ export const TasksListScreen = ({ navigation, route }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see tasks.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see tasks.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
       ) : tasks.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>📋</Text>
-          <Text style={styles.emptyText}>No {categoryLabel.toLowerCase()} tasks yet</Text>
+          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No {categoryLabel.toLowerCase()} tasks yet</Text>
         </View>
       ) : (
         <>
           <View style={styles.filterBar}>
-            <TouchableOpacity
-              style={[styles.filterChip, departmentFilter ? styles.filterChipActive : null]}
-              onPress={() => setDepartmentModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.filterChipLabel}>Department</Text>
-              <Text style={[styles.filterChipValue, departmentFilter ? styles.filterChipValueActive : null]}>
-                {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.filterBarContent}>
+              <Text style={[styles.filterLabel, { color: themeColors.textPrimary }]}>Department</Text>
+              <TouchableOpacity
+                style={[styles.dropdown, { backgroundColor: themeColors.surface }]}
+                onPress={() => setDepartmentModalVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.dropdownText, { color: themeColors.textPrimary }]}>
+                  {departmentFilter ? DEPARTMENT_OPTIONS.find((o) => o.value === departmentFilter)?.label ?? departmentFilter : 'All departments'}
+                </Text>
+                <Text style={[styles.dropdownChevron, { color: themeColors.textSecondary }]}>
+                  {departmentModalVisible ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {departmentFilter ? (
               <TouchableOpacity onPress={() => setDepartmentFilter('')} style={styles.clearFilters}>
-                <Text style={styles.clearFiltersText}>Clear filter</Text>
+                <Text style={[styles.clearFiltersText, { color: themeColors.textPrimary }]}>Clear filter</Text>
               </TouchableOpacity>
             ) : null}
           </View>
           {departmentModalVisible && (
             <Modal visible transparent animationType="fade">
               <Pressable style={styles.modalBackdrop} onPress={() => setDepartmentModalVisible(false)}>
-                <View style={styles.modalBox} onStartShouldSetResponder={() => true}>
-                  <Text style={styles.modalTitle}>Filter by department</Text>
+                <View style={[styles.modalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+                  <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Filter by department</Text>
                   {DEPARTMENT_OPTIONS.map((opt) => (
                     <TouchableOpacity
                       key={opt.value || 'all'}
@@ -243,7 +251,7 @@ export const TasksListScreen = ({ navigation, route }: any) => {
                         setDepartmentModalVisible(false);
                       }}
                     >
-                      <Text style={styles.modalItemText}>{opt.label}</Text>
+                      <Text style={[styles.modalItemText, { color: themeColors.textPrimary }]}>{opt.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -261,7 +269,7 @@ export const TasksListScreen = ({ navigation, route }: any) => {
           ListEmptyComponent={
             filteredTasks.length === 0 && tasks.length > 0 ? (
               <View style={styles.emptyFilter}>
-                <Text style={styles.emptyFilterText}>No tasks match the current filter</Text>
+                <Text style={[styles.emptyFilterText, { color: themeColors.textSecondary }]}>No tasks match the current filter</Text>
               </View>
             ) : null
           }
@@ -282,7 +290,6 @@ export const TasksListScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -292,7 +299,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   loader: {
@@ -307,7 +313,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -327,7 +332,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     flex: 1,
   },
   cardTitleComplete: {
@@ -347,7 +351,6 @@ const styles = StyleSheet.create({
   },
   deptBadge: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     backgroundColor: COLORS.gray100,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
@@ -403,42 +406,36 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.xs,
+    marginBottom: SPACING.lg,
     gap: SPACING.md,
   },
-  filterChip: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.gray100,
-    borderRadius: BORDER_RADIUS.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primaryLight,
-  },
-  filterChipLabel: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
-  filterChipValue: {
+  filterBarContent: { flex: 1 },
+  filterLabel: {
     fontSize: FONTS.sm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
-  filterChipValueActive: {
-    color: COLORS.primary,
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
+  dropdownText: { fontSize: FONTS.base, fontWeight: '500' },
+  dropdownChevron: { fontSize: 10 },
   clearFilters: {
     paddingVertical: SPACING.xs,
   },
   clearFiltersText: {
     fontSize: FONTS.sm,
-    color: COLORS.primary,
   },
   modalBackdrop: {
     flex: 1,
@@ -448,7 +445,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     minWidth: 260,
@@ -457,7 +453,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   modalItem: {
@@ -470,7 +465,6 @@ const styles = StyleSheet.create({
   },
   modalItemText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   emptyFilter: {
     padding: SPACING.xl,
@@ -478,6 +472,5 @@ const styles = StyleSheet.create({
   },
   emptyFilterText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
 });

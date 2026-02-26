@@ -19,11 +19,13 @@ import {
   Pressable,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SIZES } from '../constants/theme';
 import { useAuthStore } from '../store';
+import { useThemeColors } from '../hooks/useThemeColors';
 import maintenanceLogsService from '../services/maintenanceLogs';
 import vesselService from '../services/vessel';
 import { MaintenanceLog } from '../types';
@@ -74,16 +76,22 @@ function Checkbox({
   checked,
   onPress,
   disabled,
+  themeColors,
 }: {
   checked: boolean;
   onPress: () => void;
   disabled?: boolean;
+  themeColors: { surface: string };
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      style={[styles.checkbox, checked && styles.checkboxChecked]}
+      style={[
+        styles.checkbox,
+        { backgroundColor: checked ? undefined : themeColors.surface },
+        checked && styles.checkboxChecked,
+      ]}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       {checked && <Text style={styles.checkmark}>✓</Text>}
@@ -100,6 +108,7 @@ function escapeHtml(s: string): string {
 }
 
 export const MaintenanceLogScreen = ({ navigation }: any) => {
+  const themeColors = useThemeColors();
   const { user } = useAuthStore();
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -345,14 +354,14 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
 
   if (!vesselId) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.message}>Join a vessel to see maintenance logs.</Text>
+      <View style={[styles.center, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.message, { color: themeColors.textSecondary }]}>Join a vessel to see maintenance logs.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.actionsRow}>
         <View style={styles.leftActions}>
           <Button
@@ -393,12 +402,12 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
               return (
                 <TouchableOpacity
                   key={key}
-                  style={[styles.filterChip, value ? styles.filterChipActive : null]}
+                  style={[styles.filterChip, { backgroundColor: themeColors.surface }, value ? styles.filterChipActive : null]}
                   onPress={() => setFilterDropdownKey(key)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.filterChipLabel} numberOfLines={1}>{label}</Text>
-                  <Text style={[styles.filterChipValue, value ? styles.filterChipValueActive : null]} numberOfLines={1}>
+                  <Text style={[styles.filterChipLabel, { color: themeColors.textSecondary }]} numberOfLines={1}>{label}</Text>
+                  <Text style={[styles.filterChipValue, { color: themeColors.textPrimary }, value ? styles.filterChipValueActive : null]} numberOfLines={1}>
                     {display}
                   </Text>
                 </TouchableOpacity>
@@ -416,8 +425,8 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
       {filterDropdownKey && (
         <Modal visible transparent animationType="fade">
           <Pressable style={styles.filterModalBackdrop} onPress={() => setFilterDropdownKey(null)}>
-            <View style={styles.filterModalBox} onStartShouldSetResponder={() => true}>
-              <Text style={styles.filterModalTitle}>{FILTER_KEYS.find((f) => f.key === filterDropdownKey)?.label ?? filterDropdownKey}</Text>
+            <View style={[styles.filterModalBox, { backgroundColor: themeColors.surface }]} onStartShouldSetResponder={() => true}>
+              <Text style={[styles.filterModalTitle, { color: themeColors.textPrimary }]}>{FILTER_KEYS.find((f) => f.key === filterDropdownKey)?.label ?? filterDropdownKey}</Text>
               <FlatList
                 data={['', ...uniqueValuesByKey[filterDropdownKey]]}
                 keyExtractor={(item, i) => (item || 'all') + i}
@@ -429,7 +438,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
                       setFilterDropdownKey(null);
                     }}
                   >
-                    <Text style={styles.filterModalItemText}>{item || 'All'}</Text>
+                    <Text style={[styles.filterModalItemText, { color: themeColors.textPrimary }]}>{item || 'All'}</Text>
                   </TouchableOpacity>
                 )}
               />
@@ -453,7 +462,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
         >
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📋</Text>
-            <Text style={styles.emptyText}>No maintenance logs yet</Text>
+            <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No maintenance logs yet</Text>
             <Button title="Add first log" onPress={onAdd} variant="primary" style={styles.emptyBtn} />
           </View>
         </ScrollView>
@@ -483,6 +492,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
                   checked={filteredLogs.length > 0 && filteredLogs.every((l) => selectedIds.has(l.id))}
                   onPress={toggleSelectAll}
                   disabled={filteredLogs.length === 0}
+                  themeColors={themeColors}
                 />
               </View>
               <Text style={[styles.cell, styles.headerCell, { width: COLUMN_WIDTH }]}>Equipment</Text>
@@ -498,7 +508,7 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
             </View>
             {filteredLogs.length === 0 ? (
               <View style={styles.filterEmptyRow}>
-                <Text style={styles.filterEmptyText}>No logs match the current filters</Text>
+                <Text style={[styles.filterEmptyText, { color: themeColors.textSecondary }]}>No logs match the current filters</Text>
               </View>
             ) : (
             filteredLogs.map((log) => (
@@ -507,23 +517,24 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
                   <Checkbox
                     checked={selectedIds.has(log.id)}
                     onPress={() => toggleSelect(log.id)}
+                    themeColors={themeColors}
                   />
                 </View>
-                <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={2}>{log.equipment}</Text>
-                <Text style={[styles.cell, { width: 72 }]} numberOfLines={1}>{log.portStarboardNa || '—'}</Text>
-                <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={1}>{log.serialNumber || '—'}</Text>
-                <Text style={[styles.cell, { width: 70 }]} numberOfLines={1}>{log.hoursOfService || '—'}</Text>
-                <Text style={[styles.cell, { width: 70 }]} numberOfLines={1}>{log.hoursAtNextService || '—'}</Text>
-                <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={2}>{log.whatServiceDone || '—'}</Text>
-                <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={2}>{log.notes || '—'}</Text>
-                <Text style={[styles.cell, { width: COLUMN_WIDTH }]} numberOfLines={1}>{log.serviceDoneBy || '—'}</Text>
-                <Text style={[styles.cell, { width: DATE_WIDTH }, styles.dateCell]}>{formatDate(log.createdAt)}</Text>
+                <Text style={[styles.cell, { width: COLUMN_WIDTH, color: themeColors.textPrimary }]} numberOfLines={2}>{log.equipment}</Text>
+                <Text style={[styles.cell, { width: 72, color: themeColors.textPrimary }]} numberOfLines={1}>{log.portStarboardNa || '—'}</Text>
+                <Text style={[styles.cell, { width: COLUMN_WIDTH, color: themeColors.textPrimary }]} numberOfLines={1}>{log.serialNumber || '—'}</Text>
+                <Text style={[styles.cell, { width: 70, color: themeColors.textPrimary }]} numberOfLines={1}>{log.hoursOfService || '—'}</Text>
+                <Text style={[styles.cell, { width: 70, color: themeColors.textPrimary }]} numberOfLines={1}>{log.hoursAtNextService || '—'}</Text>
+                <Text style={[styles.cell, { width: COLUMN_WIDTH, color: themeColors.textPrimary }]} numberOfLines={2}>{log.whatServiceDone || '—'}</Text>
+                <Text style={[styles.cell, { width: COLUMN_WIDTH, color: themeColors.textPrimary }]} numberOfLines={2}>{log.notes || '—'}</Text>
+                <Text style={[styles.cell, { width: COLUMN_WIDTH, color: themeColors.textPrimary }]} numberOfLines={1}>{log.serviceDoneBy || '—'}</Text>
+                <Text style={[styles.cell, { width: DATE_WIDTH }, styles.dateCell, { color: themeColors.textSecondary }]}>{formatDate(log.createdAt)}</Text>
                 <View style={[styles.cell, styles.actionsCell, { width: ACTIONS_WIDTH }]}>
+                  <TouchableOpacity onPress={() => onDelete(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => onEdit(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                     <Text style={styles.editBtn}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => onDelete(log)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Text style={styles.deleteBtn}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -540,7 +551,6 @@ export const MaintenanceLogScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -550,7 +560,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   actionsRow: {
@@ -590,7 +599,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterChip: {
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.gray200,
     borderRadius: BORDER_RADIUS.md,
@@ -605,12 +613,10 @@ const styles = StyleSheet.create({
   },
   filterChipLabel: {
     fontSize: FONTS.xs,
-    color: COLORS.textSecondary,
     marginBottom: 2,
   },
   filterChipValue: {
     fontSize: FONTS.sm,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
   filterChipValueActive: {
@@ -633,7 +639,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   filterModalBox: {
-    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     maxHeight: '70%',
     width: '100%',
@@ -643,7 +648,6 @@ const styles = StyleSheet.create({
   filterModalTitle: {
     fontSize: FONTS.lg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     padding: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray200,
@@ -659,7 +663,6 @@ const styles = StyleSheet.create({
   },
   filterModalItemText: {
     fontSize: FONTS.base,
-    color: COLORS.textPrimary,
   },
   filterEmptyRow: {
     padding: SPACING.lg,
@@ -669,7 +672,6 @@ const styles = StyleSheet.create({
   },
   filterEmptyText: {
     fontSize: FONTS.base,
-    color: COLORS.textSecondary,
   },
   loader: {
     marginTop: SPACING.xl,
@@ -689,7 +691,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONTS.lg,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
   emptyBtn: {
@@ -727,7 +728,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     fontSize: FONTS.sm,
-    color: COLORS.textPrimary,
   },
   cellView: {
     paddingHorizontal: SPACING.sm,
@@ -741,9 +741,7 @@ const styles = StyleSheet.create({
   headerCellView: {
     /* layout only, no text props - for View */
   },
-  dateCell: {
-    color: COLORS.textSecondary,
-  },
+  dateCell: {},
   actionsCell: {
     flexDirection: 'row',
     gap: SPACING.xs,
@@ -757,7 +755,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
   },
   checkboxChecked: {
     backgroundColor: COLORS.primary,
