@@ -3,6 +3,7 @@
  */
 
 export { LoginScreen } from './LoginScreen';
+export { CreateAccountChoiceScreen } from './CreateAccountChoiceScreen';
 export { RegisterScreen } from './RegisterScreen';
 export { RegisterCaptainScreen } from './RegisterCaptainScreen';
 export { RegisterCrewScreen } from './RegisterCrewScreen';

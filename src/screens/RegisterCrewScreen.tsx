@@ -7,19 +7,31 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
   TouchableOpacity,
+  StatusBar,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Button, Input } from '../components';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import { Department } from '../types';
 import authService from '../services/auth';
 import { useAuthStore } from '../store';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+const MARITIME = {
+  bgDark: '#0f172a',
+  textOnDark: '#f8fafc',
+  textMuted: '#94a3b8',
+  formCardBg: 'rgba(255, 255, 255, 0.95)',
+  formCardBorder: 'rgba(255, 255, 255, 0.4)',
+  infoBg: 'rgba(14, 165, 233, 0.12)',
+  infoBorder: 'rgba(14, 165, 233, 0.3)',
+};
 
 const DEPARTMENTS = [
   { label: 'Bridge', value: 'BRIDGE' },
@@ -30,7 +42,6 @@ const DEPARTMENTS = [
 ];
 
 export const RegisterCrewScreen = ({ navigation }: any) => {
-  const themeColors = useThemeColors();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -138,38 +149,43 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: themeColors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={[styles.container, { backgroundColor: MARITIME.bgDark }]}>
+      <StatusBar barStyle="light-content" backgroundColor={MARITIME.bgDark} />
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.navigate('Login')}
-            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={[styles.backButtonText, { color: themeColors.textPrimary }]}>← Back</Text>
+            <Ionicons name="chevron-back" size={28} color={MARITIME.textOnDark} />
           </TouchableOpacity>
-          {/* Header */}
+
           <View style={styles.header}>
-            <Text style={styles.icon}>👥</Text>
-            <Text style={styles.title}>Create Crew Account</Text>
-            <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>Join your vessel using an invite code</Text>
+            <Image
+              source={require('../../assets/yachy-logo.png')}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
           </View>
 
-          {/* Info Banner */}
+          <Text style={styles.title}>Create Crew Account</Text>
+          <Text style={styles.subtitle}>Join your vessel using an invite code</Text>
+
           <View style={styles.infoBanner}>
             <Text style={styles.infoBannerText}>
               You'll need an 8-character invite code from your captain to create a crew account.
             </Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
+          <View style={[styles.formCard, { backgroundColor: MARITIME.formCardBg, borderColor: MARITIME.formCardBorder }]}>
             <Input
               label="Full Name"
               placeholder="John Doe"
@@ -217,9 +233,8 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
               error={errors.position}
             />
 
-            {/* Department Selection */}
             <View style={styles.departmentSection}>
-              <Text style={[styles.label, { color: themeColors.textPrimary }]}>Department</Text>
+              <Text style={[styles.label, { color: COLORS.textPrimary }]}>Department</Text>
               <View style={styles.departmentButtons}>
                 {DEPARTMENTS.map((dept) => (
                   <Button
@@ -259,85 +274,89 @@ export const RegisterCrewScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Footer */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>Already have an account? </Text>
-            <Button
-              title="Sign In"
-              onPress={() => navigation.navigate('Login')}
-              variant="outline"
-              size="small"
-            />
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.footerLink}>Sign In</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Don't have invite code */}
-          <View style={[styles.helpSection, { backgroundColor: themeColors.surface }]}>
-            <Text style={[styles.helpText, { color: themeColors.textPrimary }]}>Don't have an invite code?</Text>
-            <Text style={[styles.helpSubtext, { color: themeColors.textSecondary }]}>
+          <View style={[styles.helpSection, { backgroundColor: MARITIME.infoBg, borderColor: MARITIME.infoBorder }]}>
+            <Text style={styles.helpText}>Don't have an invite code?</Text>
+            <Text style={styles.helpSubtext}>
               Ask your captain for the vessel's invite code, or create a captain account if you're starting your own vessel.
             </Text>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: 0,
-    marginBottom: SPACING.md,
-  },
-  backButtonText: {
-    fontSize: FONTS.base,
-    fontWeight: '600',
-  },
   container: {
+    flex: 1,
+    backgroundColor: MARITIME.bgDark,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: 56,
+    paddingBottom: SPACING['2xl'],
   },
-  content: {
-    flex: 1,
-    padding: SPACING.lg,
-    paddingTop: SPACING.xl,
+  backButton: {
+    position: 'absolute',
+    top: 56,
+    left: SPACING.lg,
+    zIndex: 10,
   },
   header: {
-    marginBottom: SPACING.lg,
     alignItems: 'center',
+    marginBottom: SPACING.lg,
+    backgroundColor: 'transparent',
   },
-  icon: {
-    fontSize: 64,
-    marginBottom: SPACING.sm,
+  headerLogo: {
+    width: 140,
+    height: 84,
+    backgroundColor: 'transparent',
   },
   title: {
-    fontSize: FONTS['3xl'],
-    fontWeight: 'bold',
-    color: COLORS.primary,
+    fontSize: FONTS['2xl'],
+    fontWeight: '700',
+    color: MARITIME.textOnDark,
+    textAlign: 'center',
     marginBottom: SPACING.xs,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: FONTS.base,
+    fontSize: FONTS.sm,
+    color: MARITIME.textMuted,
     textAlign: 'center',
+    marginBottom: SPACING.lg,
   },
   infoBanner: {
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.lg,
+    backgroundColor: MARITIME.infoBg,
+    borderWidth: 1,
+    borderColor: MARITIME.infoBorder,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.xl,
   },
   infoBannerText: {
     fontSize: FONTS.sm,
-    color: COLORS.primary,
+    color: MARITIME.textOnDark,
     fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  form: {
+  formCard: {
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xl,
     marginBottom: SPACING.lg,
+    borderWidth: 1,
   },
   label: {
     fontSize: FONTS.sm,
@@ -364,27 +383,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.lg,
+    marginTop: SPACING.xl,
+    gap: SPACING.xs,
   },
   footerText: {
     fontSize: FONTS.sm,
+    color: MARITIME.textMuted,
+  },
+  footerLink: {
+    fontSize: FONTS.sm,
+    fontWeight: '600',
+    color: COLORS.secondary,
   },
   helpSection: {
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.xl,
+    borderWidth: 1,
   },
   helpText: {
     fontSize: FONTS.sm,
     fontWeight: '600',
+    color: MARITIME.textOnDark,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   helpSubtext: {
     fontSize: FONTS.xs,
+    color: MARITIME.textMuted,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   error: {
     fontSize: FONTS.xs,

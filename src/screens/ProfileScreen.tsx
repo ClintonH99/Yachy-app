@@ -169,65 +169,7 @@ export const ProfileScreen = ({ navigation }: any) => {
     setIsEditing(false);
   };
 
-  const isHOD = user?.role === 'HOD';
-  const settingsSections = [
-    ...(isHOD
-      ? [
-          {
-            title: 'Vessel Management',
-            items: [
-              {
-                icon: '⚓',
-                label: 'Vessel Settings',
-                description: 'Manage vessel name. Invite code is here.',
-                onPress: () => navigation.navigate('VesselSettings'),
-                disabled: false,
-              },
-              {
-                icon: '👥',
-                label: 'Crew Management',
-                description: 'View and manage crew members',
-                onPress: () => navigation.navigate('CrewManagement'),
-                disabled: false,
-              },
-            ],
-          },
-        ]
-      : []),
-    {
-      title: 'App',
-      items: [
-        {
-          icon: '🖼️',
-          label: 'Appearance',
-          description: 'Background theme: Day or Night Mode',
-          onPress: () => navigation.navigate('ThemeSettings'),
-          disabled: false,
-        },
-        {
-          icon: '🎨',
-          label: 'Department colors',
-          description: 'Choose color scheme per crew department',
-          onPress: () => navigation.navigate('DepartmentColorSettings'),
-          disabled: false,
-        },
-        {
-          icon: '🔔',
-          label: 'Notifications',
-          description: 'Manage notification preferences',
-          onPress: () => navigation.navigate('NotificationSettings'),
-          disabled: false,
-        },
-        {
-          icon: '📱',
-          label: 'About',
-          description: 'App version and information',
-          onPress: () => {},
-          disabled: true,
-        },
-      ],
-    },
-  ];
+  const settingsSections: Array<{ title: string; items: Array<{ icon: string; label: string; description: string; onPress: () => void; disabled: boolean }> }> = [];
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
