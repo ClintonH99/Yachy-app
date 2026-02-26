@@ -18,6 +18,7 @@ interface ButtonProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'outlineLight' | 'danger' | 'text';
   size?: 'small' | 'medium' | 'large';
+  shape?: 'default' | 'pill';
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;

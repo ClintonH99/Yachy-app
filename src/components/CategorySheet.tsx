@@ -150,10 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: PILL_BG,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
-    ...Platform.select({
-      ios: SHADOWS.lg,
-      android: { elevation: 12 },
-    }),
+    ...(Platform.OS === 'ios' ? SHADOWS.lg : { elevation: 12 }),
   },
   handleContainer: {
     alignItems: 'center',

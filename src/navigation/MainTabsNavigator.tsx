@@ -11,8 +11,8 @@ import {
   Text,
   StyleSheet,
   Platform,
-  BottomTabBarProps,
 } from 'react-native';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -50,7 +50,7 @@ function CustomPillBar(props: BottomTabBarProps) {
         },
       ]}
     >
-      {state.routes.map((route, index) => {
+      {state.routes.map((route: { key: string; name: string }, index: number) => {
         const config = BUTTON_CONFIG[index];
         const focused = state.index === index;
 
@@ -89,7 +89,7 @@ export const MainTabsNavigator = () => {
       tabBar={(props) => <CustomPillBar {...props} />}
       screenOptions={{
         headerShown: false,
-        sceneContainerStyle: { paddingBottom: bottomPadding },
+        sceneStyle: { paddingBottom: bottomPadding },
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -110,10 +110,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     backgroundColor: PILL_BG,
     borderRadius: 9999,
-    ...Platform.select({
-      ios: SHADOWS.lg,
-      android: { elevation: 12 },
-    }),
+    ...(Platform.OS === 'ios' ? SHADOWS.lg : { elevation: 12 }),
   },
   button: {
     flex: 1,
